@@ -51,7 +51,22 @@ item_data_table: Dict[str, ItemData] = {
     "Progressive Blood Punch Upgrade": ItemData(ITEM_ID_BASE + 31, ItemClassification.useful),
     "Progressive Sentinel Hammer Upgrade": ItemData(ITEM_ID_BASE + 32, ItemClassification.useful),
 
-    # NOTE: More items will be appended here automatically later as part of repetitive tasks.
+    # Collectibles and Upgrades (Generic items that will be placed in the world)
+    "Suit Point": ItemData(ITEM_ID_BASE + 33, ItemClassification.useful),
+    "Sentinel Battery": ItemData(ITEM_ID_BASE + 34, ItemClassification.progression),
+    "Sentinel Crystal": ItemData(ITEM_ID_BASE + 35, ItemClassification.progression),
+    "Rune": ItemData(ITEM_ID_BASE + 36, ItemClassification.useful),
+    "Weapon Mod": ItemData(ITEM_ID_BASE + 37, ItemClassification.progression),
+    "Extra Life": ItemData(ITEM_ID_BASE + 38, ItemClassification.filler),
+    "Codex Page": ItemData(ITEM_ID_BASE + 39, ItemClassification.filler),
+    "Doomtoy": ItemData(ITEM_ID_BASE + 40, ItemClassification.filler),
+    "Cheat Code": ItemData(ITEM_ID_BASE + 41, ItemClassification.filler),
+    "Automap": ItemData(ITEM_ID_BASE + 42, ItemClassification.filler),
+    "Album": ItemData(ITEM_ID_BASE + 43, ItemClassification.filler),
+    "Weapon Mastery Coin": ItemData(ITEM_ID_BASE + 44, ItemClassification.useful),
+    "Soulsphere": ItemData(ITEM_ID_BASE + 45, ItemClassification.filler),
+    "Armor": ItemData(ITEM_ID_BASE + 46, ItemClassification.filler),
+    "Empyrean Key": ItemData(ITEM_ID_BASE + 47, ItemClassification.progression),
 }
 
 item_name_to_id = {name: data.code for name, data in item_data_table.items() if data.code is not None}
