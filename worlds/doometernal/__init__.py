@@ -40,7 +40,7 @@ class DoomEternalWorld(World):
             location = DoomEternalLocation(self.player, loc_name, loc_data.code, region)
             region.locations.append(location)
             
-        # Create connections between regions (Entrances)
+        # connections test
         menu = self.multiworld.get_region("Menu", self.player)
         fortress = self.multiworld.get_region("Fortress of Doom", self.player)
         hell_on_earth = self.multiworld.get_region("Hell on Earth", self.player)
@@ -49,30 +49,40 @@ class DoomEternalWorld(World):
         menu.connect(fortress)
         fortress.connect(hell_on_earth)
         
-        # We explicitly name this entrance so we can easily fetch it in set_rules
         entrance_to_exultia = Entrance(self.player, "Portal to Exultia", hell_on_earth)
         hell_on_earth.exits.append(entrance_to_exultia)
         entrance_to_exultia.connect(exultia)
 
     def create_items(self) -> None:
-        # For now, just generate the items exactly matching the locations count
-        pool = []
-        for item_name in self.item_name_to_id.keys():
-            if len(pool) < len(self.location_name_to_id):
-                pool.append(self.create_item(item_name))
+        # For our E1M1 prototype, we explicitly generate a balanced pool of 23 items
+        # to fill the 23 mapped locations (20 in E1M1 + 3 in Exultia).
         
-        # Fill the rest with some useful filler to avoid generation errors
-        while len(pool) < len(self.location_name_to_id):
-            pool.append(self.create_item("Progressive Sentinel Hammer Upgrade"))
+        # 9 Progression Items
+        pool_names = [
+            "Heavy Cannon", "Chainsaw", "Frag Grenade", 
+            "Dash", "Large Health", "Flame Belch",
+            "Sticky Bombs", "Full Auto", "Precision Bolt", "Micro Missiles",
             
+            # 5 Useful
+            "Extra Life", "Extra Life Pack", "Soulsphere", 
+            "Berserk", "Weapon Mastery Coin",
+            
+            # 5 Filler
+            "Large Health", "Large Armor",
+            "Ammo Refill", "Fuel", "BFG Ammo",
+            
+            # 3 Traps
+            "Imp Trap", "Hell Knight Trap", "Marauder Trap"
+        ]
+        
+        pool = [self.create_item(name) for name in pool_names]
         self.multiworld.itempool += pool
         
     def set_rules(self) -> None:
-        set_rule(self.multiworld.get_location("Exultia - Slayer Key", self.player),
-                 lambda state: state.has("Dash", self.player))
+
 
         set_rule(self.multiworld.get_entrance("Portal to Exultia", self.player),
-                 lambda state: state.has("Combat Shotgun", self.player))
+                 lambda state: state.has("Heavy Cannon", self.player))
         
-        # Test end goal so there is any at all. Will be adding actual options later (such as actually beating the game)
-        self.multiworld.completion_condition[self.player] = lambda state: state.has("BFG-9000", self.player)
+        # placeholder condition
+        self.multiworld.completion_condition[self.player] = lambda state: state.has("Dash", self.player)
