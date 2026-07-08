@@ -29,15 +29,74 @@ item_data_table: Dict[str, ItemData] = {
     "Blood Punch": ItemData(7770014, ItemClassification.progression),
     "Dash": ItemData(7770015, ItemClassification.progression),
     "Sentinel Battery": ItemData(7770016, ItemClassification.progression),
-    "Sentinel Crystal": ItemData(7770017, ItemClassification.progression),
+    "Progressive Health Upgrade": ItemData(7770017, ItemClassification.progression),
+    "Progressive Armor Upgrade": ItemData(7770088, ItemClassification.progression),
+    "Progressive Ammo Upgrade": ItemData(7770092, ItemClassification.progression),
     "Empyrean Key": ItemData(7770018, ItemClassification.progression),
     "Sticky Bombs": ItemData(7770058, ItemClassification.progression),
     "Full Auto": ItemData(7770059, ItemClassification.progression),
     "Precision Bolt": ItemData(7770060, ItemClassification.progression),
     "Micro Missiles": ItemData(7770061, ItemClassification.progression),
+    "Heat Blast": ItemData(7770062, ItemClassification.progression),
+    "Heat Blast Mastery": ItemData(7770063, ItemClassification.progression),
+    "Microwave Beam": ItemData(7770064, ItemClassification.progression),
+    "Microwave Beam Mastery": ItemData(7770065, ItemClassification.progression),
+    "Precision Bolt Mastery": ItemData(7770067, ItemClassification.progression),
+    "Micro Missiles Mastery": ItemData(7770068, ItemClassification.progression),
+    "Full Auto Mastery": ItemData(7770069, ItemClassification.progression),
+    "Sticky Bombs Mastery": ItemData(7770070, ItemClassification.progression),
+    "Remote Detonate": ItemData(7770071, ItemClassification.progression),
+    "Remote Detonate Mastery": ItemData(7770072, ItemClassification.progression),
+    "Lock-on Burst": ItemData(7770073, ItemClassification.progression),
+    "Lock-on Burst Mastery": ItemData(7770074, ItemClassification.progression),
+    "Arbalest": ItemData(7770075, ItemClassification.progression),
+    "Arbalest Mastery": ItemData(7770076, ItemClassification.progression),
+    "Destroyer Blade": ItemData(7770077, ItemClassification.progression),
+    "Destroyer Blade Mastery": ItemData(7770078, ItemClassification.progression),
+    "Energy Shield": ItemData(7770079, ItemClassification.progression),
+    "Energy Shield Mastery": ItemData(7770080, ItemClassification.progression),
+    "Mobile Turret": ItemData(7770081, ItemClassification.progression),
+    "Mobile Turret Mastery": ItemData(7770082, ItemClassification.progression),
+    "Meat Hook": ItemData(7770083, ItemClassification.progression),
+    "Meat Hook Mastery": ItemData(7770084, ItemClassification.progression),
+    "Savagery": ItemData(7770085, ItemClassification.useful),
+    "Seek and Destroy": ItemData(7770086, ItemClassification.useful),
+    "Blood Fueled": ItemData(7770087, ItemClassification.useful),
+    "Air Control": ItemData(7770089, ItemClassification.useful),
+    "Dazed and Confused": ItemData(7770090, ItemClassification.useful),
+    "Saving Throw": ItemData(7770091, ItemClassification.useful),
+    "Chrono Strike": ItemData(7770093, ItemClassification.useful),
+    "Equipment Fiend": ItemData(7770094, ItemClassification.useful),
+    "Punch and Reave": ItemData(7770095, ItemClassification.useful),
+    "Faster Ledge Grab": ItemData(7770097, ItemClassification.useful),
+    "Faster Weapon Swap": ItemData(7770098, ItemClassification.useful),
+    "Faster Dash Recharge": ItemData(7770099, ItemClassification.useful),
+    "Dash Refill on Glory Kill": ItemData(7770100, ItemClassification.useful),
+    "Reveal Automap Stations": ItemData(7770101, ItemClassification.useful),
+    "Reveal Automap Progression Items": ItemData(7770102, ItemClassification.useful),
+    "Larger Automap Reveal": ItemData(7770103, ItemClassification.useful),
+    "Reveal Dossier Progression Items": ItemData(7770104, ItemClassification.useful),
+    "Larger Pickup Radius": ItemData(7770105, ItemClassification.useful),
+    "Reduced Hazard Damage": ItemData(7770106, ItemClassification.useful),
+    "Reduced Self Damage": ItemData(7770107, ItemClassification.useful),
+    "Respawning Barrels": ItemData(7770108, ItemClassification.useful),
+    "Ammo from Barrels": ItemData(7770109, ItemClassification.useful),
+    "Longer Powerups": ItemData(7770110, ItemClassification.useful),
+    "Frag Grenade Cooldown": ItemData(7770111, ItemClassification.useful),
+    "Frag Grenade Concussive Blast": ItemData(7770112, ItemClassification.useful),
+    "Frag Grenade Cluster Bombs": ItemData(7770113, ItemClassification.useful),
+    "Second Frag Grenade": ItemData(7770114, ItemClassification.useful),
+    "Ice Bomb Cooldown": ItemData(7770115, ItemClassification.useful),
+    "Extended Ice Bomb Duration": ItemData(7770116, ItemClassification.useful),
+    "Health from Frozen Demons": ItemData(7770117, ItemClassification.useful),
+    "Frozen Melee Shatter": ItemData(7770118, ItemClassification.useful),
+    "Flame Belch Cooldown": ItemData(7770119, ItemClassification.useful),
+    "Extended Flame Belch": ItemData(7770120, ItemClassification.useful),
+    "More Flame Belch Armor": ItemData(7770121, ItemClassification.useful),
 
     # Useful Items
     "Weapon Mastery Coin": ItemData(7770019, ItemClassification.useful),
+    # Kept for compatibility with old data packages. New seeds use named runes.
     "Rune": ItemData(7770020, ItemClassification.useful),
     "Suit Point": ItemData(7770021, ItemClassification.useful),
     "Extra Life": ItemData(7770022, ItemClassification.useful),
@@ -80,6 +139,17 @@ item_data_table: Dict[str, ItemData] = {
     "Fuel Drain Trap": ItemData(7770055, ItemClassification.trap),
     "BFG Drain Trap": ItemData(7770056, ItemClassification.trap),
     "Armor Drain Trap": ItemData(7770057, ItemClassification.trap),
+
+    # Locked to the runtime mission-completion check; it has no in-game command.
+    "Victory": ItemData(7770096, ItemClassification.progression),
 }
 
-item_name_to_id = {name: data.code for name, data in item_data_table.items()}
+item_name_to_id = {
+    name: data.code for name, data in item_data_table.items()
+    if data.code is not None
+}
+
+suit_perk_item_names = [
+    name for name, data in item_data_table.items()
+    if data.code is not None and 7770097 <= data.code <= 7770121
+]

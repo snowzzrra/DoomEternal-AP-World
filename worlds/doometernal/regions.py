@@ -3,9 +3,10 @@ from typing import List
 # Simple list of all regions (levels) in the game
 regions: List[str] = [
     "Menu",
-    "Fortress of Doom",
     "Hell on Earth",
+    "Fortress of Doom - First Visit",
     "Exultia",
+    "Fortress of Doom - Second Visit",
     "Cultist Base",
     "Doom Hunter Base",
     "Super Gore Nest",
