@@ -38,6 +38,8 @@ location_data_table: Dict[str, LocationData] = {
     "Exultia - Blood Punch": LocationData(7770021, "Exultia"),
     "Exultia - Dash": LocationData(7770083, "Exultia"),
     "Exultia - Sentinel Battery": LocationData(7770084, "Exultia"),
+    "Exultia - Secret Encounter - Capitol Arena": LocationData(7770089, "Exultia"),
+    "Exultia - Secret Encounter - Gore Nest Arena": LocationData(7770090, "Exultia"),
     "Exultia - Slayer Gate Key": LocationData(7770045, "Exultia"),
     "Exultia - Extra Life - Behind King Novik's Throne": LocationData(7770023, "Exultia"),
     "Exultia - Extra Life - Inside Electric Trap": LocationData(7770024, "Exultia"),
@@ -100,5 +102,7 @@ location_data_table: Dict[str, LocationData] = {
     "Cultist Base - Sentinel Battery 3": LocationData(7770070, "Cultist Base"),
     "Cultist Base - Slayer Key": LocationData(7770071, "Cultist Base"),
     "Cultist Base - Mission Complete": LocationData(7770082, "Cultist Base"),
+    "Cultist Base - Secret Encounter - Cave Mancubus": LocationData(7770091, "Cultist Base"),
+    "Cultist Base - Secret Encounter - Torture Pit": LocationData(7770092, "Cultist Base"),
 }
 location_name_to_id = {name: data.code for name, data in location_data_table.items()}
