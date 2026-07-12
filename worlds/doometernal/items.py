@@ -91,7 +91,7 @@ item_data_table: Dict[str, ItemData] = {
     "Reduced Self Damage": ItemData(7770107, ItemClassification.useful),
     "Respawning Barrels": ItemData(7770108, ItemClassification.useful),
     "Ammo from Barrels": ItemData(7770109, ItemClassification.useful),
-    "Longer Powerups": ItemData(7770110, ItemClassification.useful),
+    "Powerup Extender": ItemData(7770110, ItemClassification.useful),
     "Frag Grenade Cooldown": ItemData(7770111, ItemClassification.useful),
     "Frag Grenade Concussive Blast": ItemData(7770112, ItemClassification.useful),
     "Frag Grenade Cluster Bombs": ItemData(7770113, ItemClassification.useful),

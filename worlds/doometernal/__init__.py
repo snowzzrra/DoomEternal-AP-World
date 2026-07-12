@@ -6,6 +6,7 @@ from worlds.LauncherComponents import (
     Component,
     Type,
     components,
+    icon_paths,
     launch as launch_component,
 )
 from BaseClasses import Region, Entrance, Item
@@ -33,8 +34,10 @@ components.append(
         game_name="Doom Eternal",
         func=launch_client,
         component_type=Type.CLIENT,
+        icon="doom_eternal",
     )
 )
+icon_paths["doom_eternal"] = f"ap:{__name__}/doom_logo.png"
 
 
 class DoomEternalSettings(settings.Group):
