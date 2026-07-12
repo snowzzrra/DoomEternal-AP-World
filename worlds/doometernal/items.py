@@ -10,6 +10,17 @@ class ItemData(NamedTuple):
 
 ITEM_ID_BASE = 7770000
 
+# Audited from local base-campaign maps/DECLs.  The short route deliberately
+# uses only its own fixed quantities; later-map currency remains reserved.
+BASE_CAMPAIGN_MAX_SENTINEL_BATTERIES = 18
+BASE_CAMPAIGN_MAX_WEAPON_MASTERY_TOKENS = 7
+CURRENT_ROUTE_SENTINEL_BATTERIES = 5
+CURRENT_ROUTE_WEAPON_MASTERY_TOKENS = 1
+
+# Tombstones: never allocate these IDs again in the item namespace.
+RESERVED_ITEM_IDS = frozenset({7770105, 7770119, 7770120, 7770121})
+RESERVED_LOCATION_IDS = frozenset({7770055, 7770068})
+
 item_data_table: Dict[str, ItemData] = {
     # Progression Items (Weapons & Equipment)
     "Heavy Cannon": ItemData(7770000, ItemClassification.progression),
@@ -76,7 +87,6 @@ item_data_table: Dict[str, ItemData] = {
     "Reveal Automap Progression Items": ItemData(7770102, ItemClassification.useful),
     "Larger Automap Reveal": ItemData(7770103, ItemClassification.useful),
     "Reveal Dossier Progression Items": ItemData(7770104, ItemClassification.useful),
-    "Larger Pickup Radius": ItemData(7770105, ItemClassification.useful),
     "Reduced Hazard Damage": ItemData(7770106, ItemClassification.useful),
     "Reduced Self Damage": ItemData(7770107, ItemClassification.useful),
     "Respawning Barrels": ItemData(7770108, ItemClassification.useful),
@@ -90,12 +100,9 @@ item_data_table: Dict[str, ItemData] = {
     "Extended Ice Bomb Duration": ItemData(7770116, ItemClassification.useful),
     "Health from Frozen Demons": ItemData(7770117, ItemClassification.useful),
     "Frozen Melee Shatter": ItemData(7770118, ItemClassification.useful),
-    "Flame Belch Cooldown": ItemData(7770119, ItemClassification.useful),
-    "Extended Flame Belch": ItemData(7770120, ItemClassification.useful),
-    "More Flame Belch Armor": ItemData(7770121, ItemClassification.useful),
 
     # Useful Items
-    "Weapon Mastery Coin": ItemData(7770019, ItemClassification.useful),
+    "Weapon Mastery Token": ItemData(7770019, ItemClassification.useful),
     # Kept for compatibility with old data packages. New seeds use named runes.
     "Rune": ItemData(7770020, ItemClassification.useful),
     "Suit Point": ItemData(7770021, ItemClassification.useful),
@@ -153,3 +160,19 @@ suit_perk_item_names = [
     name for name, data in item_data_table.items()
     if data.code is not None and 7770097 <= data.code <= 7770121
 ]
+
+# Canonical eligibility for the parent Dossier > Suit page. Crystal
+# progressives are displayed there; Frag and Ice have vanilla Suit-family
+# preReqStats. Flame Belch is not part of that Suit group, so its base item is
+# deliberately not a page unlocker.
+SUIT_PAGE_UNLOCKING_ITEM_NAMES = frozenset({
+    "Progressive Health Upgrade",
+    "Progressive Armor Upgrade",
+    "Progressive Ammo Upgrade",
+    "Frag Grenade",
+    "Ice Bomb",
+    *suit_perk_item_names,
+})
+SUIT_PAGE_UNLOCKING_ITEM_IDS = frozenset(
+    item_data_table[name].code for name in SUIT_PAGE_UNLOCKING_ITEM_NAMES
+)

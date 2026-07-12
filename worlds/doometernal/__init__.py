@@ -11,6 +11,8 @@ from worlds.LauncherComponents import (
 from BaseClasses import Region, Entrance, Item
 from .options import DoomEternalOptions
 from .items import (
+    CURRENT_ROUTE_SENTINEL_BATTERIES,
+    CURRENT_ROUTE_WEAPON_MASTERY_TOKENS,
     item_data_table,
     item_name_to_id,
     suit_perk_item_names,
@@ -131,6 +133,7 @@ class DoomEternalWorld(World):
             "Savagery", "Seek and Destroy", "Blood Fueled", "Air Control",
             "Dazed and Confused", "Saving Throw", "Chrono Strike",
             "Equipment Fiend", "Punch and Reave",
+            *(["Weapon Mastery Token"] * CURRENT_ROUTE_WEAPON_MASTERY_TOKENS),
             *(["Progressive Health Upgrade"] * 4),
             *(["Progressive Armor Upgrade"] * 4),
             *(["Progressive Ammo Upgrade"] * 4),
@@ -151,11 +154,12 @@ class DoomEternalWorld(World):
             ).place_locked_item(self.create_item("Dash"))
 
         if self.options.randomize_first_battery:
-            pool_names.append("Sentinel Battery")
+            pool_names.extend(["Sentinel Battery"] * CURRENT_ROUTE_SENTINEL_BATTERIES)
         else:
             self.multiworld.get_location(
                 "Exultia - Sentinel Battery", self.player
             ).place_locked_item(self.create_item("Sentinel Battery"))
+            pool_names.extend(["Sentinel Battery"] * (CURRENT_ROUTE_SENTINEL_BATTERIES - 1))
 
         self.multiworld.get_location(
             "Cultist Base - Mission Complete", self.player
@@ -210,6 +214,15 @@ class DoomEternalWorld(World):
         set_rule(
             self.multiworld.get_entrance("Portal to Cultist Base", self.player),
             lambda state: state.has("Sentinel Battery", self.player),
+        )
+
+        set_rule(
+            self.multiworld.get_location("Fortress of Doom - Sentinel Crystal 2", self.player),
+            lambda state: state.has("Sentinel Battery", self.player, 3),
+        )
+        set_rule(
+            self.multiworld.get_location("Fortress of Doom - Sentinel Crystal 3", self.player),
+            lambda state: state.has("Sentinel Battery", self.player, 5),
         )
 
         self.multiworld.completion_condition[self.player] = (
