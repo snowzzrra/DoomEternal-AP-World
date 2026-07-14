@@ -13,7 +13,6 @@ from BaseClasses import Region, Entrance, Item
 from .options import DoomEternalOptions
 from .items import (
     CURRENT_ROUTE_SENTINEL_BATTERIES,
-    CURRENT_ROUTE_WEAPON_MASTERY_TOKENS,
     item_data_table,
     item_name_to_id,
     suit_perk_item_names,
@@ -98,11 +97,13 @@ class DoomEternalWorld(World):
         exultia = self.multiworld.get_region("Exultia", self.player)
         fortress_second_visit = self.multiworld.get_region("Fortress of Doom - Second Visit", self.player)
         cultist_base = self.multiworld.get_region("Cultist Base", self.player)
+        weapon_masteries = self.multiworld.get_region("Weapon Masteries", self.player)
 
         # Actual pre-alpha campaign order:
         # E1M1 -> Hub (Flame Belch) -> E1M2 -> Hub (Ice Bomb, Suit Point,
         # Ripatorium) -> E1M3.
         menu.connect(hell_on_earth)
+        menu.connect(weapon_masteries)
 
         entrance_to_first_hub = Entrance(self.player, "Return to Fortress after Hell on Earth", hell_on_earth)
         hell_on_earth.exits.append(entrance_to_first_hub)
@@ -136,7 +137,9 @@ class DoomEternalWorld(World):
             "Savagery", "Seek and Destroy", "Blood Fueled", "Air Control",
             "Dazed and Confused", "Saving Throw", "Chrono Strike",
             "Equipment Fiend", "Punch and Reave",
-            *(["Weapon Mastery Token"] * CURRENT_ROUTE_WEAPON_MASTERY_TOKENS),
+            "Sticky Bombs Mastery", "Full Auto Mastery", "Micro Missiles Mastery",
+            "Heat Blast Mastery", "Microwave Beam Mastery", "Lock-on Burst Mastery",
+            "Arbalest Mastery", "Energy Shield Mastery", "Mobile Turret Mastery",
             *(["Progressive Health Upgrade"] * 4),
             *(["Progressive Armor Upgrade"] * 4),
             *(["Progressive Ammo Upgrade"] * 4),
@@ -227,6 +230,25 @@ class DoomEternalWorld(World):
             self.multiworld.get_location("Fortress of Doom - Sentinel Crystal 3", self.player),
             lambda state: state.has("Sentinel Battery", self.player, 5),
         )
+
+        mastery_requirements = {
+            "Weapon Mastery Challenge - Sticky Bombs": ("Sticky Bombs",),
+            "Weapon Mastery Challenge - Full Auto": ("Full Auto",),
+            "Weapon Mastery Challenge - Micro Missiles": ("Heavy Cannon", "Micro Missiles"),
+            "Weapon Mastery Challenge - Heat Blast": ("Plasma Rifle", "Heat Blast"),
+            "Weapon Mastery Challenge - Microwave Beam": ("Plasma Rifle", "Microwave Beam"),
+            "Weapon Mastery Challenge - Lock-on Burst": ("Rocket Launcher", "Lock-on Burst"),
+            "Weapon Mastery Challenge - Arbalest": ("Ballista", "Arbalest"),
+            "Weapon Mastery Challenge - Energy Shield": ("Chaingun", "Energy Shield"),
+            "Weapon Mastery Challenge - Mobile Turret": ("Chaingun", "Mobile Turret"),
+        }
+        for location_name, required_items in mastery_requirements.items():
+            set_rule(
+                self.multiworld.get_location(location_name, self.player),
+                lambda state, items=required_items: all(
+                    state.has(item, self.player) for item in items
+                ),
+            )
 
         self.multiworld.completion_condition[self.player] = (
             lambda state: state.has("Victory", self.player)

@@ -8,6 +8,7 @@ regions: List[str] = [
     "Exultia",
     "Fortress of Doom - Second Visit",
     "Cultist Base",
+    "Weapon Masteries",
     "Doom Hunter Base",
     "Super Gore Nest",
     "Arc Complex",
