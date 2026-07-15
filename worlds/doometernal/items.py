@@ -16,9 +16,9 @@ BASE_CAMPAIGN_MAX_SENTINEL_BATTERIES = 18
 CURRENT_ROUTE_SENTINEL_BATTERIES = 5
 
 # Tombstones: never allocate these IDs again in the item namespace.  7770019
-# remains a Hell on Earth location ID; its former Weapon Mastery Token item
-# allocation is deprecated and must never be revived or repurposed.
-RESERVED_ITEM_IDS = frozenset({7770019, 7770105, 7770119, 7770120, 7770121})
+# remains a Hell on Earth location ID; 7770057 remains a Cultist Battery
+# location ID. Their former item allocations are deprecated and never reused.
+RESERVED_ITEM_IDS = frozenset({7770019, 7770057, 7770105, 7770119, 7770120, 7770121})
 RESERVED_LOCATION_IDS = frozenset({7770055, 7770068})
 
 item_data_table: Dict[str, ItemData] = {
@@ -144,7 +144,6 @@ item_data_table: Dict[str, ItemData] = {
     "Ammo Drain Trap": ItemData(7770054, ItemClassification.trap),
     "Fuel Drain Trap": ItemData(7770055, ItemClassification.trap),
     "BFG Drain Trap": ItemData(7770056, ItemClassification.trap),
-    "Armor Drain Trap": ItemData(7770057, ItemClassification.trap),
 
     # Locked to the runtime mission-completion check; it has no in-game command.
     "Victory": ItemData(7770096, ItemClassification.progression),

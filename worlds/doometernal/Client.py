@@ -5,10 +5,15 @@ from __future__ import annotations
 import os
 import runpy
 import sys
+import hashlib
+import json
 from pathlib import Path
 
 import settings
 from Utils import messagebox
+
+
+BRIDGE_PROTOCOL = 3
 
 
 def _client_directory() -> Path:
@@ -21,24 +26,41 @@ def _client_directory() -> Path:
     candidates = [
         configured_path,
         configured_path / "client",
-        Path.home() / "DoomEternalArchipelago",
-        Path.home() / "DoomEternalArchipelago" / "client",
-        Path.home() / "Downloads" / "DoomEternalArchipelagoPlayableTest",
-        Path.home() / "Downloads" / "DoomEternalArchipelagoPlayableTest" / "client",
     ]
-    
-    # Try finding bridge_client.py in any candidate directory
+
+    # Never fall back to a global/download/repository copy: the configured
+    # extracted release is the only authority for the bridge being launched.
     for path in candidates:
         if (path / "bridge_client.py").is_file():
             return path
-            
-    # If not found, search one level deep in the configured path
-    if configured_path.is_dir():
-        for subpath in configured_path.iterdir():
-            if subpath.is_dir() and (subpath / "bridge_client.py").is_file():
-                return subpath
 
     return configured_path
+
+
+def _bridge_identity(bridge: Path) -> tuple[str, str]:
+    """Validate packaged bridge identity without importing its code."""
+    identity_path = bridge.with_name("bridge_identity.json")
+    try:
+        identity = json.loads(identity_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise RuntimeError(
+            "Missing or invalid bridge_identity.json beside bridge_client.py. "
+            "Re-extract matching DOOM Eternal Archipelago release client."
+        ) from error
+
+    actual_sha = hashlib.sha256(bridge.read_bytes()).hexdigest()
+    expected_revision = f"mission-unified-{actual_sha[:12]}"
+    if identity.get("protocol") != BRIDGE_PROTOCOL:
+        raise RuntimeError(
+            f"Bridge protocol {identity.get('protocol')!r} is incompatible with "
+            f"APWorld protocol {BRIDGE_PROTOCOL}. Re-extract matching release."
+        )
+    if identity.get("sha256") != actual_sha or identity.get("revision") != expected_revision:
+        raise RuntimeError(
+            "Bridge SHA/revision does not match bridge_identity.json. "
+            "Re-extract matching DOOM Eternal Archipelago release client."
+        )
+    return actual_sha, expected_revision
 
 
 def launch(*launch_args: str) -> None:
@@ -54,6 +76,17 @@ def launch(*launch_args: str) -> None:
             error=True,
         )
         return
+
+    try:
+        bridge_sha256, bridge_revision = _bridge_identity(bridge)
+    except RuntimeError as error:
+        messagebox("DOOM Eternal bridge mismatch", str(error), error=True)
+        return
+
+    print(f"BRIDGE_REVISION={bridge_revision}")
+    print(f"BRIDGE_FILE={bridge.resolve()}")
+    print(f"BRIDGE_SHA256={bridge_sha256}")
+    print(f"BRIDGE_PROTOCOL={BRIDGE_PROTOCOL}")
 
     os.chdir(client_directory)
     sys.path.insert(0, str(client_directory))

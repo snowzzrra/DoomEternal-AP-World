@@ -140,6 +140,8 @@ class DoomEternalWorld(World):
             "Sticky Bombs Mastery", "Full Auto Mastery", "Micro Missiles Mastery",
             "Heat Blast Mastery", "Microwave Beam Mastery", "Lock-on Burst Mastery",
             "Arbalest Mastery", "Energy Shield Mastery", "Mobile Turret Mastery",
+            "Precision Bolt Mastery", "Remote Detonate Mastery",
+            "Destroyer Blade Mastery", "Meat Hook Mastery",
             *(["Progressive Health Upgrade"] * 4),
             *(["Progressive Armor Upgrade"] * 4),
             *(["Progressive Ammo Upgrade"] * 4),
@@ -195,7 +197,6 @@ class DoomEternalWorld(World):
             "Ammo Drain Trap": 2,
             "Fuel Drain Trap": 2,
             "BFG Drain Trap": 2,
-            "Armor Drain Trap": 2,
         }
 
         # Pad with filler
@@ -230,25 +231,6 @@ class DoomEternalWorld(World):
             self.multiworld.get_location("Fortress of Doom - Sentinel Crystal 3", self.player),
             lambda state: state.has("Sentinel Battery", self.player, 5),
         )
-
-        mastery_requirements = {
-            "Weapon Mastery Challenge - Sticky Bombs": ("Sticky Bombs",),
-            "Weapon Mastery Challenge - Full Auto": ("Full Auto",),
-            "Weapon Mastery Challenge - Micro Missiles": ("Heavy Cannon", "Micro Missiles"),
-            "Weapon Mastery Challenge - Heat Blast": ("Plasma Rifle", "Heat Blast"),
-            "Weapon Mastery Challenge - Microwave Beam": ("Plasma Rifle", "Microwave Beam"),
-            "Weapon Mastery Challenge - Lock-on Burst": ("Rocket Launcher", "Lock-on Burst"),
-            "Weapon Mastery Challenge - Arbalest": ("Ballista", "Arbalest"),
-            "Weapon Mastery Challenge - Energy Shield": ("Chaingun", "Energy Shield"),
-            "Weapon Mastery Challenge - Mobile Turret": ("Chaingun", "Mobile Turret"),
-        }
-        for location_name, required_items in mastery_requirements.items():
-            set_rule(
-                self.multiworld.get_location(location_name, self.player),
-                lambda state, items=required_items: all(
-                    state.has(item, self.player) for item in items
-                ),
-            )
 
         self.multiworld.completion_condition[self.player] = (
             lambda state: state.has("Victory", self.player)

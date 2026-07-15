@@ -33,7 +33,7 @@ location_data_table: Dict[str, LocationData] = {
     "Hell on Earth - Doom Slayer Toy": LocationData(7770018, "Hell on Earth"),
     "Hell on Earth - Imp Toy": LocationData(7770019, "Hell on Earth"),
     "Hell on Earth - Infinite Extra Lives Cheat": LocationData(7770020, "Hell on Earth"),
-    "Hell on Earth - Mission Complete": LocationData(7770093, "Hell on Earth"),
+    "Hell on Earth - Mission Complete": LocationData(7770122, "Hell on Earth"),
 
     # left some for exultia here, and deleted all of the rest, but i will place them back here soon
     "Exultia - Blood Punch": LocationData(7770021, "Exultia"),
@@ -63,7 +63,7 @@ location_data_table: Dict[str, LocationData] = {
     "Exultia - The Betrayer Codex Entry": LocationData(7770042, "Exultia"),
     "Exultia - Weapon Modbot 1": LocationData(7770043, "Exultia"),
     "Exultia - Rune 1": LocationData(7770044, "Exultia"),
-    "Exultia - Mission Complete": LocationData(7770094, "Exultia"),
+    "Exultia - Mission Complete": LocationData(7770123, "Exultia"),
 
     # Fortress of Doom
     # The campaign visits the same physical Hub twice during the pre-alpha.
@@ -71,6 +71,7 @@ location_data_table: Dict[str, LocationData] = {
     # conservatively considered second-visit content until room access is mapped.
     "Fortress of Doom - Flame Belch": LocationData(7770073, "Fortress of Doom - First Visit"),
     "Fortress of Doom - Sentinel Crystal 1": LocationData(7770086, "Fortress of Doom - First Visit"),
+    "Fortress of Doom - Praetor Suit Token 1": LocationData(7770081, "Fortress of Doom - Second Visit"),
     "Fortress of Doom - Fortress of Doom Codex Entry": LocationData(7770072, "Fortress of Doom - Second Visit"),
     "Fortress of Doom - Ice Bomb": LocationData(7770074, "Fortress of Doom - Second Visit"),
     "Fortress of Doom - Sentinel Crystal 2": LocationData(7770087, "Fortress of Doom - Second Visit"),
@@ -100,21 +101,8 @@ location_data_table: Dict[str, LocationData] = {
     "Cultist Base - Sentinel Battery 2": LocationData(7770069, "Cultist Base"),
     "Cultist Base - Sentinel Battery 3": LocationData(7770070, "Cultist Base"),
     "Cultist Base - Slayer Key": LocationData(7770071, "Cultist Base"),
-    "Cultist Base - Mission Complete": LocationData(7770082, "Cultist Base"),
-    "Cultist Base - Mission Challenge - Pull the Crystal": LocationData(7770095, "Cultist Base"),
-    "Cultist Base - Mission Challenge - Armored Rain": LocationData(7770096, "Cultist Base"),
-    "Cultist Base - Mission Challenge - Master of Turrets": LocationData(7770097, "Cultist Base"),
+    "Cultist Base - Mission Complete": LocationData(7770124, "Cultist Base"),
     "Cultist Base - Secret Encounter - Cave Mancubus": LocationData(7770091, "Cultist Base"),
     "Cultist Base - Secret Encounter - Torture Pit": LocationData(7770092, "Cultist Base"),
-
-    "Weapon Mastery Challenge - Sticky Bombs": LocationData(7770098, "Weapon Masteries"),
-    "Weapon Mastery Challenge - Full Auto": LocationData(7770099, "Weapon Masteries"),
-    "Weapon Mastery Challenge - Micro Missiles": LocationData(7770100, "Weapon Masteries"),
-    "Weapon Mastery Challenge - Heat Blast": LocationData(7770101, "Weapon Masteries"),
-    "Weapon Mastery Challenge - Microwave Beam": LocationData(7770102, "Weapon Masteries"),
-    "Weapon Mastery Challenge - Lock-on Burst": LocationData(7770103, "Weapon Masteries"),
-    "Weapon Mastery Challenge - Arbalest": LocationData(7770104, "Weapon Masteries"),
-    "Weapon Mastery Challenge - Energy Shield": LocationData(7770105, "Weapon Masteries"),
-    "Weapon Mastery Challenge - Mobile Turret": LocationData(7770106, "Weapon Masteries"),
 }
 location_name_to_id = {name: data.code for name, data in location_data_table.items()}
