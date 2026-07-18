@@ -12,7 +12,8 @@ from worlds.LauncherComponents import (
 from BaseClasses import Region, Entrance, Item
 from .options import DoomEternalOptions
 from .items import (
-    CURRENT_ROUTE_SENTINEL_BATTERIES,
+    CURRENT_ROUTE_SENTINEL_BATTERY_BUNDLES,
+    SENTINEL_BATTERY_BUNDLE_VALUE,
     item_data_table,
     item_name_to_id,
     suit_perk_item_names,
@@ -71,6 +72,14 @@ class DoomEternalWorld(World):
     def create_item(self, name: str) -> DoomEternalItem:
         item_data = item_data_table[name]
         return DoomEternalItem(name, item_data.classification, item_data.code, self.player)
+
+    @staticmethod
+    def has_sentinel_battery_currency(state, player: int, amount: int) -> bool:
+        return (
+            state.count("Sentinel Battery", player)
+            + SENTINEL_BATTERY_BUNDLE_VALUE
+            * state.count("Sentinel Battery Bundle", player)
+        ) >= amount
 
     def fill_slot_data(self) -> dict:
         return {
@@ -162,12 +171,17 @@ class DoomEternalWorld(World):
             ).place_locked_item(self.create_item("Dash"))
 
         if self.options.randomize_first_battery:
-            pool_names.extend(["Sentinel Battery"] * CURRENT_ROUTE_SENTINEL_BATTERIES)
+            pool_names.append("Sentinel Battery")
         else:
+            # The physical Exultia Battery remains an AP location in both
+            # modes.  The default keeps its required first Battery locked to
+            # that pickup; enabling the option leaves the location randomized.
             self.multiworld.get_location(
                 "Exultia - Sentinel Battery", self.player
             ).place_locked_item(self.create_item("Sentinel Battery"))
-            pool_names.extend(["Sentinel Battery"] * (CURRENT_ROUTE_SENTINEL_BATTERIES - 1))
+        pool_names.extend(
+            ["Sentinel Battery Bundle"] * CURRENT_ROUTE_SENTINEL_BATTERY_BUNDLES
+        )
 
         self.multiworld.get_location(
             "Cultist Base - Mission Complete", self.player
@@ -220,16 +234,16 @@ class DoomEternalWorld(World):
 
         set_rule(
             self.multiworld.get_entrance("Portal to Cultist Base", self.player),
-            lambda state: state.has("Sentinel Battery", self.player),
+            lambda state: self.has_sentinel_battery_currency(state, self.player, 1),
         )
 
         set_rule(
             self.multiworld.get_location("Fortress of Doom - Sentinel Crystal 2", self.player),
-            lambda state: state.has("Sentinel Battery", self.player, 3),
+            lambda state: self.has_sentinel_battery_currency(state, self.player, 3),
         )
         set_rule(
             self.multiworld.get_location("Fortress of Doom - Sentinel Crystal 3", self.player),
-            lambda state: state.has("Sentinel Battery", self.player, 5),
+            lambda state: self.has_sentinel_battery_currency(state, self.player, 5),
         )
 
         self.multiworld.completion_condition[self.player] = (

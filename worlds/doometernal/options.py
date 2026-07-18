@@ -23,8 +23,8 @@ class RandomizeDash(Toggle):
 
 class RandomizeFirstBattery(Toggle):
     """
-    Randomize the Sentinel Battery collected in Exultia and required to open
-    the route from the post-Exultia Fortress visit to Cultist Base.
+    When enabled, the mandatory first Sentinel Battery is shuffled into the
+    item pool instead of being locked to its Exultia pickup.
     """
     display_name = "Randomize First Sentinel Battery"
     default = 0

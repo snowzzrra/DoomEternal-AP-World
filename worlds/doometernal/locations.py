@@ -104,5 +104,24 @@ location_data_table: Dict[str, LocationData] = {
     "Cultist Base - Mission Complete": LocationData(7770124, "Cultist Base"),
     "Cultist Base - Secret Encounter - Cave Mancubus": LocationData(7770091, "Cultist Base"),
     "Cultist Base - Secret Encounter - Torture Pit": LocationData(7770092, "Cultist Base"),
+
+    "Sticky Bombs - Weapon Mastery Challenge": LocationData(7770125, "Weapon Masteries"),
+    "Full Auto - Weapon Mastery Challenge": LocationData(7770126, "Weapon Masteries"),
+    "Precision Bolt - Weapon Mastery Challenge": LocationData(7770127, "Weapon Masteries"),
+    "Micro Missiles - Weapon Mastery Challenge": LocationData(7770128, "Weapon Masteries"),
+    "Heat Blast - Weapon Mastery Challenge": LocationData(7770129, "Weapon Masteries"),
+    "Microwave Beam - Weapon Mastery Challenge": LocationData(7770130, "Weapon Masteries"),
+    "Lock-on Burst - Weapon Mastery Challenge": LocationData(7770131, "Weapon Masteries"),
+    "Remote Detonate - Weapon Mastery Challenge": LocationData(7770132, "Weapon Masteries"),
+    "Destroyer Blade - Weapon Mastery Challenge": LocationData(7770133, "Weapon Masteries"),
+    "Arbalest - Weapon Mastery Challenge": LocationData(7770134, "Weapon Masteries"),
+    "Mobile Turret - Weapon Mastery Challenge": LocationData(7770135, "Weapon Masteries"),
+    "Energy Shield - Weapon Mastery Challenge": LocationData(7770136, "Weapon Masteries"),
+    "Meat Hook - Weapon Mastery Challenge": LocationData(7770137, "Weapon Masteries"),
+
+    "Cultist Base - Mission Challenge - Pull the Crystal": LocationData(7770138, "Cultist Base"),
+    "Cultist Base - Mission Challenge - Armored Rain": LocationData(7770139, "Cultist Base"),
+    "Cultist Base - Mission Challenge - Master of Turrets": LocationData(7770140, "Cultist Base"),
+    "Cultist Base - All Mission Challenges Completed": LocationData(7770141, "Cultist Base"),
 }
 location_name_to_id = {name: data.code for name, data in location_data_table.items()}

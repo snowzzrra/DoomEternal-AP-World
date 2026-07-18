@@ -14,6 +14,8 @@ ITEM_ID_BASE = 7770000
 # uses only its own fixed quantity; later-map currency remains reserved.
 BASE_CAMPAIGN_MAX_SENTINEL_BATTERIES = 18
 CURRENT_ROUTE_SENTINEL_BATTERIES = 5
+CURRENT_ROUTE_SENTINEL_BATTERY_BUNDLES = 2
+SENTINEL_BATTERY_BUNDLE_VALUE = 2
 
 # Tombstones: never allocate these IDs again in the item namespace.  7770019
 # remains a Hell on Earth location ID; 7770057 remains a Cultist Battery
@@ -40,6 +42,7 @@ item_data_table: Dict[str, ItemData] = {
     "Blood Punch": ItemData(7770014, ItemClassification.progression),
     "Dash": ItemData(7770015, ItemClassification.progression),
     "Sentinel Battery": ItemData(7770016, ItemClassification.progression),
+    "Sentinel Battery Bundle": ItemData(7770142, ItemClassification.progression),
     "Progressive Health Upgrade": ItemData(7770017, ItemClassification.progression),
     "Progressive Armor Upgrade": ItemData(7770088, ItemClassification.progression),
     "Progressive Ammo Upgrade": ItemData(7770092, ItemClassification.progression),
