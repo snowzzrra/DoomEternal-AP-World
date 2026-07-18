@@ -1,7 +1,7 @@
 from typing import ClassVar
 import settings
 from worlds.AutoWorld import World, WebWorld
-from worlds.generic.Rules import set_rule
+from worlds.generic.Rules import forbid_item, set_rule
 from worlds.LauncherComponents import (
     Component,
     Type,
@@ -20,6 +20,13 @@ from .items import (
     DoomEternalItem,
 )
 from .locations import location_data_table, location_name_to_id, DoomEternalLocation
+from .logic import (
+    EXTERNAL_VANILLA_PREREQUISITES,
+    build_location_prerequisites,
+    requirement_satisfied,
+    validate_external_vanilla_prerequisites,
+    validate_location_prerequisites,
+)
 from .regions import regions
 
 
@@ -245,6 +252,31 @@ class DoomEternalWorld(World):
             self.multiworld.get_location("Fortress of Doom - Sentinel Crystal 3", self.player),
             lambda state: self.has_sentinel_battery_currency(state, self.player, 5),
         )
+
+        prerequisite_table = build_location_prerequisites(set(location_data_table))
+        validate_location_prerequisites(
+            prerequisite_table, set(location_data_table), set(item_data_table)
+        )
+        validate_external_vanilla_prerequisites(
+            EXTERNAL_VANILLA_PREREQUISITES,
+            prerequisite_table,
+            set(location_data_table),
+            set(item_data_table),
+            {
+                item.name for item in self.multiworld.get_items()
+                if item.player == self.player
+            },
+        )
+        for location_name, requirement in prerequisite_table.items():
+            location = self.multiworld.get_location(location_name, self.player)
+            set_rule(
+                location,
+                lambda state, requirement=requirement: requirement_satisfied(
+                    requirement, state, self.player
+                ),
+            )
+            for item_name in requirement.all_of:
+                forbid_item(location, item_name, self.player)
 
         self.multiworld.completion_condition[self.player] = (
             lambda state: state.has("Victory", self.player)
