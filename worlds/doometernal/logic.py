@@ -40,6 +40,7 @@ MOD_BASE_WEAPON_REQUIREMENTS: Mapping[str, str] = {
 class LocationRequirement:
     all_of: tuple[str, ...] = ()
     any_of: tuple[tuple[str, ...], ...] = ()
+    battery_currency: int = 0
 
 
 @dataclass(frozen=True)
@@ -73,6 +74,16 @@ def build_location_prerequisites(location_names: set[str]) -> dict[str, Location
         "Cultist Base - All Mission Challenges Completed": LocationRequirement(
             all_of=("Flame Belch",)
         ),
+        "Fortress of Doom - Praetor Suit Token 2": LocationRequirement(battery_currency=2),
+        "Fortress of Doom - Praetor Suit Token 3": LocationRequirement(battery_currency=3),
+        "Fortress of Doom - Weapon Modbot 1": LocationRequirement(battery_currency=5),
+        "Fortress of Doom - Weapon Modbot 2": LocationRequirement(battery_currency=7),
+        "Fortress of Doom - Sentinel Crystal 2": LocationRequirement(battery_currency=9),
+        "Fortress of Doom - Sentinel Crystal 3": LocationRequirement(battery_currency=11),
+        "Fortress of Doom - Praetor Suit Token 4": LocationRequirement(battery_currency=12),
+        "Fortress of Doom - Praetor Suit Token 5": LocationRequirement(battery_currency=13),
+        "Fortress of Doom - All Runes Cheat Code": LocationRequirement(battery_currency=15),
+        "Fortress of Doom - Fully Upgraded Suit Cheat Code": LocationRequirement(battery_currency=17),
     }
     for location_name in mastery_locations:
         if location_name in EXTERNAL_VANILLA_PREREQUISITES:
@@ -107,6 +118,12 @@ def validate_location_prerequisites(
         }
         if unknown_any:
             raise ValueError(f"Unknown any_of item(s) for {location_name}: {sorted(unknown_any)}")
+        if requirement.battery_currency < 0:
+            raise ValueError(f"Negative Battery requirement: {location_name}")
+        if requirement.battery_currency and not {
+            "Sentinel Battery", "Sentinel Battery Bundle"
+        }.issubset(item_names):
+            raise ValueError(f"Battery items are absent for {location_name}")
 
 
 def validate_external_vanilla_prerequisites(
@@ -143,6 +160,11 @@ def validate_external_vanilla_prerequisites(
 
 def requirement_satisfied(requirement: LocationRequirement, state, player: int) -> bool:
     if not all(state.has(item_name, player) for item_name in requirement.all_of):
+        return False
+    if requirement.battery_currency and (
+        state.count("Sentinel Battery", player)
+        + 2 * state.count("Sentinel Battery Bundle", player)
+    ) < requirement.battery_currency:
         return False
     return not requirement.any_of or any(
         all(state.has(item_name, player) for item_name in alternative)

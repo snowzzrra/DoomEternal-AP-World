@@ -9,10 +9,11 @@ from worlds.LauncherComponents import (
     icon_paths,
     launch as launch_component,
 )
-from BaseClasses import Region, Entrance, Item
+from BaseClasses import Region, Entrance
 from .options import DoomEternalOptions
 from .items import (
-    CURRENT_ROUTE_SENTINEL_BATTERY_BUNDLES,
+    BASE_CAMPAIGN_SENTINEL_BATTERY_BUNDLES,
+    BASE_CAMPAIGN_SENTINEL_BATTERY_SINGLES,
     SENTINEL_BATTERY_BUNDLE_VALUE,
     item_data_table,
     item_name_to_id,
@@ -113,6 +114,9 @@ class DoomEternalWorld(World):
         exultia = self.multiworld.get_region("Exultia", self.player)
         fortress_second_visit = self.multiworld.get_region("Fortress of Doom - Second Visit", self.player)
         cultist_base = self.multiworld.get_region("Cultist Base", self.player)
+        doom_hunter_base = self.multiworld.get_region("Doom Hunter Base", self.player)
+        fortress_third_visit = self.multiworld.get_region("Fortress of Doom - Third Visit", self.player)
+        super_gore_nest = self.multiworld.get_region("Super Gore Nest", self.player)
         weapon_masteries = self.multiworld.get_region("Weapon Masteries", self.player)
 
         # Actual pre-alpha campaign order:
@@ -136,6 +140,18 @@ class DoomEternalWorld(World):
         entrance_to_cultist_base = Entrance(self.player, "Portal to Cultist Base", fortress_second_visit)
         fortress_second_visit.exits.append(entrance_to_cultist_base)
         entrance_to_cultist_base.connect(cultist_base)
+
+        entrance_to_doom_hunter_base = Entrance(self.player, "Portal to Doom Hunter Base", cultist_base)
+        cultist_base.exits.append(entrance_to_doom_hunter_base)
+        entrance_to_doom_hunter_base.connect(doom_hunter_base)
+
+        entrance_to_third_hub = Entrance(self.player, "Return to Fortress after Doom Hunter Base", doom_hunter_base)
+        doom_hunter_base.exits.append(entrance_to_third_hub)
+        entrance_to_third_hub.connect(fortress_third_visit)
+
+        entrance_to_super_gore_nest = Entrance(self.player, "Portal to Super Gore Nest", fortress_third_visit)
+        fortress_third_visit.exits.append(entrance_to_super_gore_nest)
+        entrance_to_super_gore_nest.connect(super_gore_nest)
 
     def create_items(self) -> None:
         # Base progression items to seed into the world
@@ -177,8 +193,9 @@ class DoomEternalWorld(World):
                 "Exultia - Dash", self.player
             ).place_locked_item(self.create_item("Dash"))
 
+        randomized_battery_singles = BASE_CAMPAIGN_SENTINEL_BATTERY_SINGLES
         if self.options.randomize_first_battery:
-            pool_names.append("Sentinel Battery")
+            pool_names.extend(["Sentinel Battery"] * randomized_battery_singles)
         else:
             # The physical Exultia Battery remains an AP location in both
             # modes.  The default keeps its required first Battery locked to
@@ -186,12 +203,15 @@ class DoomEternalWorld(World):
             self.multiworld.get_location(
                 "Exultia - Sentinel Battery", self.player
             ).place_locked_item(self.create_item("Sentinel Battery"))
+            pool_names.extend(
+                ["Sentinel Battery"] * (randomized_battery_singles - 1)
+            )
         pool_names.extend(
-            ["Sentinel Battery Bundle"] * CURRENT_ROUTE_SENTINEL_BATTERY_BUNDLES
+            ["Sentinel Battery Bundle"] * BASE_CAMPAIGN_SENTINEL_BATTERY_BUNDLES
         )
 
         self.multiworld.get_location(
-            "Cultist Base - Mission Complete", self.player
+            "Fortress of Doom - Super Gore Nest Transition", self.player
         ).place_locked_item(self.create_item("Victory"))
 
         locations_count = len(self.multiworld.get_unfilled_locations(self.player))
@@ -244,15 +264,6 @@ class DoomEternalWorld(World):
             lambda state: self.has_sentinel_battery_currency(state, self.player, 1),
         )
 
-        set_rule(
-            self.multiworld.get_location("Fortress of Doom - Sentinel Crystal 2", self.player),
-            lambda state: self.has_sentinel_battery_currency(state, self.player, 3),
-        )
-        set_rule(
-            self.multiworld.get_location("Fortress of Doom - Sentinel Crystal 3", self.player),
-            lambda state: self.has_sentinel_battery_currency(state, self.player, 5),
-        )
-
         prerequisite_table = build_location_prerequisites(set(location_data_table))
         validate_location_prerequisites(
             prerequisite_table, set(location_data_table), set(item_data_table)
@@ -277,6 +288,9 @@ class DoomEternalWorld(World):
             )
             for item_name in requirement.all_of:
                 forbid_item(location, item_name, self.player)
+            if requirement.battery_currency:
+                forbid_item(location, "Sentinel Battery", self.player)
+                forbid_item(location, "Sentinel Battery Bundle", self.player)
 
         self.multiworld.completion_condition[self.player] = (
             lambda state: state.has("Victory", self.player)

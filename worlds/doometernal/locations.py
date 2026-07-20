@@ -76,6 +76,15 @@ location_data_table: Dict[str, LocationData] = {
     "Fortress of Doom - Ice Bomb": LocationData(7770074, "Fortress of Doom - Second Visit"),
     "Fortress of Doom - Sentinel Crystal 2": LocationData(7770087, "Fortress of Doom - Second Visit"),
     "Fortress of Doom - Sentinel Crystal 3": LocationData(7770088, "Fortress of Doom - Second Visit"),
+    "Fortress of Doom - Praetor Suit Token 2": LocationData(7770163, "Fortress of Doom - Second Visit"),
+    "Fortress of Doom - Praetor Suit Token 3": LocationData(7770164, "Fortress of Doom - Second Visit"),
+    "Fortress of Doom - Weapon Modbot 1": LocationData(7770165, "Fortress of Doom - Second Visit"),
+    "Fortress of Doom - Weapon Modbot 2": LocationData(7770166, "Fortress of Doom - Second Visit"),
+    "Fortress of Doom - Praetor Suit Token 4": LocationData(7770167, "Fortress of Doom - Second Visit"),
+    "Fortress of Doom - Praetor Suit Token 5": LocationData(7770168, "Fortress of Doom - Second Visit"),
+    "Fortress of Doom - All Runes Cheat Code": LocationData(7770169, "Fortress of Doom - Second Visit"),
+    "Fortress of Doom - Ballista": LocationData(7770170, "Fortress of Doom - Third Visit"),
+    "Fortress of Doom - Fully Upgraded Suit Cheat Code": LocationData(7770171, "Fortress of Doom - Second Visit"),
 
     "Cultist Base - Extra Life - Spike Crushers": LocationData(7770046, "Cultist Base"),
     "Cultist Base - Extra Life - After Big Fight Outside": LocationData(7770047, "Cultist Base"),
@@ -123,5 +132,31 @@ location_data_table: Dict[str, LocationData] = {
     "Cultist Base - Mission Challenge - Armored Rain": LocationData(7770139, "Cultist Base"),
     "Cultist Base - Mission Challenge - Master of Turrets": LocationData(7770140, "Cultist Base"),
     "Cultist Base - All Mission Challenges Completed": LocationData(7770141, "Cultist Base"),
+
+    # Doom Hunter Base
+    "Doom Hunter Base - Extra Life - Opening": LocationData(7770143, "Doom Hunter Base"),
+    "Doom Hunter Base - Praetor Suit Token 1": LocationData(7770144, "Doom Hunter Base"),
+    "Doom Hunter Base - Deag Ranak Codex": LocationData(7770145, "Doom Hunter Base"),
+    "Doom Hunter Base - Doom Hunter Base Codex": LocationData(7770146, "Doom Hunter Base"),
+    "Doom Hunter Base - Doom Hunter Codex": LocationData(7770147, "Doom Hunter Base"),
+    "Doom Hunter Base - Sentinel Battery 1": LocationData(7770148, "Doom Hunter Base"),
+    "Doom Hunter Base - Praetor Suit Token 2": LocationData(7770149, "Doom Hunter Base"),
+    "Doom Hunter Base - Extra Life - Furnace": LocationData(7770150, "Doom Hunter Base"),
+    "Doom Hunter Base - Sentinel Battery 2": LocationData(7770151, "Doom Hunter Base"),
+    "Doom Hunter Base - Sentinel Crystal": LocationData(7770152, "Doom Hunter Base"),
+    "Doom Hunter Base - Extra Life - Moving Platform": LocationData(7770153, "Doom Hunter Base"),
+    "Doom Hunter Base - Weapon Modbot": LocationData(7770154, "Doom Hunter Base"),
+    "Doom Hunter Base - Praetor Suit Token 3": LocationData(7770155, "Doom Hunter Base"),
+    "Doom Hunter Base - Hell Knight Toy": LocationData(7770156, "Doom Hunter Base"),
+    "Doom Hunter Base - Keen - Shadows Don't Scare Commander Keen Vinyl": LocationData(7770157, "Doom Hunter Base"),
+    "Doom Hunter Base - Praetor Suit Token 4": LocationData(7770158, "Doom Hunter Base"),
+    "Doom Hunter Base - Silver Bullet Mode Cheat Code": LocationData(7770159, "Doom Hunter Base"),
+    "Doom Hunter Base - Lost Soul Toy": LocationData(7770160, "Doom Hunter Base"),
+    "Doom Hunter Base - Rune": LocationData(7770161, "Doom Hunter Base"),
+    "Doom Hunter Base - Mission Complete": LocationData(7770162, "Doom Hunter Base"),
+    "Fortress of Doom - Super Gore Nest Transition": LocationData(None, "Fortress of Doom - Third Visit"),
 }
-location_name_to_id = {name: data.code for name, data in location_data_table.items()}
+location_name_to_id = {
+    name: data.code for name, data in location_data_table.items()
+    if data.code is not None
+}

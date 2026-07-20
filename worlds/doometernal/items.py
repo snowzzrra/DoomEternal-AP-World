@@ -13,8 +13,9 @@ ITEM_ID_BASE = 7770000
 # Audited from local base-campaign maps/DECLs.  The short route deliberately
 # uses only its own fixed quantity; later-map currency remains reserved.
 BASE_CAMPAIGN_MAX_SENTINEL_BATTERIES = 18
-CURRENT_ROUTE_SENTINEL_BATTERIES = 5
-CURRENT_ROUTE_SENTINEL_BATTERY_BUNDLES = 2
+BASE_CAMPAIGN_SENTINEL_BATTERIES = 18
+BASE_CAMPAIGN_SENTINEL_BATTERY_BUNDLES = 8
+BASE_CAMPAIGN_SENTINEL_BATTERY_SINGLES = 2
 SENTINEL_BATTERY_BUNDLE_VALUE = 2
 
 # Tombstones: never allocate these IDs again in the item namespace.  7770019
