@@ -133,9 +133,9 @@ location_data_table: dict[str, LocationData] = {
     "Cultist Base - Mission Challenge - Pull the Crystal": LocationData(7770138, "Cultist Base"),
     "Cultist Base - Mission Challenge - Armored Rain": LocationData(7770139, "Cultist Base"),
     "Cultist Base - Mission Challenge - Master of Turrets": LocationData(7770140, "Cultist Base"),
-    "Doom Hunter Base - Mission Challenge - Find the Album": LocationData(7770172, "Doom Hunter Base"),
-    "Doom Hunter Base - Mission Challenge - Map the Area": LocationData(7770173, "Doom Hunter Base"),
-    "Doom Hunter Base - Mission Challenge - Kill Two with One Grenade": LocationData(7770174, "Doom Hunter Base"),
+    "Doom Hunter Base - Mission Challenge - Musical Interlude": LocationData(7770172, "Doom Hunter Base"),
+    "Doom Hunter Base - Mission Challenge - Big Reveal": LocationData(7770173, "Doom Hunter Base"),
+    "Doom Hunter Base - Mission Challenge - Fire in the Hole": LocationData(7770174, "Doom Hunter Base"),
     "Cultist Base - All Mission Challenges Completed": LocationData(7770141, "Cultist Base"),
     "Doom Hunter Base - All Mission Challenges Completed": LocationData(7770175, "Doom Hunter Base"),
 
