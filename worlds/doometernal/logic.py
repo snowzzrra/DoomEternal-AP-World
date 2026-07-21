@@ -177,4 +177,8 @@ def requirement_satisfied(requirement: LocationRequirement, state, player: int) 
 NO_RULE_PROVEN = frozenset({
     "Cultist Base - Mission Challenge - Pull the Crystal",
     "Cultist Base - Mission Challenge - Master of Turrets",
+    "Doom Hunter Base - Mission Challenge - Find the Album",
+    "Doom Hunter Base - Mission Challenge - Map the Area",
+    "Doom Hunter Base - Mission Challenge - Kill Two with One Grenade",
+    "Doom Hunter Base - All Mission Challenges Completed",
 })
