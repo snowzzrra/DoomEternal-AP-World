@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from Options import Toggle, DeathLinkMixin, PerGameCommonOptions
+
+from Options import DeathLinkMixin, PerGameCommonOptions, Toggle
 
 
 class RandomizeChainsaw(Toggle):

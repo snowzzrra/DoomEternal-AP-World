@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Mapping
-
 
 MASTERY_SUFFIX = " - Weapon Mastery Challenge"
 MEAT_HOOK_MASTERY_LOCATION = "Meat Hook - Weapon Mastery Challenge"

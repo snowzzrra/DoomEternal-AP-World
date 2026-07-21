@@ -1,18 +1,20 @@
+from typing import NamedTuple
+
 from BaseClasses import Location
-from typing import Dict, NamedTuple, Optional
+
 
 class DoomEternalLocation(Location):
     game: str = "Doom Eternal"
 
 class LocationData(NamedTuple):
-    code: Optional[int]
+    code: int | None
     region: str
 
 # Base ID for Doom Eternal locations, wanted to do 6660000 but I think that one was used for something else in the past (DOOM 1, DOOM 2), so I went with 7770000 instead. Should be plenty of room for all the locations we need to add.
 LOCATION_ID_BASE = 7770000
 
 # Special thanks to TastyFresh from the AP After Dark Discord for helping compile this list of locations.
-location_data_table: Dict[str, LocationData] = {
+location_data_table: dict[str, LocationData] = {
     "Hell on Earth - Chainsaw": LocationData(7770001, "Hell on Earth"),
     "Hell on Earth - Heavy Cannon": LocationData(7770002, "Hell on Earth"),
     "Hell on Earth - Frag Grenade": LocationData(7770003, "Hell on Earth"),

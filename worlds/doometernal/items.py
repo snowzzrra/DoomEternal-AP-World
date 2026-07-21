@@ -1,11 +1,13 @@
+from typing import NamedTuple
+
 from BaseClasses import Item, ItemClassification
-from typing import Dict, NamedTuple, Optional
+
 
 class DoomEternalItem(Item):
     game: str = "Doom Eternal"
 
 class ItemData(NamedTuple):
-    code: Optional[int]
+    code: int | None
     classification: ItemClassification
 
 ITEM_ID_BASE = 7770000
@@ -24,7 +26,7 @@ SENTINEL_BATTERY_BUNDLE_VALUE = 2
 RESERVED_ITEM_IDS = frozenset({7770019, 7770057, 7770105, 7770119, 7770120, 7770121})
 RESERVED_LOCATION_IDS = frozenset({7770055, 7770068})
 
-item_data_table: Dict[str, ItemData] = {
+item_data_table: dict[str, ItemData] = {
     # Progression Items (Weapons & Equipment)
     "Heavy Cannon": ItemData(7770000, ItemClassification.progression),
     "Plasma Rifle": ItemData(7770001, ItemClassification.progression),

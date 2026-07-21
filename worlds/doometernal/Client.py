@@ -2,16 +2,15 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 import runpy
 import sys
-import hashlib
-import json
 from pathlib import Path
 
 import settings
 from Utils import messagebox
-
 
 BRIDGE_PROTOCOL = 3
 

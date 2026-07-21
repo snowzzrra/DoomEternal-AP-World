@@ -1,26 +1,29 @@
 from typing import ClassVar
+
 import settings
-from worlds.AutoWorld import World, WebWorld
+from BaseClasses import Entrance, Region
+from worlds.AutoWorld import WebWorld, World
 from worlds.generic.Rules import forbid_item, set_rule
 from worlds.LauncherComponents import (
     Component,
     Type,
     components,
     icon_paths,
+)
+from worlds.LauncherComponents import (
     launch as launch_component,
 )
-from BaseClasses import Region, Entrance
-from .options import DoomEternalOptions
+
 from .items import (
     BASE_CAMPAIGN_SENTINEL_BATTERY_BUNDLES,
     BASE_CAMPAIGN_SENTINEL_BATTERY_SINGLES,
     SENTINEL_BATTERY_BUNDLE_VALUE,
+    DoomEternalItem,
     item_data_table,
     item_name_to_id,
     suit_perk_item_names,
-    DoomEternalItem,
 )
-from .locations import location_data_table, location_name_to_id, DoomEternalLocation
+from .locations import DoomEternalLocation, location_data_table, location_name_to_id
 from .logic import (
     EXTERNAL_VANILLA_PREREQUISITES,
     build_location_prerequisites,
@@ -28,6 +31,7 @@ from .logic import (
     validate_external_vanilla_prerequisites,
     validate_location_prerequisites,
 )
+from .options import DoomEternalOptions
 from .regions import regions
 
 
