@@ -84,6 +84,12 @@ def build_location_prerequisites(location_names: set[str]) -> dict[str, Location
         "Fortress of Doom - Praetor Suit Token 5": LocationRequirement(battery_currency=13),
         "Fortress of Doom - All Runes Cheat Code": LocationRequirement(battery_currency=15),
         "Fortress of Doom - Fully Upgraded Suit Cheat Code": LocationRequirement(battery_currency=17),
+        "Doom Hunter Base - Mission Challenge - Kill Two with One Grenade": LocationRequirement(
+            all_of=("Frag Grenade",)
+        ),
+        "Doom Hunter Base - All Mission Challenges Completed": LocationRequirement(
+            all_of=("Frag Grenade",)
+        ),
     }
     for location_name in mastery_locations:
         if location_name in EXTERNAL_VANILLA_PREREQUISITES:
@@ -179,6 +185,4 @@ NO_RULE_PROVEN = frozenset({
     "Cultist Base - Mission Challenge - Master of Turrets",
     "Doom Hunter Base - Mission Challenge - Find the Album",
     "Doom Hunter Base - Mission Challenge - Map the Area",
-    "Doom Hunter Base - Mission Challenge - Kill Two with One Grenade",
-    "Doom Hunter Base - All Mission Challenges Completed",
 })
