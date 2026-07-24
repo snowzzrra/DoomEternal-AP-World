@@ -153,9 +153,10 @@ class DoomEternalWorld(World):
         doom_hunter_base.exits.append(entrance_to_third_hub)
         entrance_to_third_hub.connect(fortress_third_visit)
 
-        entrance_to_super_gore_nest = Entrance(self.player, "Portal to Super Gore Nest", fortress_third_visit)
-        fortress_third_visit.exits.append(entrance_to_super_gore_nest)
-        entrance_to_super_gore_nest.connect(super_gore_nest)
+        entrance_to_sgn = Entrance(self.player, "Portal to Super Gore Nest", fortress_third_visit)
+        fortress_third_visit.exits.append(entrance_to_sgn)
+        entrance_to_sgn.connect(super_gore_nest)
+
 
     def create_items(self) -> None:
         # Base progression items to seed into the world
