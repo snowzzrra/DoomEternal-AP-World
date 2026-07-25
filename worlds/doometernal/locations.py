@@ -136,9 +136,9 @@ location_data_table: dict[str, LocationData] = {
     "Doom Hunter Base - Mission Challenge - Musical Interlude": LocationData(7770172, "Doom Hunter Base"),
     "Doom Hunter Base - Mission Challenge - Big Reveal": LocationData(7770173, "Doom Hunter Base"),
     "Doom Hunter Base - Mission Challenge - Fire in the Hole": LocationData(7770174, "Doom Hunter Base"),
-    "Super Gore Nest - Mission Challenge - Weapon Mod Purchase": LocationData(7770206, "Super Gore Nest"),
-    "Super Gore Nest - Mission Challenge - Blood Gore Nest": LocationData(7770207, "Super Gore Nest"),
-    "Super Gore Nest - Mission Challenge - Glory Kill Pinky": LocationData(7770208, "Super Gore Nest"),
+    "Super Gore Nest - Mission Challenge - Weaponslave": LocationData(7770206, "Super Gore Nest"),
+    "Super Gore Nest - Mission Challenge - A Bloody Secret": LocationData(7770207, "Super Gore Nest"),
+    "Super Gore Nest - Mission Challenge - War Pinkies": LocationData(7770208, "Super Gore Nest"),
     "Cultist Base - All Mission Challenges Completed": LocationData(7770141, "Cultist Base"),
     "Doom Hunter Base - All Mission Challenges Completed": LocationData(7770175, "Doom Hunter Base"),
 
