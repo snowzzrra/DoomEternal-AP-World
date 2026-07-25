@@ -83,6 +83,9 @@ def build_location_prerequisites(location_names: set[str]) -> dict[str, Location
         "Fortress of Doom - Praetor Suit Token 5": LocationRequirement(battery_currency=13),
         "Fortress of Doom - All Runes Cheat Code": LocationRequirement(battery_currency=15),
         "Fortress of Doom - Fully Upgraded Suit Cheat Code": LocationRequirement(battery_currency=17),
+        "Fortress of Doom - Praetor Suit": LocationRequirement(battery_currency=2),
+        "Fortress of Doom - Sentinel Armor": LocationRequirement(battery_currency=4),
+        "Fortress of Doom - Classic Marine Suit": LocationRequirement(battery_currency=6),
         "Doom Hunter Base - Mission Challenge - Fire in the Hole": LocationRequirement(
             all_of=("Frag Grenade",)
         ),

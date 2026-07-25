@@ -87,6 +87,9 @@ location_data_table: dict[str, LocationData] = {
     "Fortress of Doom - All Runes Cheat Code": LocationData(7770169, "Fortress of Doom - Second Visit"),
     "Fortress of Doom - Ballista": LocationData(7770170, "Fortress of Doom - Third Visit"),
     "Fortress of Doom - Fully Upgraded Suit Cheat Code": LocationData(7770171, "Fortress of Doom - Second Visit"),
+    "Fortress of Doom - Praetor Suit": LocationData(7770253, "Fortress of Doom - Second Visit"),
+    "Fortress of Doom - Sentinel Armor": LocationData(7770254, "Fortress of Doom - Second Visit"),
+    "Fortress of Doom - Classic Marine Suit": LocationData(7770255, "Fortress of Doom - Second Visit"),
 
     "Cultist Base - Extra Life - Spike Crushers": LocationData(7770046, "Cultist Base"),
     "Cultist Base - Extra Life - After Big Fight Outside": LocationData(7770047, "Cultist Base"),
@@ -227,7 +230,6 @@ location_data_table: dict[str, LocationData] = {
     "ARC Complex - Return of Dr. Hayden - Part 1 Codex": LocationData(7770235, "ARC Complex"),
     "ARC Complex - Return of Dr. Hayden - Part 2 Codex": LocationData(7770236, "ARC Complex"),
     "ARC Complex - Slayer Key": LocationData(7770237, "ARC Complex"),
-    "ARC Complex - Chaingun": LocationData(7770239, "ARC Complex"),
     "ARC Complex - Sentinel Crystal": LocationData(7770240, "ARC Complex"),
     "ARC Complex - Secret Encounter 1": LocationData(7770242, "ARC Complex"),
     "ARC Complex - Secret Encounter 2": LocationData(7770243, "ARC Complex"),
@@ -236,6 +238,13 @@ location_data_table: dict[str, LocationData] = {
     "ARC Complex - Mission Challenge - Solitary Confinement": LocationData(7770246, "ARC Complex"),
     "ARC Complex - All Mission Challenges Completed": LocationData(7770247, "ARC Complex"),
     "ARC Complex - Mission Complete": LocationData(7770248, "ARC Complex"),
+    "ARC Complex - Dr. Elena Richardson Log 1": LocationData(7770249, "ARC Complex"),
+    "ARC Complex - Dr. Elena Richardson Log 2": LocationData(7770250, "ARC Complex"),
+    "ARC Complex - Dr. Elena Richardson Log 3": LocationData(7770251, "ARC Complex"),
+    "ARC Complex - Dr. Elena Richardson Log 4": LocationData(7770252, "ARC Complex"),
+    "Fortress of Doom - Praetor Suit": LocationData(7770253, "Fortress of Doom - Second Visit"),
+    "Fortress of Doom - Sentinel Armor": LocationData(7770254, "Fortress of Doom - Second Visit"),
+    "Fortress of Doom - Classic Marine Suit": LocationData(7770255, "Fortress of Doom - Second Visit"),
     "Fortress of Doom - Mars Core Transition": LocationData(None, "Fortress of Doom - Fifth Visit"),
 }
 location_name_to_id = {
