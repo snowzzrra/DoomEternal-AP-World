@@ -89,6 +89,12 @@ def build_location_prerequisites(location_names: set[str]) -> dict[str, Location
         "Doom Hunter Base - All Mission Challenges Completed": LocationRequirement(
             all_of=("Frag Grenade",)
         ),
+        "ARC Complex - Mission Challenge - External Combustion": LocationRequirement(
+            all_of=("Plasma Rifle",)
+        ),
+        "ARC Complex - All Mission Challenges Completed": LocationRequirement(
+            all_of=("Plasma Rifle",)
+        ),
     }
     for location_name in mastery_locations:
         if location_name in EXTERNAL_VANILLA_PREREQUISITES:
@@ -184,4 +190,6 @@ NO_RULE_PROVEN = frozenset({
     "Cultist Base - Mission Challenge - Master of Turrets",
     "Doom Hunter Base - Mission Challenge - Musical Interlude",
     "Doom Hunter Base - Mission Challenge - Big Reveal",
+    "ARC Complex - Mission Challenge - Rune Finder",
+    "ARC Complex - Mission Challenge - Solitary Confinement",
 })

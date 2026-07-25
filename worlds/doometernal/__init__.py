@@ -121,11 +121,14 @@ class DoomEternalWorld(World):
         doom_hunter_base = self.multiworld.get_region("Doom Hunter Base", self.player)
         fortress_third_visit = self.multiworld.get_region("Fortress of Doom - Third Visit", self.player)
         super_gore_nest = self.multiworld.get_region("Super Gore Nest", self.player)
+        fortress_fourth_visit = self.multiworld.get_region("Fortress of Doom - Fourth Visit", self.player)
+        arc_complex = self.multiworld.get_region("ARC Complex", self.player)
+        fortress_fifth_visit = self.multiworld.get_region("Fortress of Doom - Fifth Visit", self.player)
         weapon_masteries = self.multiworld.get_region("Weapon Masteries", self.player)
 
         # Actual pre-alpha campaign order:
         # E1M1 -> Hub (Flame Belch) -> E1M2 -> Hub (Ice Bomb, Suit Point,
-        # Ripatorium) -> E1M3.
+        # Ripatorium) -> E1M3 -> E1M4 -> Hub -> E2M1 -> Hub -> E2M2 -> Hub.
         menu.connect(hell_on_earth)
         menu.connect(weapon_masteries)
 
@@ -156,6 +159,18 @@ class DoomEternalWorld(World):
         entrance_to_sgn = Entrance(self.player, "Portal to Super Gore Nest", fortress_third_visit)
         fortress_third_visit.exits.append(entrance_to_sgn)
         entrance_to_sgn.connect(super_gore_nest)
+
+        entrance_to_fourth_hub = Entrance(self.player, "Return to Fortress after Super Gore Nest", super_gore_nest)
+        super_gore_nest.exits.append(entrance_to_fourth_hub)
+        entrance_to_fourth_hub.connect(fortress_fourth_visit)
+
+        entrance_to_arc = Entrance(self.player, "Portal to ARC Complex", fortress_fourth_visit)
+        fortress_fourth_visit.exits.append(entrance_to_arc)
+        entrance_to_arc.connect(arc_complex)
+
+        entrance_to_fifth_hub = Entrance(self.player, "Return to Fortress after ARC Complex", arc_complex)
+        arc_complex.exits.append(entrance_to_fifth_hub)
+        entrance_to_fifth_hub.connect(fortress_fifth_visit)
 
 
     def create_items(self) -> None:
@@ -216,7 +231,7 @@ class DoomEternalWorld(World):
         )
 
         self.multiworld.get_location(
-            "Fortress of Doom - Super Gore Nest Transition", self.player
+            "Fortress of Doom - Mars Core Transition", self.player
         ).place_locked_item(self.create_item("Victory"))
 
         locations_count = len(self.multiworld.get_unfilled_locations(self.player))
