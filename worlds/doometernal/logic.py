@@ -195,4 +195,6 @@ NO_RULE_PROVEN = frozenset({
     "Doom Hunter Base - Mission Challenge - Big Reveal",
     "ARC Complex - Mission Challenge - Rune Finder",
     "ARC Complex - Mission Challenge - Solitary Confinement",
+    "Mars Core - Mission Challenge - Disarmament",
+    "Mars Core - Mission Challenge - Lock and Key",
 })

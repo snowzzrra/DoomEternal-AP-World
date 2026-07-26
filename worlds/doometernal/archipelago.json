@@ -1,7 +1,7 @@
 {
   "game": "Doom Eternal",
   "authors": ["snow"],
-  "world_version": "0.3.3",
-  "release_label": "v0.3.3-alpha",
+    "world_version": "0.3.4",
+    "release_label": "v0.3.4-alpha",
   "minimum_ap_version": "0.6.7"
 }

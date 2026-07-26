@@ -124,6 +124,7 @@ class DoomEternalWorld(World):
         fortress_fourth_visit = self.multiworld.get_region("Fortress of Doom - Fourth Visit", self.player)
         arc_complex = self.multiworld.get_region("ARC Complex", self.player)
         fortress_fifth_visit = self.multiworld.get_region("Fortress of Doom - Fifth Visit", self.player)
+        mars_core = self.multiworld.get_region("Mars Core", self.player)
         weapon_masteries = self.multiworld.get_region("Weapon Masteries", self.player)
 
         # Actual pre-alpha campaign order:
@@ -172,6 +173,11 @@ class DoomEternalWorld(World):
         arc_complex.exits.append(entrance_to_fifth_hub)
         entrance_to_fifth_hub.connect(fortress_fifth_visit)
 
+        entrance_to_mars_core = Entrance(
+            self.player, "Portal to Mars Core", fortress_fifth_visit
+        )
+        fortress_fifth_visit.exits.append(entrance_to_mars_core)
+        entrance_to_mars_core.connect(mars_core)
 
     def create_items(self) -> None:
         # Base progression items to seed into the world
@@ -231,7 +237,7 @@ class DoomEternalWorld(World):
         )
 
         self.multiworld.get_location(
-            "Fortress of Doom - Mars Core Transition", self.player
+            "Mars Core - Sentinel Prime Transition", self.player
         ).place_locked_item(self.create_item("Victory"))
 
         locations_count = len(self.multiworld.get_unfilled_locations(self.player))
