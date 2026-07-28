@@ -35,7 +35,6 @@ item_data_table: dict[str, ItemData] = {
     "Ballista": ItemData(7770004, ItemClassification.progression),
     "Chaingun": ItemData(7770005, ItemClassification.progression),
     "BFG-9000": ItemData(7770006, ItemClassification.progression),
-    "The Crucible": ItemData(7770007, ItemClassification.progression),
     "The Unmaykr": ItemData(7770008, ItemClassification.progression),
     "Sentinel Hammer": ItemData(7770009, ItemClassification.progression),
     "Chainsaw": ItemData(7770010, ItemClassification.progression),

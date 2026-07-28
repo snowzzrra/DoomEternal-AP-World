@@ -2,7 +2,7 @@
 
 # This file has no timestamp: stable input yields a stable diff.
 CONTENT_SCHEMA_VERSION = 2
-CONTENT_REVISION = 'v0.3.4-alpha.1'
+CONTENT_REVISION = 'v0.3.5-alpha.1'
 BRIDGE_PROTOCOL_VERSION = 3
 
 LOCATION_ROWS = (
@@ -221,6 +221,34 @@ LOCATION_ROWS = (
     ('Sentinel Prime - Praetor Suit Token', 7770300, 'Sentinel Prime'),
     ('Sentinel Prime - Extra Life 1', 7770301, 'Sentinel Prime'),
     ('Sentinel Prime - Extra Life 2', 7770302, 'Sentinel Prime'),
+    ('Taras Nabad - Sentinel Crystal', 7770303, 'Taras Nabad'),
+    ('Taras Nabad - Praetor Suit Token 1', 7770306, 'Taras Nabad'),
+    ('Taras Nabad - Praetor Suit Token 2', 7770307, 'Taras Nabad'),
+    ('Taras Nabad - Praetor Suit Token 3', 7770308, 'Taras Nabad'),
+    ('Taras Nabad - Praetor Suit Token 4', 7770309, 'Taras Nabad'),
+    ('Taras Nabad - Praetor Suit Token 5', 7770310, 'Taras Nabad'),
+    ('Taras Nabad - Sentinel Battery 1', 7770311, 'Taras Nabad'),
+    ('Taras Nabad - Sentinel Battery 2', 7770312, 'Taras Nabad'),
+    ('Taras Nabad - Sentinel Battery 3', 7770313, 'Taras Nabad'),
+    ('Taras Nabad - Extra Life 1', 7770314, 'Taras Nabad'),
+    ('Taras Nabad - Extra Life 2', 7770315, 'Taras Nabad'),
+    ('Taras Nabad - Extra Life 3', 7770316, 'Taras Nabad'),
+    ('Taras Nabad - Toy - Cyber Mancubus', 7770317, 'Taras Nabad'),
+    ('Taras Nabad - Toy - Marauder', 7770318, 'Taras Nabad'),
+    ('Taras Nabad - Toy - Pain Elemental', 7770319, 'Taras Nabad'),
+    ('Taras Nabad - Codex 1', 7770320, 'Taras Nabad'),
+    ('Taras Nabad - Codex 2', 7770321, 'Taras Nabad'),
+    ('Taras Nabad - Codex 3', 7770322, 'Taras Nabad'),
+    ('Taras Nabad - Codex 4', 7770323, 'Taras Nabad'),
+    ('Taras Nabad - Codex 5', 7770324, 'Taras Nabad'),
+    ('Taras Nabad - Codex 6', 7770325, 'Taras Nabad'),
+    ('Taras Nabad - Codex 7', 7770326, 'Taras Nabad'),
+    ('Taras Nabad - Cheat Code - Powerup Mode: Overdrive', 7770327, 'Taras Nabad'),
+    ('Taras Nabad - Album 1', 7770328, 'Taras Nabad'),
+    ('Taras Nabad - Album 2', 7770329, 'Taras Nabad'),
+    ('Taras Nabad - Slayer Key', 7770330, 'Taras Nabad'),
+    ('Taras Nabad - Secret Encounter 1', 7770331, 'Taras Nabad'),
+    ('Taras Nabad - Secret Encounter 2', 7770332, 'Taras Nabad'),
     ('Hell on Earth - Mission Complete', 7770122, 'Hell on Earth'),
     ('Exultia - Mission Complete', 7770123, 'Exultia'),
     ('Cultist Base - Mission Complete', 7770124, 'Cultist Base'),
@@ -262,6 +290,11 @@ LOCATION_ROWS = (
     ('Super Gore Nest - All Mission Challenges Completed', 7770209, 'Super Gore Nest'),
     ('ARC Complex - All Mission Challenges Completed', 7770247, 'ARC Complex'),
     ('Mars Core - All Mission Challenges Completed', 7770288, 'Mars Core'),
+    ('Taras Nabad - Mission Challenge - Man Made Wiki', 7770333, 'Taras Nabad'),
+    ('Taras Nabad - Mission Challenge - Recharge Time', 7770334, 'Taras Nabad'),
+    ('Taras Nabad - Mission Challenge - Painkiller', 7770335, 'Taras Nabad'),
+    ('Taras Nabad - All Mission Challenges Completed', 7770336, 'Taras Nabad'),
+    ('Taras Nabad - Mission Complete', 7770337, 'Taras Nabad'),
     ('Fortress of Doom - Super Gore Nest Transition', None, 'Fortress of Doom - Third Visit'),
 )
 LOCATION_NAME_TO_ID = {name: code for name, code, _ in LOCATION_ROWS if code is not None}
@@ -277,10 +310,12 @@ LOCATION_NAMES_BY_REGION = {
     'Mars Core': ('Mars Core - Praetor Suit Token 1', 'Mars Core - Praetor Suit Token 2', 'Mars Core - Praetor Suit Token 3', 'Mars Core - Praetor Suit Token 4', 'Mars Core - Praetor Suit Token 5', 'Mars Core - Sentinel Battery 1', 'Mars Core - Sentinel Battery 2', 'Mars Core - Sentinel Battery 3', 'Mars Core - Rune 1', 'Mars Core - Rune 2', 'Mars Core - Extra Life 1', 'Mars Core - Extra Life 2', 'Mars Core - Extra Life 3', 'Mars Core - Extra Life 4', 'Mars Core - Extra Life 5', 'Mars Core - Extra Life 6', 'Mars Core - Prowler Toy', 'Mars Core - Carcass Toy', 'Mars Core - Pinky Toy', 'Mars Core - DOOM 64 - Main Theme Vinyl Record', 'Mars Core - Quake Champions - Goroth Vinyl Record', 'Mars Core - Infinite Onslaught Cheat Code', 'Mars Core - BFG-10000 Codex', 'Mars Core - Lost City of Hebeth Codex', 'Mars Core - Slayer Key', 'Mars Core - Sentinel Crystal', 'Mars Core - Secret Encounter 1', 'Mars Core - Secret Encounter 2', 'Mars Core - Mission Complete', 'Mars Core - Mission Challenge - Big Ba-Da Boom', 'Mars Core - Mission Challenge - Disarmament', 'Mars Core - Mission Challenge - Lock and Key', 'Mars Core - All Mission Challenges Completed'),
     'Sentinel Prime': ('Sentinel Prime - Sentinel Prime Codex', 'Sentinel Prime - History of the Sentinels Part IV Codex', 'Sentinel Prime - History of the Sentinels Part V Codex', 'Sentinel Prime - History of the Sentinels Part VI Codex', 'Sentinel Prime - History of the Sentinels Part VII Codex', 'Sentinel Prime - History of the Sentinels Part VIII Codex', 'Sentinel Prime - History of the Sentinels Part IX Codex', 'Sentinel Prime - Deag Grav Codex', 'Sentinel Prime - Gladiator Codex', 'Sentinel Prime - Praetor Suit Token', 'Sentinel Prime - Extra Life 1', 'Sentinel Prime - Extra Life 2', 'Sentinel Prime - Mission Complete'),
     'Super Gore Nest': ('Super Gore Nest - Praetor Suit Token 1', 'Super Gore Nest - Praetor Suit Token 2', 'Super Gore Nest - Praetor Suit Token 3', 'Super Gore Nest - Praetor Suit Token 4', 'Super Gore Nest - Praetor Suit Token 5', 'Super Gore Nest - Weapon Modbot 1', 'Super Gore Nest - Weapon Modbot 2', 'Super Gore Nest - Rune 1', 'Super Gore Nest - Rune 2', 'Super Gore Nest - Soldier (Shield) Toy', 'Super Gore Nest - Revenant Toy', 'Super Gore Nest - Mecha Zombie Toy', 'Super Gore Nest - Doom 3 - Main Theme Vinyl', 'Super Gore Nest - Wolf 3D - Wondering About My Loved Ones Vinyl', 'Super Gore Nest - Extra Life 1', 'Super Gore Nest - Extra Life 2', 'Super Gore Nest - Extra Life 3', 'Super Gore Nest - Extra Life 4', 'Super Gore Nest - The Hellgrowth Part I Codex', 'Super Gore Nest - The Hellgrowth Part II Codex', 'Super Gore Nest - Super Gore Nest Codex', 'Super Gore Nest - Sentinel Battery 1', 'Super Gore Nest - Sentinel Battery 2', 'Super Gore Nest - Sentinel Battery 3', 'Super Gore Nest - Infinite Ammo Cheat Code', 'Super Gore Nest - Chaingun', 'Super Gore Nest - Sentinel Crystal', 'Super Gore Nest - Slayer Key', 'Super Gore Nest - Secret Encounter 1', 'Super Gore Nest - Secret Encounter 2', 'Super Gore Nest - Mission Complete', 'Super Gore Nest - Mission Challenge - Weaponslave', 'Super Gore Nest - Mission Challenge - A Bloody Secret', 'Super Gore Nest - Mission Challenge - War Pinkies', 'Super Gore Nest - All Mission Challenges Completed'),
+    'Taras Nabad': ('Taras Nabad - Sentinel Crystal', 'Taras Nabad - Praetor Suit Token 1', 'Taras Nabad - Praetor Suit Token 2', 'Taras Nabad - Praetor Suit Token 3', 'Taras Nabad - Praetor Suit Token 4', 'Taras Nabad - Praetor Suit Token 5', 'Taras Nabad - Sentinel Battery 1', 'Taras Nabad - Sentinel Battery 2', 'Taras Nabad - Sentinel Battery 3', 'Taras Nabad - Extra Life 1', 'Taras Nabad - Extra Life 2', 'Taras Nabad - Extra Life 3', 'Taras Nabad - Toy - Cyber Mancubus', 'Taras Nabad - Toy - Marauder', 'Taras Nabad - Toy - Pain Elemental', 'Taras Nabad - Codex 1', 'Taras Nabad - Codex 2', 'Taras Nabad - Codex 3', 'Taras Nabad - Codex 4', 'Taras Nabad - Codex 5', 'Taras Nabad - Codex 6', 'Taras Nabad - Codex 7', 'Taras Nabad - Cheat Code - Powerup Mode: Overdrive', 'Taras Nabad - Album 1', 'Taras Nabad - Album 2', 'Taras Nabad - Slayer Key', 'Taras Nabad - Secret Encounter 1', 'Taras Nabad - Secret Encounter 2', 'Taras Nabad - Mission Challenge - Man Made Wiki', 'Taras Nabad - Mission Challenge - Recharge Time', 'Taras Nabad - Mission Challenge - Painkiller', 'Taras Nabad - All Mission Challenges Completed', 'Taras Nabad - Mission Complete'),
     'Weapon Masteries': ('Sticky Bombs - Weapon Mastery Challenge', 'Full Auto - Weapon Mastery Challenge', 'Precision Bolt - Weapon Mastery Challenge', 'Micro Missiles - Weapon Mastery Challenge', 'Heat Blast - Weapon Mastery Challenge', 'Microwave Beam - Weapon Mastery Challenge', 'Lock-on Burst - Weapon Mastery Challenge', 'Remote Detonate - Weapon Mastery Challenge', 'Destroyer Blade - Weapon Mastery Challenge', 'Arbalest - Weapon Mastery Challenge', 'Mobile Turret - Weapon Mastery Challenge', 'Energy Shield - Weapon Mastery Challenge', 'Meat Hook - Weapon Mastery Challenge'),
 }
-CAMPAIGN_REGIONS = ('Menu', 'Weapon Masteries', 'Hell on Earth', 'Fortress of Doom - First Visit', 'Exultia', 'Fortress of Doom - Second Visit', 'Cultist Base', 'Doom Hunter Base', 'Fortress of Doom - Third Visit', 'Super Gore Nest', 'Fortress of Doom - Fourth Visit', 'ARC Complex', 'Fortress of Doom - Fifth Visit', 'Mars Core', 'Sentinel Prime')
-CAMPAIGN_CONNECTIONS = (('Menu', 'Hell on Earth', ''), ('Menu', 'Weapon Masteries', ''), ('Hell on Earth', 'Fortress of Doom - First Visit', 'Return to Fortress after Hell on Earth'), ('Fortress of Doom - First Visit', 'Exultia', 'Portal to Exultia'), ('Exultia', 'Fortress of Doom - Second Visit', 'Return to Fortress after Exultia'), ('Fortress of Doom - Second Visit', 'Cultist Base', 'Portal to Cultist Base'), ('Cultist Base', 'Doom Hunter Base', 'Portal to Doom Hunter Base'), ('Doom Hunter Base', 'Fortress of Doom - Third Visit', 'Return to Fortress after Doom Hunter Base'), ('Fortress of Doom - Third Visit', 'Super Gore Nest', 'Portal to Super Gore Nest'), ('Super Gore Nest', 'Fortress of Doom - Fourth Visit', 'Return to Fortress after Super Gore Nest'), ('Fortress of Doom - Fourth Visit', 'ARC Complex', 'Portal to ARC Complex'), ('ARC Complex', 'Fortress of Doom - Fifth Visit', 'Return to Fortress after ARC Complex'), ('Fortress of Doom - Fifth Visit', 'Mars Core', 'Portal to Mars Core'), ('Mars Core', 'Sentinel Prime', 'Portal to Sentinel Prime'))
+CAMPAIGN_REGIONS = ('Menu', 'Weapon Masteries', 'Hell on Earth', 'Fortress of Doom - First Visit', 'Exultia', 'Fortress of Doom - Second Visit', 'Cultist Base', 'Doom Hunter Base', 'Fortress of Doom - Third Visit', 'Super Gore Nest', 'Fortress of Doom - Fourth Visit', 'ARC Complex', 'Fortress of Doom - Fifth Visit', 'Mars Core', 'Sentinel Prime', 'Fortress of Doom - Sixth Visit', 'Taras Nabad', 'Fortress of Doom - Seventh Visit')
+CAMPAIGN_CONNECTIONS = (('Menu', 'Hell on Earth', ''), ('Menu', 'Weapon Masteries', ''), ('Hell on Earth', 'Fortress of Doom - First Visit', 'Return to Fortress after Hell on Earth'), ('Fortress of Doom - First Visit', 'Exultia', 'Portal to Exultia'), ('Exultia', 'Fortress of Doom - Second Visit', 'Return to Fortress after Exultia'), ('Fortress of Doom - Second Visit', 'Cultist Base', 'Portal to Cultist Base'), ('Cultist Base', 'Doom Hunter Base', 'Portal to Doom Hunter Base'), ('Doom Hunter Base', 'Fortress of Doom - Third Visit', 'Return to Fortress after Doom Hunter Base'), ('Fortress of Doom - Third Visit', 'Super Gore Nest', 'Portal to Super Gore Nest'), ('Super Gore Nest', 'Fortress of Doom - Fourth Visit', 'Return to Fortress after Super Gore Nest'), ('Fortress of Doom - Fourth Visit', 'ARC Complex', 'Portal to ARC Complex'), ('ARC Complex', 'Fortress of Doom - Fifth Visit', 'Return to Fortress after ARC Complex'), ('Fortress of Doom - Fifth Visit', 'Mars Core', 'Portal to Mars Core'), ('Mars Core', 'Sentinel Prime', 'Portal to Sentinel Prime'), ('Sentinel Prime', 'Fortress of Doom - Sixth Visit', 'Return to Fortress after Sentinel Prime'), ('Fortress of Doom - Sixth Visit', 'Taras Nabad', 'Portal to Taras Nabad'), ('Taras Nabad', 'Fortress of Doom - Seventh Visit', 'Return to Fortress after Taras Nabad'))
+CAMPAIGN_GOAL_LOCATION = 'Taras Nabad - Mission Complete'
 RUNTIME_LOCATION_NAMES = frozenset({
     'Hell on Earth - Mission Complete',
     'Exultia - Mission Complete',
@@ -323,4 +358,9 @@ RUNTIME_LOCATION_NAMES = frozenset({
     'Super Gore Nest - All Mission Challenges Completed',
     'ARC Complex - All Mission Challenges Completed',
     'Mars Core - All Mission Challenges Completed',
+    'Taras Nabad - Mission Challenge - Man Made Wiki',
+    'Taras Nabad - Mission Challenge - Recharge Time',
+    'Taras Nabad - Mission Challenge - Painkiller',
+    'Taras Nabad - All Mission Challenges Completed',
+    'Taras Nabad - Mission Complete',
 })

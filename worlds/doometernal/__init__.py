@@ -24,7 +24,11 @@ from .items import (
     suit_perk_item_names,
 )
 from .locations import DoomEternalLocation, location_data_table, location_name_to_id
-from .generated_content import CAMPAIGN_CONNECTIONS
+from .generated_content import (
+    CAMPAIGN_CONNECTIONS,
+    CAMPAIGN_GOAL_LOCATION,
+    CAMPAIGN_REGIONS,
+)
 from .logic import (
     EXTERNAL_VANILLA_PREREQUISITES,
     build_location_prerequisites,
@@ -102,7 +106,7 @@ class DoomEternalWorld(World):
     # Suffice to say this isn't even close to being complete, but it's a start. I'll be adding more locations, items, and rules as I continue development.
     def create_regions(self) -> None:
         # Create regions
-        for region_name in regions:
+        for region_name in dict.fromkeys((*regions, *CAMPAIGN_REGIONS)):
             region = Region(region_name, self.player, self.multiworld)
             self.multiworld.regions.append(region)
 
@@ -180,7 +184,7 @@ class DoomEternalWorld(World):
         )
 
         self.multiworld.get_location(
-            "Sentinel Prime - Mission Complete", self.player
+            CAMPAIGN_GOAL_LOCATION, self.player
         ).place_locked_item(self.create_item("Victory"))
 
         locations_count = len(self.multiworld.get_unfilled_locations(self.player))
