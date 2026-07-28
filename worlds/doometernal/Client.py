@@ -7,6 +7,7 @@ import json
 import os
 import runpy
 import sys
+import traceback
 from pathlib import Path
 
 import settings
@@ -89,7 +90,17 @@ def launch(*launch_args: str) -> None:
 
     os.chdir(client_directory)
     sys.path.insert(0, str(client_directory))
-    bridge_globals = runpy.run_path(
-        str(bridge), run_name="doom_eternal_external_client"
-    )
-    bridge_globals["launch"](*launch_args)
+    try:
+        bridge_globals = runpy.run_path(
+            str(bridge), run_name="doom_eternal_external_client"
+        )
+        bridge_globals["launch"](*launch_args)
+    except Exception as error:
+        traceback.print_exc()
+        messagebox(
+            "DOOM Eternal Client failed to start",
+            f"{type(error).__name__}: {error}\n\n"
+            "Rebuild and re-extract the matching playable client. "
+            "The traceback was also written to the Launcher output.",
+            error=True,
+        )

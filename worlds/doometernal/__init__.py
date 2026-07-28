@@ -24,6 +24,7 @@ from .items import (
     suit_perk_item_names,
 )
 from .locations import DoomEternalLocation, location_data_table, location_name_to_id
+from .generated_content import CAMPAIGN_CONNECTIONS
 from .logic import (
     EXTERNAL_VANILLA_PREREQUISITES,
     build_location_prerequisites,
@@ -111,73 +112,15 @@ class DoomEternalWorld(World):
             location = DoomEternalLocation(self.player, loc_name, loc_data.code, region)
             region.locations.append(location)
 
-        # connections test
-        menu = self.multiworld.get_region("Menu", self.player)
-        hell_on_earth = self.multiworld.get_region("Hell on Earth", self.player)
-        fortress_first_visit = self.multiworld.get_region("Fortress of Doom - First Visit", self.player)
-        exultia = self.multiworld.get_region("Exultia", self.player)
-        fortress_second_visit = self.multiworld.get_region("Fortress of Doom - Second Visit", self.player)
-        cultist_base = self.multiworld.get_region("Cultist Base", self.player)
-        doom_hunter_base = self.multiworld.get_region("Doom Hunter Base", self.player)
-        fortress_third_visit = self.multiworld.get_region("Fortress of Doom - Third Visit", self.player)
-        super_gore_nest = self.multiworld.get_region("Super Gore Nest", self.player)
-        fortress_fourth_visit = self.multiworld.get_region("Fortress of Doom - Fourth Visit", self.player)
-        arc_complex = self.multiworld.get_region("ARC Complex", self.player)
-        fortress_fifth_visit = self.multiworld.get_region("Fortress of Doom - Fifth Visit", self.player)
-        mars_core = self.multiworld.get_region("Mars Core", self.player)
-        weapon_masteries = self.multiworld.get_region("Weapon Masteries", self.player)
-
-        # Actual pre-alpha campaign order:
-        # E1M1 -> Hub (Flame Belch) -> E1M2 -> Hub (Ice Bomb, Suit Point,
-        # Ripatorium) -> E1M3 -> E1M4 -> Hub -> E2M1 -> Hub -> E2M2 -> Hub.
-        menu.connect(hell_on_earth)
-        menu.connect(weapon_masteries)
-
-        entrance_to_first_hub = Entrance(self.player, "Return to Fortress after Hell on Earth", hell_on_earth)
-        hell_on_earth.exits.append(entrance_to_first_hub)
-        entrance_to_first_hub.connect(fortress_first_visit)
-
-        entrance_to_exultia = Entrance(self.player, "Portal to Exultia", fortress_first_visit)
-        fortress_first_visit.exits.append(entrance_to_exultia)
-        entrance_to_exultia.connect(exultia)
-
-        entrance_to_second_hub = Entrance(self.player, "Return to Fortress after Exultia", exultia)
-        exultia.exits.append(entrance_to_second_hub)
-        entrance_to_second_hub.connect(fortress_second_visit)
-
-        entrance_to_cultist_base = Entrance(self.player, "Portal to Cultist Base", fortress_second_visit)
-        fortress_second_visit.exits.append(entrance_to_cultist_base)
-        entrance_to_cultist_base.connect(cultist_base)
-
-        entrance_to_doom_hunter_base = Entrance(self.player, "Portal to Doom Hunter Base", cultist_base)
-        cultist_base.exits.append(entrance_to_doom_hunter_base)
-        entrance_to_doom_hunter_base.connect(doom_hunter_base)
-
-        entrance_to_third_hub = Entrance(self.player, "Return to Fortress after Doom Hunter Base", doom_hunter_base)
-        doom_hunter_base.exits.append(entrance_to_third_hub)
-        entrance_to_third_hub.connect(fortress_third_visit)
-
-        entrance_to_sgn = Entrance(self.player, "Portal to Super Gore Nest", fortress_third_visit)
-        fortress_third_visit.exits.append(entrance_to_sgn)
-        entrance_to_sgn.connect(super_gore_nest)
-
-        entrance_to_fourth_hub = Entrance(self.player, "Return to Fortress after Super Gore Nest", super_gore_nest)
-        super_gore_nest.exits.append(entrance_to_fourth_hub)
-        entrance_to_fourth_hub.connect(fortress_fourth_visit)
-
-        entrance_to_arc = Entrance(self.player, "Portal to ARC Complex", fortress_fourth_visit)
-        fortress_fourth_visit.exits.append(entrance_to_arc)
-        entrance_to_arc.connect(arc_complex)
-
-        entrance_to_fifth_hub = Entrance(self.player, "Return to Fortress after ARC Complex", arc_complex)
-        arc_complex.exits.append(entrance_to_fifth_hub)
-        entrance_to_fifth_hub.connect(fortress_fifth_visit)
-
-        entrance_to_mars_core = Entrance(
-            self.player, "Portal to Mars Core", fortress_fifth_visit
-        )
-        fortress_fifth_visit.exits.append(entrance_to_mars_core)
-        entrance_to_mars_core.connect(mars_core)
+        for source_name, destination_name, entrance_name in CAMPAIGN_CONNECTIONS:
+            source = self.multiworld.get_region(source_name, self.player)
+            destination = self.multiworld.get_region(destination_name, self.player)
+            if not entrance_name:
+                source.connect(destination)
+                continue
+            entrance = Entrance(self.player, entrance_name, source)
+            source.exits.append(entrance)
+            entrance.connect(destination)
 
     def create_items(self) -> None:
         # Base progression items to seed into the world
@@ -237,7 +180,7 @@ class DoomEternalWorld(World):
         )
 
         self.multiworld.get_location(
-            "Mars Core - Sentinel Prime Transition", self.player
+            "Sentinel Prime - Mission Complete", self.player
         ).place_locked_item(self.create_item("Victory"))
 
         locations_count = len(self.multiworld.get_unfilled_locations(self.player))
