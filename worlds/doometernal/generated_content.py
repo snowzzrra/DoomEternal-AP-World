@@ -2,7 +2,7 @@
 
 # This file has no timestamp: stable input yields a stable diff.
 CONTENT_SCHEMA_VERSION = 2
-CONTENT_REVISION = 'v0.3.5-alpha.1'
+CONTENT_REVISION = 'v0.3.5-alpha.2'
 BRIDGE_PROTOCOL_VERSION = 3
 
 LOCATION_ROWS = (
