@@ -10,10 +10,24 @@ MEAT_HOOK_MASTERY_LOCATION = "Meat Hook - Weapon Mastery Challenge"
 MEAT_HOOK_VANILLA_SOURCE = (
     "Cultist Base: scripted Super Shotgun/Meat Hook sequence"
 )
+MARS_BFG_VANILLA_SOURCE = (
+    "Mars Core: mandatory route BFG-9000 grant (inventory declaration 4701)"
+)
+NEKRAVOL_CRUCIBLE_VANILLA_SOURCE = (
+    "Nekravol: mandatory route Crucible grant (inventory declaration 4137)"
+)
 AUDITED_VANILLA_GRANT_SOURCES = {
     MEAT_HOOK_VANILLA_SOURCE: {
         "map": "Cultist Base",
         "grant": "mandatory scripted Super Shotgun/Meat Hook sequence",
+    },
+    MARS_BFG_VANILLA_SOURCE: {
+        "map": "Mars Core",
+        "grant": "mandatory route BFG-9000 grant 4701",
+    },
+    NEKRAVOL_CRUCIBLE_VANILLA_SOURCE: {
+        "map": "Nekravol",
+        "grant": "mandatory route Crucible grant 4137",
     },
 }
 
@@ -59,6 +73,20 @@ EXTERNAL_VANILLA_PREREQUISITES: Mapping[str, ExternalVanillaPrerequisite] = {
         ap_pool_representation="none",
         rationale="no AP self-lock surface",
     ),
+    "Mars Core - Mission Challenge - Big Ba-Da Boom": ExternalVanillaPrerequisite(
+        kind="route_guaranteed_vanilla_grant",
+        capability="BFG-9000",
+        source=MARS_BFG_VANILLA_SOURCE,
+        ap_pool_representation="randomized_copy_does_not_replace_route_grant",
+        rationale="the current route grants vanilla BFG 4701 before the challenge",
+    ),
+    "Nekravol - Mission Challenge - Die by the Sword": ExternalVanillaPrerequisite(
+        kind="route_guaranteed_vanilla_grant",
+        capability="Crucible",
+        source=NEKRAVOL_CRUCIBLE_VANILLA_SOURCE,
+        ap_pool_representation="none",
+        rationale="the current route grants vanilla Crucible 4137 before the challenge",
+    ),
 }
 
 
@@ -97,6 +125,32 @@ def build_location_prerequisites(location_names: set[str]) -> dict[str, Location
         ),
         "ARC Complex - All Mission Challenges Completed": LocationRequirement(
             all_of=("Plasma Rifle",)
+        ),
+        "Taras Nabad - Mission Challenge - Keeping Cool": LocationRequirement(
+            all_of=("Ice Bomb",)
+        ),
+        "Taras Nabad - All Mission Challenges Completed": LocationRequirement(
+            all_of=("Ice Bomb",)
+        ),
+        "Nekravol Part II - Mission Challenge - Punched by Blood": LocationRequirement(
+            all_of=("Blood Punch",)
+        ),
+        "Nekravol Part II - All Mission Challenges Completed": LocationRequirement(
+            all_of=("Blood Punch",)
+        ),
+        "Urdak - Mission Challenge - Angel of Death": LocationRequirement(
+            any_of=(
+                ("Heavy Cannon", "Precision Bolt"),
+                ("Ballista",),
+                ("Sticky Bombs",),
+            )
+        ),
+        "Urdak - All Mission Challenges Completed": LocationRequirement(
+            any_of=(
+                ("Heavy Cannon", "Precision Bolt"),
+                ("Ballista",),
+                ("Sticky Bombs",),
+            )
         ),
     }
     for location_name in mastery_locations:
@@ -150,21 +204,25 @@ def validate_external_vanilla_prerequisites(
     for location_name, record in metadata.items():
         if location_name not in location_names:
             raise ValueError(f"Unknown external prerequisite location: {location_name}")
-        if location_name != MEAT_HOOK_MASTERY_LOCATION:
-            raise ValueError(f"Unaudited external prerequisite location: {location_name}")
         if not isinstance(record, ExternalVanillaPrerequisite):
             raise ValueError(f"Unknown or unused external prerequisite metadata: {location_name}")
-        if record != EXTERNAL_VANILLA_PREREQUISITES[location_name]:
+        expected = EXTERNAL_VANILLA_PREREQUISITES.get(location_name)
+        if expected is None:
+            raise ValueError(f"Unaudited external prerequisite location: {location_name}")
+        if record != expected:
             raise ValueError(f"External prerequisite contract drift: {location_name}")
         source_evidence = AUDITED_VANILLA_GRANT_SOURCES.get(record.source)
-        if source_evidence != {
-            "map": "Cultist Base",
-            "grant": "mandatory scripted Super Shotgun/Meat Hook sequence",
-        }:
+        if source_evidence is None:
             raise ValueError(f"External prerequisite source is not audited: {record.source}")
-        if record.capability not in item_names:
+        if (
+            record.kind == "mandatory_vanilla_grant"
+            and record.capability not in item_names
+        ):
             raise ValueError(f"Unknown external capability: {record.capability}")
-        if record.capability in active_pool_item_names:
+        if (
+            record.kind == "mandatory_vanilla_grant"
+            and record.capability in active_pool_item_names
+        ):
             raise ValueError(
                 f"External prerequisite cannot replace active AP item: {record.capability}"
             )
@@ -186,6 +244,13 @@ def requirement_satisfied(requirement: LocationRequirement, state, player: int) 
     )
 
 
+def required_item_names(requirement: LocationRequirement) -> frozenset[str]:
+    """Return every item which must be excluded from its own ruled location."""
+    return frozenset(requirement.all_of).union(
+        item for alternative in requirement.any_of for item in alternative
+    )
+
+
 # Audited checks with no proven mandatory item prerequisite. Keep this explicit
 # so future audits do not silently turn absence of evidence into logic.
 NO_RULE_PROVEN = frozenset({
@@ -195,6 +260,16 @@ NO_RULE_PROVEN = frozenset({
     "Doom Hunter Base - Mission Challenge - Big Reveal",
     "ARC Complex - Mission Challenge - Rune Finder",
     "ARC Complex - Mission Challenge - Solitary Confinement",
+    "Mars Core - Mission Challenge - Big Ba-Da Boom",
     "Mars Core - Mission Challenge - Disarmament",
     "Mars Core - Mission Challenge - Lock and Key",
+    "Taras Nabad - Mission Challenge - Man Made Wiki",
+    "Taras Nabad - Mission Challenge - Painkiller",
+    "Nekravol - Mission Challenge - Die by the Sword",
+    "Nekravol - Mission Challenge - Tricks and Traps",
+    "Nekravol - Mission Challenge - Doom Hunt",
+    "Nekravol Part II - Mission Challenge - Cut Down to Size",
+    "Nekravol Part II - Mission Challenge - Resurrect No More",
+    "Urdak - Mission Challenge - Accessories Not Included",
+    "Urdak - Mission Challenge - Inflight Devastation",
 })

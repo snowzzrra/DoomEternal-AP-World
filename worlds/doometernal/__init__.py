@@ -32,6 +32,7 @@ from .generated_content import (
 from .logic import (
     EXTERNAL_VANILLA_PREREQUISITES,
     build_location_prerequisites,
+    required_item_names,
     requirement_satisfied,
     validate_external_vanilla_prerequisites,
     validate_location_prerequisites,
@@ -259,7 +260,7 @@ class DoomEternalWorld(World):
                     requirement, state, self.player
                 ),
             )
-            for item_name in requirement.all_of:
+            for item_name in required_item_names(requirement):
                 forbid_item(location, item_name, self.player)
             if requirement.battery_currency:
                 forbid_item(location, "Sentinel Battery", self.player)
