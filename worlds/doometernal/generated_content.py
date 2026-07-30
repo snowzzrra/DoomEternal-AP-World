@@ -2,7 +2,7 @@
 
 # This file has no timestamp: stable input yields a stable diff.
 CONTENT_SCHEMA_VERSION = 2
-CONTENT_REVISION = 'v0.3.5-alpha.3'
+CONTENT_REVISION = 'v0.3.6-alpha.1'
 BRIDGE_PROTOCOL_VERSION = 3
 
 LOCATION_ROWS = (
@@ -251,6 +251,44 @@ LOCATION_ROWS = (
     ('Taras Nabad - Mastery Token 2', 7770339, 'Taras Nabad'),
     ('Taras Nabad - Secret Encounter 1', 7770331, 'Taras Nabad'),
     ('Taras Nabad - Secret Encounter 2', 7770332, 'Taras Nabad'),
+    ('Nekravol - Cheat Code - Famine Mode', 7770340, 'Nekravol'),
+    ('Nekravol - Extra Life 1', 7770341, 'Nekravol'),
+    ('Nekravol - Praetor Suit Token 1', 7770342, 'Nekravol'),
+    ('Nekravol - Toy - Baron of Hell', 7770343, 'Nekravol'),
+    ('Nekravol - Praetor Suit Token 2', 7770344, 'Nekravol'),
+    ('Nekravol - Mastery Token 1', 7770345, 'Nekravol'),
+    ('Nekravol - Extra Life 2', 7770346, 'Nekravol'),
+    ('Nekravol - Nekravol Part I Codex', 7770347, 'Nekravol'),
+    ('Nekravol - Fuel the Eternal Flame Part I Codex', 7770348, 'Nekravol'),
+    ('Nekravol - Toy - Gladiator', 7770349, 'Nekravol'),
+    ('Nekravol - Mastery Token 2', 7770350, 'Nekravol'),
+    ('Nekravol - Praetor Suit Token 3', 7770351, 'Nekravol'),
+    ('Nekravol - Album', 7770352, 'Nekravol'),
+    ('Nekravol - Toy - Doom Hunter', 7770353, 'Nekravol'),
+    ('Nekravol - Extra Life 3', 7770354, 'Nekravol'),
+    ('Nekravol - Sentinel Crystal', 7770355, 'Nekravol'),
+    ('Nekravol - Secret Encounter 1', 7770356, 'Nekravol'),
+    ('Nekravol - Secret Encounter 2', 7770357, 'Nekravol'),
+    ('Nekravol Part II - Toy - Tyrant', 7770363, 'Nekravol Part II'),
+    ('Nekravol Part II - Fuel the Eternal Flame Part III Codex', 7770364, 'Nekravol Part II'),
+    ('Nekravol Part II - Fuel the Eternal Flame Part II Codex', 7770365, 'Nekravol Part II'),
+    ('Nekravol Part II - Nekravol Part II Codex', 7770366, 'Nekravol Part II'),
+    ('Nekravol Part II - Extra Life 1', 7770367, 'Nekravol Part II'),
+    ('Nekravol Part II - Album 1', 7770368, 'Nekravol Part II'),
+    ('Nekravol Part II - Mastery Token', 7770369, 'Nekravol Part II'),
+    ('Nekravol Part II - Cheat Code - Party Mode', 7770370, 'Nekravol Part II'),
+    ('Nekravol Part II - Album 2', 7770371, 'Nekravol Part II'),
+    ('Nekravol Part II - Toy - Dread Knight', 7770372, 'Nekravol Part II'),
+    ('Nekravol Part II - Cheat Code - Instant Stagger Mode', 7770373, 'Nekravol Part II'),
+    ('Nekravol Part II - Extra Life 2', 7770374, 'Nekravol Part II'),
+    ('Nekravol Part II - Sentinel Crystal', 7770375, 'Nekravol Part II'),
+    ('Nekravol Part II - Toy - Archvile', 7770376, 'Nekravol Part II'),
+    ('Nekravol Part II - Extra Life 3', 7770377, 'Nekravol Part II'),
+    ('Nekravol Part II - Praetor Suit Token 1', 7770378, 'Nekravol Part II'),
+    ('Nekravol Part II - Praetor Suit Token 2', 7770379, 'Nekravol Part II'),
+    ('Nekravol Part II - Praetor Suit Token 3', 7770380, 'Nekravol Part II'),
+    ('Nekravol Part II - Secret Encounter 1', 7770381, 'Nekravol Part II'),
+    ('Nekravol Part II - Secret Encounter 2', 7770382, 'Nekravol Part II'),
     ('Hell on Earth - Mission Complete', 7770122, 'Hell on Earth'),
     ('Exultia - Mission Complete', 7770123, 'Exultia'),
     ('Cultist Base - Mission Complete', 7770124, 'Cultist Base'),
@@ -297,6 +335,16 @@ LOCATION_ROWS = (
     ('Taras Nabad - Mission Challenge - Painkiller', 7770335, 'Taras Nabad'),
     ('Taras Nabad - All Mission Challenges Completed', 7770336, 'Taras Nabad'),
     ('Taras Nabad - Mission Complete', 7770337, 'Taras Nabad'),
+    ('Nekravol - Mission Challenge - Die by the Sword', 7770358, 'Nekravol'),
+    ('Nekravol - Mission Challenge - Tricks and Traps', 7770359, 'Nekravol'),
+    ('Nekravol - Mission Challenge - Doom Hunt', 7770360, 'Nekravol'),
+    ('Nekravol - All Mission Challenges Completed', 7770361, 'Nekravol'),
+    ('Nekravol - Mission Complete', 7770362, 'Nekravol'),
+    ('Nekravol Part II - Mission Challenge - Punched by Blood', 7770383, 'Nekravol Part II'),
+    ('Nekravol Part II - Mission Challenge - Cut Down to Size', 7770384, 'Nekravol Part II'),
+    ('Nekravol Part II - Mission Challenge - Resurrect No More', 7770385, 'Nekravol Part II'),
+    ('Nekravol Part II - All Mission Challenges Completed', 7770386, 'Nekravol Part II'),
+    ('Nekravol Part II - Mission Complete', 7770387, 'Nekravol Part II'),
     ('Fortress of Doom - Super Gore Nest Transition', None, 'Fortress of Doom - Third Visit'),
 )
 LOCATION_NAME_TO_ID = {name: code for name, code, _ in LOCATION_ROWS if code is not None}
@@ -310,14 +358,16 @@ LOCATION_NAMES_BY_REGION = {
     'Fortress of Doom - Third Visit': ('Fortress of Doom - Ballista', 'Fortress of Doom - Super Gore Nest Transition'),
     'Hell on Earth': ('Hell on Earth - Chainsaw', 'Hell on Earth - Heavy Cannon', 'Hell on Earth - Frag Grenade', 'Hell on Earth - Extra Life - Cliffside in Last Arena', 'Hell on Earth - Extra Life - Shopping Center Elevator', 'Hell on Earth - Extra Life - Street Arena Behind Breakable Wall', 'Hell on Earth - Extra Life - Street Arena Behind Bars', 'Hell on Earth - Hell Barges Codex', 'Hell on Earth - Remaining Human Populations Part 1 Codex', 'Hell on Earth - Remaining Human Populations Part 2 Codex', 'Hell on Earth - Formation of the ARC Codex', 'Hell on Earth - Hell Priests Codex', 'Hell on Earth - Deag Nilox Codex', 'Hell on Earth - Modbot 1', 'Hell on Earth - Modbot 2', 'Hell on Earth - Modbot 3', 'Hell on Earth - Zombie Toy', 'Hell on Earth - Doom Slayer Toy', 'Hell on Earth - Imp Toy', 'Hell on Earth - Infinite Extra Lives Cheat', 'Hell on Earth - Mission Complete'),
     'Mars Core': ('Mars Core - Praetor Suit Token 1', 'Mars Core - Praetor Suit Token 2', 'Mars Core - Praetor Suit Token 3', 'Mars Core - Praetor Suit Token 4', 'Mars Core - Praetor Suit Token 5', 'Mars Core - Sentinel Battery 1', 'Mars Core - Sentinel Battery 2', 'Mars Core - Sentinel Battery 3', 'Mars Core - Rune 1', 'Mars Core - Rune 2', 'Mars Core - Extra Life 1', 'Mars Core - Extra Life 2', 'Mars Core - Extra Life 3', 'Mars Core - Extra Life 4', 'Mars Core - Extra Life 5', 'Mars Core - Extra Life 6', 'Mars Core - Prowler Toy', 'Mars Core - Carcass Toy', 'Mars Core - Pinky Toy', 'Mars Core - DOOM 64 - Main Theme Vinyl Record', 'Mars Core - Quake Champions - Goroth Vinyl Record', 'Mars Core - Infinite Onslaught Cheat Code', 'Mars Core - BFG-10000 Codex', 'Mars Core - Lost City of Hebeth Codex', 'Mars Core - Slayer Key', 'Mars Core - Sentinel Crystal', 'Mars Core - Secret Encounter 1', 'Mars Core - Secret Encounter 2', 'Mars Core - Mission Complete', 'Mars Core - Mission Challenge - Big Ba-Da Boom', 'Mars Core - Mission Challenge - Disarmament', 'Mars Core - Mission Challenge - Lock and Key', 'Mars Core - All Mission Challenges Completed'),
+    'Nekravol': ('Nekravol - Cheat Code - Famine Mode', 'Nekravol - Extra Life 1', 'Nekravol - Praetor Suit Token 1', 'Nekravol - Toy - Baron of Hell', 'Nekravol - Praetor Suit Token 2', 'Nekravol - Mastery Token 1', 'Nekravol - Extra Life 2', 'Nekravol - Nekravol Part I Codex', 'Nekravol - Fuel the Eternal Flame Part I Codex', 'Nekravol - Toy - Gladiator', 'Nekravol - Mastery Token 2', 'Nekravol - Praetor Suit Token 3', 'Nekravol - Album', 'Nekravol - Toy - Doom Hunter', 'Nekravol - Extra Life 3', 'Nekravol - Sentinel Crystal', 'Nekravol - Secret Encounter 1', 'Nekravol - Secret Encounter 2', 'Nekravol - Mission Challenge - Die by the Sword', 'Nekravol - Mission Challenge - Tricks and Traps', 'Nekravol - Mission Challenge - Doom Hunt', 'Nekravol - All Mission Challenges Completed', 'Nekravol - Mission Complete'),
+    'Nekravol Part II': ('Nekravol Part II - Toy - Tyrant', 'Nekravol Part II - Fuel the Eternal Flame Part III Codex', 'Nekravol Part II - Fuel the Eternal Flame Part II Codex', 'Nekravol Part II - Nekravol Part II Codex', 'Nekravol Part II - Extra Life 1', 'Nekravol Part II - Album 1', 'Nekravol Part II - Mastery Token', 'Nekravol Part II - Cheat Code - Party Mode', 'Nekravol Part II - Album 2', 'Nekravol Part II - Toy - Dread Knight', 'Nekravol Part II - Cheat Code - Instant Stagger Mode', 'Nekravol Part II - Extra Life 2', 'Nekravol Part II - Sentinel Crystal', 'Nekravol Part II - Toy - Archvile', 'Nekravol Part II - Extra Life 3', 'Nekravol Part II - Praetor Suit Token 1', 'Nekravol Part II - Praetor Suit Token 2', 'Nekravol Part II - Praetor Suit Token 3', 'Nekravol Part II - Secret Encounter 1', 'Nekravol Part II - Secret Encounter 2', 'Nekravol Part II - Mission Challenge - Punched by Blood', 'Nekravol Part II - Mission Challenge - Cut Down to Size', 'Nekravol Part II - Mission Challenge - Resurrect No More', 'Nekravol Part II - All Mission Challenges Completed', 'Nekravol Part II - Mission Complete'),
     'Sentinel Prime': ('Sentinel Prime - Sentinel Prime Codex', 'Sentinel Prime - History of the Sentinels Part IV Codex', 'Sentinel Prime - History of the Sentinels Part V Codex', 'Sentinel Prime - History of the Sentinels Part VI Codex', 'Sentinel Prime - History of the Sentinels Part VII Codex', 'Sentinel Prime - History of the Sentinels Part VIII Codex', 'Sentinel Prime - History of the Sentinels Part IX Codex', 'Sentinel Prime - Deag Grav Codex', 'Sentinel Prime - Gladiator Codex', 'Sentinel Prime - Praetor Suit Token', 'Sentinel Prime - Extra Life 1', 'Sentinel Prime - Extra Life 2', 'Sentinel Prime - Mission Complete'),
     'Super Gore Nest': ('Super Gore Nest - Praetor Suit Token 1', 'Super Gore Nest - Praetor Suit Token 2', 'Super Gore Nest - Praetor Suit Token 3', 'Super Gore Nest - Praetor Suit Token 4', 'Super Gore Nest - Praetor Suit Token 5', 'Super Gore Nest - Weapon Modbot 1', 'Super Gore Nest - Weapon Modbot 2', 'Super Gore Nest - Rune 1', 'Super Gore Nest - Rune 2', 'Super Gore Nest - Soldier (Shield) Toy', 'Super Gore Nest - Revenant Toy', 'Super Gore Nest - Mecha Zombie Toy', 'Super Gore Nest - Doom 3 - Main Theme Vinyl', 'Super Gore Nest - Wolf 3D - Wondering About My Loved Ones Vinyl', 'Super Gore Nest - Extra Life 1', 'Super Gore Nest - Extra Life 2', 'Super Gore Nest - Extra Life 3', 'Super Gore Nest - Extra Life 4', 'Super Gore Nest - The Hellgrowth Part I Codex', 'Super Gore Nest - The Hellgrowth Part II Codex', 'Super Gore Nest - Super Gore Nest Codex', 'Super Gore Nest - Sentinel Battery 1', 'Super Gore Nest - Sentinel Battery 2', 'Super Gore Nest - Sentinel Battery 3', 'Super Gore Nest - Infinite Ammo Cheat Code', 'Super Gore Nest - Chaingun', 'Super Gore Nest - Sentinel Crystal', 'Super Gore Nest - Slayer Key', 'Super Gore Nest - Secret Encounter 1', 'Super Gore Nest - Secret Encounter 2', 'Super Gore Nest - Mission Complete', 'Super Gore Nest - Mission Challenge - Weaponslave', 'Super Gore Nest - Mission Challenge - A Bloody Secret', 'Super Gore Nest - Mission Challenge - War Pinkies', 'Super Gore Nest - All Mission Challenges Completed'),
     'Taras Nabad': ('Taras Nabad - Sentinel Crystal', 'Taras Nabad - Praetor Suit Token 1', 'Taras Nabad - Praetor Suit Token 2', 'Taras Nabad - Praetor Suit Token 3', 'Taras Nabad - Praetor Suit Token 4', 'Taras Nabad - Praetor Suit Token 5', 'Taras Nabad - Sentinel Battery 1', 'Taras Nabad - Sentinel Battery 2', 'Taras Nabad - Sentinel Battery 3', 'Taras Nabad - Extra Life 1', 'Taras Nabad - Extra Life 2', 'Taras Nabad - Extra Life 3', 'Taras Nabad - Toy - Cyber Mancubus', 'Taras Nabad - Toy - Marauder', 'Taras Nabad - Toy - Pain Elemental', 'Taras Nabad - Taras Nabad Codex', 'Taras Nabad - The Divinity Machine Codex', 'Taras Nabad - History of the Sentinels Part X Codex', 'Taras Nabad - History of the Sentinels Part XI Codex', 'Taras Nabad - History of the Sentinels Part XII Codex', 'Taras Nabad - History of the Sentinels Part XIII Codex', 'Taras Nabad - History of the Sentinels Part XIV Codex', 'Taras Nabad - Cheat Code - Powerup Mode: Overdrive', 'Taras Nabad - Album 1', 'Taras Nabad - Album 2', 'Taras Nabad - Slayer Key', 'Taras Nabad - Mastery Token 1', 'Taras Nabad - Mastery Token 2', 'Taras Nabad - Secret Encounter 1', 'Taras Nabad - Secret Encounter 2', 'Taras Nabad - Mission Challenge - Man Made Wiki', 'Taras Nabad - Mission Challenge - Recharge Time', 'Taras Nabad - Mission Challenge - Painkiller', 'Taras Nabad - All Mission Challenges Completed', 'Taras Nabad - Mission Complete'),
     'Weapon Masteries': ('Sticky Bombs - Weapon Mastery Challenge', 'Full Auto - Weapon Mastery Challenge', 'Precision Bolt - Weapon Mastery Challenge', 'Micro Missiles - Weapon Mastery Challenge', 'Heat Blast - Weapon Mastery Challenge', 'Microwave Beam - Weapon Mastery Challenge', 'Lock-on Burst - Weapon Mastery Challenge', 'Remote Detonate - Weapon Mastery Challenge', 'Destroyer Blade - Weapon Mastery Challenge', 'Arbalest - Weapon Mastery Challenge', 'Mobile Turret - Weapon Mastery Challenge', 'Energy Shield - Weapon Mastery Challenge', 'Meat Hook - Weapon Mastery Challenge'),
 }
-CAMPAIGN_REGIONS = ('Menu', 'Weapon Masteries', 'Hell on Earth', 'Fortress of Doom - First Visit', 'Exultia', 'Fortress of Doom - Second Visit', 'Cultist Base', 'Doom Hunter Base', 'Fortress of Doom - Third Visit', 'Super Gore Nest', 'Fortress of Doom - Fourth Visit', 'ARC Complex', 'Fortress of Doom - Fifth Visit', 'Mars Core', 'Sentinel Prime', 'Fortress of Doom - Sixth Visit', 'Taras Nabad', 'Fortress of Doom - Seventh Visit')
-CAMPAIGN_CONNECTIONS = (('Menu', 'Hell on Earth', ''), ('Menu', 'Weapon Masteries', ''), ('Hell on Earth', 'Fortress of Doom - First Visit', 'Return to Fortress after Hell on Earth'), ('Fortress of Doom - First Visit', 'Exultia', 'Portal to Exultia'), ('Exultia', 'Fortress of Doom - Second Visit', 'Return to Fortress after Exultia'), ('Fortress of Doom - Second Visit', 'Cultist Base', 'Portal to Cultist Base'), ('Cultist Base', 'Doom Hunter Base', 'Portal to Doom Hunter Base'), ('Doom Hunter Base', 'Fortress of Doom - Third Visit', 'Return to Fortress after Doom Hunter Base'), ('Fortress of Doom - Third Visit', 'Super Gore Nest', 'Portal to Super Gore Nest'), ('Super Gore Nest', 'Fortress of Doom - Fourth Visit', 'Return to Fortress after Super Gore Nest'), ('Fortress of Doom - Fourth Visit', 'ARC Complex', 'Portal to ARC Complex'), ('ARC Complex', 'Fortress of Doom - Fifth Visit', 'Return to Fortress after ARC Complex'), ('Fortress of Doom - Fifth Visit', 'Mars Core', 'Portal to Mars Core'), ('Mars Core', 'Sentinel Prime', 'Portal to Sentinel Prime'), ('Sentinel Prime', 'Fortress of Doom - Sixth Visit', 'Return to Fortress after Sentinel Prime'), ('Fortress of Doom - Sixth Visit', 'Taras Nabad', 'Portal to Taras Nabad'), ('Taras Nabad', 'Fortress of Doom - Seventh Visit', 'Return to Fortress after Taras Nabad'))
-CAMPAIGN_GOAL_LOCATION = 'Taras Nabad - Mission Complete'
+CAMPAIGN_REGIONS = ('Menu', 'Weapon Masteries', 'Hell on Earth', 'Fortress of Doom - First Visit', 'Exultia', 'Fortress of Doom - Second Visit', 'Cultist Base', 'Doom Hunter Base', 'Fortress of Doom - Third Visit', 'Super Gore Nest', 'Fortress of Doom - Fourth Visit', 'ARC Complex', 'Fortress of Doom - Fifth Visit', 'Mars Core', 'Sentinel Prime', 'Fortress of Doom - Sixth Visit', 'Taras Nabad', 'Fortress of Doom - Seventh Visit', 'Nekravol', 'Nekravol Part II')
+CAMPAIGN_CONNECTIONS = (('Menu', 'Hell on Earth', ''), ('Menu', 'Weapon Masteries', ''), ('Hell on Earth', 'Fortress of Doom - First Visit', 'Return to Fortress after Hell on Earth'), ('Fortress of Doom - First Visit', 'Exultia', 'Portal to Exultia'), ('Exultia', 'Fortress of Doom - Second Visit', 'Return to Fortress after Exultia'), ('Fortress of Doom - Second Visit', 'Cultist Base', 'Portal to Cultist Base'), ('Cultist Base', 'Doom Hunter Base', 'Portal to Doom Hunter Base'), ('Doom Hunter Base', 'Fortress of Doom - Third Visit', 'Return to Fortress after Doom Hunter Base'), ('Fortress of Doom - Third Visit', 'Super Gore Nest', 'Portal to Super Gore Nest'), ('Super Gore Nest', 'Fortress of Doom - Fourth Visit', 'Return to Fortress after Super Gore Nest'), ('Fortress of Doom - Fourth Visit', 'ARC Complex', 'Portal to ARC Complex'), ('ARC Complex', 'Fortress of Doom - Fifth Visit', 'Return to Fortress after ARC Complex'), ('Fortress of Doom - Fifth Visit', 'Mars Core', 'Portal to Mars Core'), ('Mars Core', 'Sentinel Prime', 'Portal to Sentinel Prime'), ('Sentinel Prime', 'Fortress of Doom - Sixth Visit', 'Return to Fortress after Sentinel Prime'), ('Fortress of Doom - Sixth Visit', 'Taras Nabad', 'Portal to Taras Nabad'), ('Taras Nabad', 'Fortress of Doom - Seventh Visit', 'Return to Fortress after Taras Nabad'), ('Fortress of Doom - Seventh Visit', 'Nekravol', 'Portal to Nekravol'), ('Nekravol', 'Nekravol Part II', 'Continue to Nekravol Part II'))
+CAMPAIGN_GOAL_LOCATION = 'Nekravol Part II - Mission Complete'
 RUNTIME_LOCATION_NAMES = frozenset({
     'Hell on Earth - Mission Complete',
     'Exultia - Mission Complete',
@@ -365,4 +415,14 @@ RUNTIME_LOCATION_NAMES = frozenset({
     'Taras Nabad - Mission Challenge - Painkiller',
     'Taras Nabad - All Mission Challenges Completed',
     'Taras Nabad - Mission Complete',
+    'Nekravol - Mission Challenge - Die by the Sword',
+    'Nekravol - Mission Challenge - Tricks and Traps',
+    'Nekravol - Mission Challenge - Doom Hunt',
+    'Nekravol - All Mission Challenges Completed',
+    'Nekravol - Mission Complete',
+    'Nekravol Part II - Mission Challenge - Punched by Blood',
+    'Nekravol Part II - Mission Challenge - Cut Down to Size',
+    'Nekravol Part II - Mission Challenge - Resurrect No More',
+    'Nekravol Part II - All Mission Challenges Completed',
+    'Nekravol Part II - Mission Complete',
 })
