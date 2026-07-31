@@ -2,7 +2,7 @@
 
 # This file has no timestamp: stable input yields a stable diff.
 CONTENT_SCHEMA_VERSION = 2
-CONTENT_REVISION = 'v0.3.7-alpha.3'
+CONTENT_REVISION = 'v0.3.8-alpha.1'
 BRIDGE_PROTOCOL_VERSION = 3
 
 LOCATION_ROWS = (
@@ -308,6 +308,8 @@ LOCATION_ROWS = (
     ('Urdak - Maykr Angels Codex', 7770404, 'Urdak'),
     ('Urdak - Secret Encounter 1', 7770405, 'Urdak'),
     ('Urdak - Secret Encounter 2', 7770406, 'Urdak'),
+    ('Final Sin - Extra Life 1', 7770412, 'Final Sin'),
+    ('Final Sin - Icon of Sin Codex', 7770413, 'Final Sin'),
     ('Hell on Earth - Mission Complete', 7770122, 'Hell on Earth'),
     ('Exultia - Mission Complete', 7770123, 'Exultia'),
     ('Cultist Base - Mission Complete', 7770124, 'Cultist Base'),
@@ -369,6 +371,7 @@ LOCATION_ROWS = (
     ('Urdak - Mission Challenge - Angel of Death', 7770409, 'Urdak'),
     ('Urdak - All Mission Challenges Completed', 7770410, 'Urdak'),
     ('Urdak - Mission Complete', 7770411, 'Urdak'),
+    ('Final Sin - Mission Complete', 7770414, 'Final Sin'),
     ('Fortress of Doom - Super Gore Nest Transition', None, 'Fortress of Doom - Third Visit'),
 )
 LOCATION_NAME_TO_ID = {name: code for name, code, _ in LOCATION_ROWS if code is not None}
@@ -377,6 +380,7 @@ LOCATION_NAMES_BY_REGION = {
     'Cultist Base': ('Cultist Base - Sentinel Crystal 1', 'Cultist Base - Rocket Launcher', 'Cultist Base - Extra Life - Hanging Cage', 'Cultist Base - Praetor Suit Token 5', 'Cultist Base - Extra Life - Dopefish 2', 'Cultist Base - Extra Life - Dopefish 3', 'Cultist Base - Praetor Suit Token 1', "Cultist Base - Into Sandy's City Vinyl Record", 'Cultist Base - Soldier (Blaster) Toy', 'Cultist Base - Sentinel Battery 1', 'Cultist Base - Praetor Suit Token 4', 'Cultist Base - Cultist Base Codex Entry', 'Cultist Base - Rune 2', 'Cultist Base - Weapon Modbot 1', 'Cultist Base - Praetor Suit Token 6', 'Cultist Base - Extra Life - Spike Crushers', 'Cultist Base - Extra Life - Before Cultist Key', 'Cultist Base - Extra Life - After Big Fight Outside', 'Cultist Base - Slayer Key', 'Cultist Base - Gargoyle Toy', 'Cultist Base - IDDQD Cheat Code', 'Cultist Base - Praetor Suit Token 3', 'Cultist Base - Sentinel Battery 2', 'Cultist Base - Sentinel Battery 3', 'Cultist Base - Secret Encounter - Cave Mancubus', 'Cultist Base - Secret Encounter - Torture Pit', 'Cultist Base - Mission Complete', 'Cultist Base - Mission Challenge - Pull the Crystal', 'Cultist Base - Mission Challenge - Armored Rain', 'Cultist Base - Mission Challenge - Master of Turrets', 'Cultist Base - All Mission Challenges Completed'),
     'Doom Hunter Base': ('Doom Hunter Base - Extra Life - Opening', 'Doom Hunter Base - Praetor Suit Token 1', 'Doom Hunter Base - Deag Ranak Codex', 'Doom Hunter Base - Doom Hunter Base Codex', 'Doom Hunter Base - Doom Hunter Codex', 'Doom Hunter Base - Sentinel Battery 1', 'Doom Hunter Base - Praetor Suit Token 2', 'Doom Hunter Base - Extra Life - Furnace', 'Doom Hunter Base - Sentinel Battery 2', 'Doom Hunter Base - Sentinel Crystal', 'Doom Hunter Base - Extra Life - Moving Platform', 'Doom Hunter Base - Weapon Modbot', 'Doom Hunter Base - Praetor Suit Token 3', 'Doom Hunter Base - Hell Knight Toy', "Doom Hunter Base - Keen - Shadows Don't Scare Commander Keen Vinyl", 'Doom Hunter Base - Praetor Suit Token 4', 'Doom Hunter Base - Silver Bullet Mode Cheat Code', 'Doom Hunter Base - Lost Soul Toy', 'Doom Hunter Base - Rune', 'Doom Hunter Base - Mission Complete', 'Doom Hunter Base - Mission Challenge - Musical Interlude', 'Doom Hunter Base - Mission Challenge - Big Reveal', 'Doom Hunter Base - Mission Challenge - Fire in the Hole', 'Doom Hunter Base - All Mission Challenges Completed'),
     'Exultia': ('Exultia - Rune 1', 'Exultia - Arachnotron Toy', 'Exultia - Cacodemon Toy', 'Exultia - Weapon Modbot 1', 'Exultia - Hidden Plasma Rifle', "Exultia - At Doom's Gate Vinyl Record", 'Exultia - Exultia Codex Entry', 'Exultia - The Wolf Codex Entry', 'Exultia - History of the Sentinels Part One Codex Entry', 'Exultia - King Novik Codex Entry', 'Exultia - History of the Sentinels Part Two Codex Entry', 'Exultia - History of the Sentinels Part Three Codex Entry', 'Exultia - The Betrayer Codex Entry', 'Exultia - Sentinel Crystal 1', 'Exultia - Extra Life - After Dash', 'Exultia - Extra Life - Under Level Start', 'Exultia - Extra Life - Close to First Rune', 'Exultia - Extra Life - Under Floating Platform', 'Exultia - Extra Life - Floating in Goo Room', "Exultia - Extra Life - Behind King Novik's Throne", 'Exultia - Extra Life - Inside Electric Trap', 'Exultia - Blood Punch', 'Exultia - Dash', 'Exultia - Sentinel Battery', 'Exultia - Slayer Gate Key', 'Exultia - Secret Encounter - Capitol Arena', 'Exultia - Secret Encounter - Gore Nest Arena', 'Exultia - Mission Complete'),
+    'Final Sin': ('Final Sin - Extra Life 1', 'Final Sin - Icon of Sin Codex', 'Final Sin - Mission Complete'),
     'Fortress of Doom - First Visit': ('Fortress of Doom - Flame Belch', 'Fortress of Doom - Sentinel Crystal 1'),
     'Fortress of Doom - Second Visit': ('Fortress of Doom - Fortress of Doom Codex Entry', 'Fortress of Doom - Ice Bomb', 'Fortress of Doom - Sentinel Crystal 2', 'Fortress of Doom - Sentinel Crystal 3', 'Fortress of Doom - Praetor Suit Token 1', 'Fortress of Doom - Praetor Suit Token 2', 'Fortress of Doom - Praetor Suit Token 3', 'Fortress of Doom - Weapon Modbot 1', 'Fortress of Doom - Weapon Modbot 2', 'Fortress of Doom - Praetor Suit Token 4', 'Fortress of Doom - Praetor Suit Token 5', 'Fortress of Doom - All Runes Cheat Code', 'Fortress of Doom - Fully Upgraded Suit Cheat Code', 'Fortress of Doom - Praetor Suit', 'Fortress of Doom - Sentinel Armor', 'Fortress of Doom - Classic Marine Suit'),
     'Fortress of Doom - Third Visit': ('Fortress of Doom - Ballista', 'Fortress of Doom - Super Gore Nest Transition'),
@@ -392,7 +396,7 @@ LOCATION_NAMES_BY_REGION = {
 }
 CAMPAIGN_REGIONS = ('Menu', 'Weapon Masteries', 'Hell on Earth', 'Fortress of Doom - First Visit', 'Exultia', 'Fortress of Doom - Second Visit', 'Cultist Base', 'Doom Hunter Base', 'Fortress of Doom - Third Visit', 'Super Gore Nest', 'Fortress of Doom - Fourth Visit', 'ARC Complex', 'Fortress of Doom - Fifth Visit', 'Mars Core', 'Sentinel Prime', 'Fortress of Doom - Sixth Visit', 'Taras Nabad', 'Fortress of Doom - Seventh Visit', 'Nekravol', 'Nekravol Part II', 'Urdak', 'Final Sin')
 CAMPAIGN_CONNECTIONS = (('Menu', 'Hell on Earth', ''), ('Menu', 'Weapon Masteries', ''), ('Hell on Earth', 'Fortress of Doom - First Visit', 'Return to Fortress after Hell on Earth'), ('Fortress of Doom - First Visit', 'Exultia', 'Portal to Exultia'), ('Exultia', 'Fortress of Doom - Second Visit', 'Return to Fortress after Exultia'), ('Fortress of Doom - Second Visit', 'Cultist Base', 'Portal to Cultist Base'), ('Cultist Base', 'Doom Hunter Base', 'Portal to Doom Hunter Base'), ('Doom Hunter Base', 'Fortress of Doom - Third Visit', 'Return to Fortress after Doom Hunter Base'), ('Fortress of Doom - Third Visit', 'Super Gore Nest', 'Portal to Super Gore Nest'), ('Super Gore Nest', 'Fortress of Doom - Fourth Visit', 'Return to Fortress after Super Gore Nest'), ('Fortress of Doom - Fourth Visit', 'ARC Complex', 'Portal to ARC Complex'), ('ARC Complex', 'Fortress of Doom - Fifth Visit', 'Return to Fortress after ARC Complex'), ('Fortress of Doom - Fifth Visit', 'Mars Core', 'Portal to Mars Core'), ('Mars Core', 'Sentinel Prime', 'Portal to Sentinel Prime'), ('Sentinel Prime', 'Fortress of Doom - Sixth Visit', 'Return to Fortress after Sentinel Prime'), ('Fortress of Doom - Sixth Visit', 'Taras Nabad', 'Portal to Taras Nabad'), ('Taras Nabad', 'Fortress of Doom - Seventh Visit', 'Return to Fortress after Taras Nabad'), ('Fortress of Doom - Seventh Visit', 'Nekravol', 'Portal to Nekravol'), ('Nekravol', 'Nekravol Part II', 'Continue to Nekravol Part II'), ('Nekravol Part II', 'Urdak', 'Continue to Urdak'), ('Urdak', 'Final Sin', 'Continue to Final Sin'))
-CAMPAIGN_GOAL_LOCATION = 'Urdak - Mission Complete'
+CAMPAIGN_GOAL_LOCATION = 'Final Sin - Mission Complete'
 RUNTIME_LOCATION_NAMES = frozenset({
     'Hell on Earth - Mission Complete',
     'Exultia - Mission Complete',
@@ -455,4 +459,5 @@ RUNTIME_LOCATION_NAMES = frozenset({
     'Urdak - Mission Challenge - Angel of Death',
     'Urdak - All Mission Challenges Completed',
     'Urdak - Mission Complete',
+    'Final Sin - Mission Complete',
 })
