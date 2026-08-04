@@ -13,6 +13,12 @@ from pathlib import Path
 import settings
 from Utils import messagebox
 
+try:
+    from .identity import GAME_NAME, LEGACY_GAME_NAME
+except ImportError:  # packaged launcher audit loads this module standalone
+    GAME_NAME = "DOOM Eternal"
+    LEGACY_GAME_NAME = "Doom Eternal"
+
 BRIDGE_PROTOCOL = 3
 
 
@@ -54,6 +60,13 @@ def _bridge_identity(bridge: Path) -> tuple[str, str]:
         raise RuntimeError(
             f"Bridge protocol {identity.get('protocol')!r} is incompatible with "
             f"APWorld protocol {BRIDGE_PROTOCOL}. Re-extract matching release."
+        )
+    if identity.get("game") != GAME_NAME:
+        found = identity.get("game", LEGACY_GAME_NAME)
+        raise RuntimeError(
+            f"Bridge game identity {found!r} is incompatible with APWorld "
+            f"identity {GAME_NAME!r}. Old 'Doom Eternal' seeds require the "
+            "prior client/APWorld; do not mix releases."
         )
     if identity.get("sha256") != actual_sha or identity.get("revision") != expected_revision:
         raise RuntimeError(

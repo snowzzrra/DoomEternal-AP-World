@@ -2,9 +2,14 @@ from typing import NamedTuple
 
 from BaseClasses import Item, ItemClassification
 
+try:
+    from .identity import GAME_NAME
+except ImportError:  # build_apworld_identity loads this module standalone
+    GAME_NAME = "DOOM Eternal"
+
 
 class DoomEternalItem(Item):
-    game: str = "Doom Eternal"
+    game: str = GAME_NAME
 
 class ItemData(NamedTuple):
     code: int | None

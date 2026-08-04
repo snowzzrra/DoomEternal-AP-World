@@ -5,6 +5,10 @@ import importlib.util
 from pathlib import Path
 
 from BaseClasses import Location
+try:
+    from .identity import GAME_NAME
+except ImportError:  # build_apworld_identity loads this module standalone
+    GAME_NAME = "DOOM Eternal"
 
 try:
     from .generated_content import LOCATION_NAME_TO_ID, LOCATION_ROWS
@@ -18,7 +22,7 @@ except ImportError:  # build_apworld_identity loads this file outside its packag
 
 
 class DoomEternalLocation(Location):
-    game: str = "Doom Eternal"
+    game: str = GAME_NAME
 
 
 class LocationData(NamedTuple):

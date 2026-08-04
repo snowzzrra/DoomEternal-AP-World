@@ -23,6 +23,7 @@ from .items import (
     item_name_to_id,
     suit_perk_item_names,
 )
+from .identity import GAME_NAME
 from .locations import DoomEternalLocation, location_data_table, location_name_to_id
 from .generated_content import (
     CAMPAIGN_CONNECTIONS,
@@ -49,7 +50,7 @@ def launch_client(*args: str):
 components.append(
     Component(
         "DOOM Eternal Client",
-        game_name="Doom Eternal",
+        game_name=GAME_NAME,
         func=launch_client,
         component_type=Type.CLIENT,
         icon="doom_eternal",
@@ -77,7 +78,7 @@ class DoomEternalWorld(World):
     Rip and tear, until it is done.
     Doom Eternal Randomizer for Archipelago.
     """
-    game: str = "Doom Eternal"
+    game: str = GAME_NAME
     web = DoomEternalWeb()
     options_dataclass = DoomEternalOptions
     options: DoomEternalOptions
@@ -175,7 +176,7 @@ class DoomEternalWorld(World):
             # modes.  The default keeps its required first Battery locked to
             # that pickup; enabling the option leaves the location randomized.
             self.multiworld.get_location(
-                "Exultia - Sentinel Battery", self.player
+                "Exultia - Sentinel Battery - King Novik Return Path", self.player
             ).place_locked_item(self.create_item("Sentinel Battery"))
             pool_names.extend(
                 ["Sentinel Battery"] * (randomized_battery_singles - 1)
