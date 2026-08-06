@@ -152,6 +152,9 @@ def build_location_prerequisites(location_names: set[str]) -> dict[str, Location
                 ("Sticky Bombs",),
             )
         ),
+        "Urdak - Mission Complete": LocationRequirement(
+            all_of=("Blood Punch",)
+        ),
     }
     for location_name in mastery_locations:
         if location_name in EXTERNAL_VANILLA_PREREQUISITES:

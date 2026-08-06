@@ -239,6 +239,11 @@ class DoomEternalWorld(World):
             lambda state: self.has_sentinel_battery_currency(state, self.player, 1),
         )
 
+        set_rule(
+            self.multiworld.get_entrance("Continue to Final Sin", self.player),
+            lambda state: state.has("Blood Punch", self.player),
+        )
+
         prerequisite_table = build_location_prerequisites(set(location_data_table))
         validate_location_prerequisites(
             prerequisite_table, set(location_data_table), set(item_data_table)
