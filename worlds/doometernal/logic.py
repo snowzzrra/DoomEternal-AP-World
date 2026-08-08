@@ -5,17 +5,13 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 
+from BaseClasses import CollectionState
+
 MASTERY_SUFFIX = " - Weapon Mastery Challenge"
 MEAT_HOOK_MASTERY_LOCATION = "Meat Hook - Weapon Mastery Challenge"
-MEAT_HOOK_VANILLA_SOURCE = (
-    "Cultist Base: scripted Super Shotgun/Meat Hook sequence"
-)
-MARS_BFG_VANILLA_SOURCE = (
-    "Mars Core: mandatory route BFG-9000 grant (inventory declaration 4701)"
-)
-NEKRAVOL_CRUCIBLE_VANILLA_SOURCE = (
-    "Nekravol: mandatory route Crucible grant (inventory declaration 4137)"
-)
+MEAT_HOOK_VANILLA_SOURCE = "Cultist Base: scripted Super Shotgun/Meat Hook sequence"
+MARS_BFG_VANILLA_SOURCE = "Mars Core: mandatory route BFG-9000 grant (inventory declaration 4701)"
+NEKRAVOL_CRUCIBLE_VANILLA_SOURCE = "Nekravol: mandatory route Crucible grant (inventory declaration 4137)"
 AUDITED_VANILLA_GRANT_SOURCES = {
     MEAT_HOOK_VANILLA_SOURCE: {
         "map": "Cultist Base",
@@ -93,14 +89,10 @@ EXTERNAL_VANILLA_PREREQUISITES: Mapping[str, ExternalVanillaPrerequisite] = {
 def build_location_prerequisites(location_names: set[str]) -> dict[str, LocationRequirement]:
     mastery_locations = sorted(name for name in location_names if name.endswith(MASTERY_SUFFIX))
     table: dict[str, LocationRequirement] = {
-        "Cultist Base - Mission Challenge - Armored Rain": LocationRequirement(
-            all_of=("Flame Belch",)
-        ),
+        "Cultist Base - Mission Challenge - Armored Rain": LocationRequirement(all_of=("Flame Belch",)),
         # This aggregate is the conjunction of its three native children. Only
         # Armored Rain currently has a proven mandatory inventory prerequisite.
-        "Cultist Base - All Mission Challenges Completed": LocationRequirement(
-            all_of=("Flame Belch",)
-        ),
+        "Cultist Base - All Mission Challenges Completed": LocationRequirement(all_of=("Flame Belch",)),
         "Fortress of Doom - Praetor Suit Token - Battery Room Upper East": LocationRequirement(battery_currency=2),
         "Fortress of Doom - Praetor Suit Token - Battery Room Upper West": LocationRequirement(battery_currency=3),
         "Fortress of Doom - Modbot - Battery Room Upper West": LocationRequirement(battery_currency=5),
@@ -114,30 +106,14 @@ def build_location_prerequisites(location_names: set[str]) -> dict[str, Location
         "Fortress of Doom - Praetor Suit": LocationRequirement(battery_currency=2),
         "Fortress of Doom - Sentinel Armor": LocationRequirement(battery_currency=4),
         "Fortress of Doom - Classic Marine Suit": LocationRequirement(battery_currency=6),
-        "Doom Hunter Base - Mission Challenge - Fire in the Hole": LocationRequirement(
-            all_of=("Frag Grenade",)
-        ),
-        "Doom Hunter Base - All Mission Challenges Completed": LocationRequirement(
-            all_of=("Frag Grenade",)
-        ),
-        "ARC Complex - Mission Challenge - External Combustion": LocationRequirement(
-            all_of=("Plasma Rifle",)
-        ),
-        "ARC Complex - All Mission Challenges Completed": LocationRequirement(
-            all_of=("Plasma Rifle",)
-        ),
-        "Taras Nabad - Mission Challenge - Keeping Cool": LocationRequirement(
-            all_of=("Ice Bomb",)
-        ),
-        "Taras Nabad - All Mission Challenges Completed": LocationRequirement(
-            all_of=("Ice Bomb",)
-        ),
-        "Nekravol Part II - Mission Challenge - Punched by Blood": LocationRequirement(
-            all_of=("Blood Punch",)
-        ),
-        "Nekravol Part II - All Mission Challenges Completed": LocationRequirement(
-            all_of=("Blood Punch",)
-        ),
+        "Doom Hunter Base - Mission Challenge - Fire in the Hole": LocationRequirement(all_of=("Frag Grenade",)),
+        "Doom Hunter Base - All Mission Challenges Completed": LocationRequirement(all_of=("Frag Grenade",)),
+        "ARC Complex - Mission Challenge - External Combustion": LocationRequirement(all_of=("Plasma Rifle",)),
+        "ARC Complex - All Mission Challenges Completed": LocationRequirement(all_of=("Plasma Rifle",)),
+        "Taras Nabad - Mission Challenge - Keeping Cool": LocationRequirement(all_of=("Ice Bomb",)),
+        "Taras Nabad - All Mission Challenges Completed": LocationRequirement(all_of=("Ice Bomb",)),
+        "Nekravol Part II - Mission Challenge - Punched by Blood": LocationRequirement(all_of=("Blood Punch",)),
+        "Nekravol Part II - All Mission Challenges Completed": LocationRequirement(all_of=("Blood Punch",)),
         "Urdak - Mission Challenge - Angel of Death": LocationRequirement(
             any_of=(
                 ("Heavy Cannon", "Precision Bolt"),
@@ -152,9 +128,7 @@ def build_location_prerequisites(location_names: set[str]) -> dict[str, Location
                 ("Sticky Bombs",),
             )
         ),
-        "Urdak - Mission Complete": LocationRequirement(
-            all_of=("Blood Punch",)
-        ),
+        "Urdak - Mission Complete": LocationRequirement(all_of=("Blood Punch",)),
     }
     for location_name in mastery_locations:
         if location_name in EXTERNAL_VANILLA_PREREQUISITES:
@@ -178,22 +152,16 @@ def validate_location_prerequisites(
             raise ValueError(f"Invalid logic rule: {location_name}")
         if set(requirement.all_of) - item_names:
             raise ValueError(
-                f"Unknown logic item(s) for {location_name}: "
-                f"{sorted(set(requirement.all_of) - item_names)}"
+                f"Unknown logic item(s) for {location_name}: {sorted(set(requirement.all_of) - item_names)}"
             )
         if any(not alternative for alternative in requirement.any_of):
             raise ValueError(f"Empty any_of alternative: {location_name}")
-        unknown_any = {
-            item for alternative in requirement.any_of for item in alternative
-            if item not in item_names
-        }
+        unknown_any = {item for alternative in requirement.any_of for item in alternative if item not in item_names}
         if unknown_any:
             raise ValueError(f"Unknown any_of item(s) for {location_name}: {sorted(unknown_any)}")
         if requirement.battery_currency < 0:
             raise ValueError(f"Negative Battery requirement: {location_name}")
-        if requirement.battery_currency and not {
-            "Sentinel Battery", "Sentinel Battery Bundle"
-        }.issubset(item_names):
+        if requirement.battery_currency and not {"Sentinel Battery", "Sentinel Battery Bundle"}.issubset(item_names):
             raise ValueError(f"Battery items are absent for {location_name}")
 
 
@@ -217,62 +185,54 @@ def validate_external_vanilla_prerequisites(
         source_evidence = AUDITED_VANILLA_GRANT_SOURCES.get(record.source)
         if source_evidence is None:
             raise ValueError(f"External prerequisite source is not audited: {record.source}")
-        if (
-            record.kind == "mandatory_vanilla_grant"
-            and record.capability not in item_names
-        ):
+        if record.kind == "mandatory_vanilla_grant" and record.capability not in item_names:
             raise ValueError(f"Unknown external capability: {record.capability}")
-        if (
-            record.kind == "mandatory_vanilla_grant"
-            and record.capability in active_pool_item_names
-        ):
-            raise ValueError(
-                f"External prerequisite cannot replace active AP item: {record.capability}"
-            )
+        if record.kind == "mandatory_vanilla_grant" and record.capability in active_pool_item_names:
+            raise ValueError(f"External prerequisite cannot replace active AP item: {record.capability}")
         if location_name in prerequisite_table:
             raise ValueError(f"External prerequisite also has an AP access rule: {location_name}")
 
 
-def requirement_satisfied(requirement: LocationRequirement, state, player: int) -> bool:
+def requirement_satisfied(requirement: LocationRequirement, state: CollectionState, player: int) -> bool:
     if not all(state.has(item_name, player) for item_name in requirement.all_of):
         return False
-    if requirement.battery_currency and (
-        state.count("Sentinel Battery", player)
-        + 2 * state.count("Sentinel Battery Bundle", player)
-    ) < requirement.battery_currency:
+    if (
+        requirement.battery_currency
+        and (state.count("Sentinel Battery", player) + 2 * state.count("Sentinel Battery Bundle", player))
+        < requirement.battery_currency
+    ):
         return False
     return not requirement.any_of or any(
-        all(state.has(item_name, player) for item_name in alternative)
-        for alternative in requirement.any_of
+        all(state.has(item_name, player) for item_name in alternative) for alternative in requirement.any_of
     )
 
 
 def required_item_names(requirement: LocationRequirement) -> frozenset[str]:
     """Return every item which must be excluded from its own ruled location."""
-    return frozenset(requirement.all_of).union(
-        item for alternative in requirement.any_of for item in alternative
-    )
+    return frozenset(requirement.all_of).union(item for alternative in requirement.any_of for item in alternative)
 
 
 # Audited checks with no proven mandatory item prerequisite. Keep this explicit
 # so future audits do not silently turn absence of evidence into logic.
-NO_RULE_PROVEN = frozenset({
-    "Cultist Base - Mission Challenge - Pull the Crystal",
-    "Cultist Base - Mission Challenge - Master of Turrets",
-    "Doom Hunter Base - Mission Challenge - Musical Interlude",
-    "Doom Hunter Base - Mission Challenge - Big Reveal",
-    "ARC Complex - Mission Challenge - Rune Finder",
-    "ARC Complex - Mission Challenge - Solitary Confinement",
-    "Mars Core - Mission Challenge - Big Ba-Da Boom",
-    "Mars Core - Mission Challenge - Disarmament",
-    "Mars Core - Mission Challenge - Lock and Key",
-    "Taras Nabad - Mission Challenge - Man Made Wiki",
-    "Taras Nabad - Mission Challenge - Painkiller",
-    "Nekravol - Mission Challenge - Die by the Sword",
-    "Nekravol - Mission Challenge - Tricks and Traps",
-    "Nekravol - Mission Challenge - Doom Hunt",
-    "Nekravol Part II - Mission Challenge - Cut Down to Size",
-    "Nekravol Part II - Mission Challenge - Resurrect No More",
-    "Urdak - Mission Challenge - Accessories Not Included",
-    "Urdak - Mission Challenge - Inflight Devastation",
-})
+NO_RULE_PROVEN = frozenset(
+    {
+        "Cultist Base - Mission Challenge - Pull the Crystal",
+        "Cultist Base - Mission Challenge - Master of Turrets",
+        "Doom Hunter Base - Mission Challenge - Musical Interlude",
+        "Doom Hunter Base - Mission Challenge - Big Reveal",
+        "ARC Complex - Mission Challenge - Rune Finder",
+        "ARC Complex - Mission Challenge - Solitary Confinement",
+        "Mars Core - Mission Challenge - Big Ba-Da Boom",
+        "Mars Core - Mission Challenge - Disarmament",
+        "Mars Core - Mission Challenge - Lock and Key",
+        "Taras Nabad - Mission Challenge - Man Made Wiki",
+        "Taras Nabad - Mission Challenge - Painkiller",
+        "Nekravol - Mission Challenge - Die by the Sword",
+        "Nekravol - Mission Challenge - Tricks and Traps",
+        "Nekravol - Mission Challenge - Doom Hunt",
+        "Nekravol Part II - Mission Challenge - Cut Down to Size",
+        "Nekravol Part II - Mission Challenge - Resurrect No More",
+        "Urdak - Mission Challenge - Accessories Not Included",
+        "Urdak - Mission Challenge - Inflight Devastation",
+    }
+)

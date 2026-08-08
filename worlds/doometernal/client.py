@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
 import runpy
 import sys
@@ -23,12 +24,8 @@ except ImportError:  # packaged launcher audit loads this module standalone
 
 
 def _client_directory() -> Path:
-    configured = settings.get_settings()["doometernal_options"][
-        "client_directory"
-    ]
-    configured_path = Path(
-        os.path.expandvars(os.path.expanduser(str(configured)))
-    )
+    configured = settings.get_settings()["doometernal_options"]["client_directory"]
+    configured_path = Path(os.path.expandvars(os.path.expanduser(str(configured))))
     candidates = [
         configured_path,
         configured_path / "client",
@@ -96,17 +93,15 @@ def launch(*launch_args: str) -> None:
         messagebox("DOOM Eternal bridge mismatch", str(error), error=True)
         return
 
-    print(f"BRIDGE_REVISION={bridge_revision}")
-    print(f"BRIDGE_FILE={bridge.resolve()}")
-    print(f"BRIDGE_SHA256={bridge_sha256}")
-    print(f"BRIDGE_PROTOCOL={BRIDGE_PROTOCOL}")
+    logging.info("BRIDGE_REVISION=%s", bridge_revision)
+    logging.info("BRIDGE_FILE=%s", bridge.resolve())
+    logging.info("BRIDGE_SHA256=%s", bridge_sha256)
+    logging.info("BRIDGE_PROTOCOL=%s", BRIDGE_PROTOCOL)
 
     os.chdir(client_directory)
     sys.path.insert(0, str(client_directory))
     try:
-        bridge_globals = runpy.run_path(
-            str(bridge), run_name="doom_eternal_external_client"
-        )
+        bridge_globals = runpy.run_path(str(bridge), run_name="doom_eternal_external_client")
         bridge_globals["launch"](*launch_args)
     except Exception as error:
         traceback.print_exc()

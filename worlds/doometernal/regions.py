@@ -1,4 +1,3 @@
-
 # Simple list of all regions (levels) in the game
 regions: list[str] = [
     "Menu",
@@ -21,15 +20,13 @@ regions: list[str] = [
     "Nekravol Part II",
     "Urdak",
     "Final Sin",
-
     # DLC 1
     "UAC Atlantica Facility",
     "The Blood Swamps",
     "The Holt",
-
     # DLC 2
     "The World Spear",
     "Reclaimed Earth",
     "Immora",
-    "The Dark Lord"
+    "The Dark Lord",
 ]

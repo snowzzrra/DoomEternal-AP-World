@@ -1,7 +1,8 @@
+from functools import partial
 from typing import ClassVar
 
 import settings
-from BaseClasses import Entrance, Region
+from BaseClasses import CollectionState, Entrance, Region, Tutorial
 from worlds.AutoWorld import WebWorld, World
 from worlds.generic.Rules import forbid_item, set_rule
 from worlds.LauncherComponents import (
@@ -14,6 +15,12 @@ from worlds.LauncherComponents import (
     launch as launch_component,
 )
 
+from .generated_content import (
+    CAMPAIGN_CONNECTIONS,
+    CAMPAIGN_GOAL_LOCATION,
+    CAMPAIGN_REGIONS,
+)
+from .identity import GAME_NAME
 from .items import (
     BASE_CAMPAIGN_SENTINEL_BATTERY_BUNDLES,
     BASE_CAMPAIGN_SENTINEL_BATTERY_SINGLES,
@@ -23,13 +30,7 @@ from .items import (
     item_name_to_id,
     suit_perk_item_names,
 )
-from .identity import GAME_NAME
 from .locations import DoomEternalLocation, location_data_table, location_name_to_id
-from .generated_content import (
-    CAMPAIGN_CONNECTIONS,
-    CAMPAIGN_GOAL_LOCATION,
-    CAMPAIGN_REGIONS,
-)
 from .logic import (
     EXTERNAL_VANILLA_PREREQUISITES,
     build_location_prerequisites,
@@ -43,8 +44,9 @@ from .regions import regions
 from .version import APWORLD_REVISION, BRIDGE_PROTOCOL, COMPILER_REVISION, CONTENT_REVISION
 
 
-def launch_client(*args: str):
-    from .Client import launch
+def launch_client(*args: str) -> None:
+    from .client import launch
+
     launch_component(launch, name="DoomEternalClient", args=args)
 
 
@@ -66,20 +68,30 @@ class DoomEternalSettings(settings.Group):
 
         description = "DOOM Eternal Mod Folder (containing bridge_client.py)"
 
-    client_directory: ClientDirectory = ClientDirectory(
-        "~/DoomEternalArchipelago/client"
-    )
+    client_directory: ClientDirectory = ClientDirectory("~/DoomEternalArchipelago/client")
 
 
 class DoomEternalWeb(WebWorld):
     theme = "dirt"
+    tutorials: list[Tutorial] = [  # noqa: RUF012
+        Tutorial(
+            "DOOM Eternal Setup Guide",
+            "A guide to installing and connecting DOOM Eternal for Archipelago.",
+            "English",
+            "setup_en.md",
+            "setup/en",
+            ["snowzzrra"],
+        )
+    ]
+
 
 class DoomEternalWorld(World):
     """
     Rip and tear, until it is done.
     Doom Eternal Randomizer for Archipelago.
     """
-    game: str = GAME_NAME
+
+    game: ClassVar[str] = GAME_NAME
     web = DoomEternalWeb()
     options_dataclass = DoomEternalOptions
     options: DoomEternalOptions
@@ -94,14 +106,13 @@ class DoomEternalWorld(World):
         return DoomEternalItem(name, item_data.classification, item_data.code, self.player)
 
     @staticmethod
-    def has_sentinel_battery_currency(state, player: int, amount: int) -> bool:
+    def has_sentinel_battery_currency(state: CollectionState, player: int, amount: int) -> bool:
         return (
             state.count("Sentinel Battery", player)
-            + SENTINEL_BATTERY_BUNDLE_VALUE
-            * state.count("Sentinel Battery Bundle", player)
+            + SENTINEL_BATTERY_BUNDLE_VALUE * state.count("Sentinel Battery Bundle", player)
         ) >= amount
 
-    def fill_slot_data(self) -> dict:
+    def fill_slot_data(self) -> dict[str, object]:
         return {
             "death_link": bool(self.options.death_link.value),
             "randomize_dash": bool(self.options.randomize_dash.value),
@@ -111,7 +122,6 @@ class DoomEternalWorld(World):
             "compiler_revision": COMPILER_REVISION,
         }
 
-    # Suffice to say this isn't even close to being complete, but it's a start. I'll be adding more locations, items, and rules as I continue development.
     def create_regions(self) -> None:
         # Create regions
         for region_name in dict.fromkeys((*regions, *CAMPAIGN_REGIONS)):
@@ -143,20 +153,50 @@ class DoomEternalWorld(World):
             # Super Shotgun/Revenant sequence. Keep only that weapon and its
             # bundled Meat Hook out of the PTB pool for now; Rocket Launcher
             # remains in scope.
-            "Heavy Cannon", "Plasma Rifle", "Rocket Launcher",
-            "Ballista", "Chaingun",
-            "Chainsaw", "Frag Grenade", "Blood Punch", "Flame Belch", "Ice Bomb",
-            "Sticky Bombs", "Full Auto", "Precision Bolt", "Micro Missiles",
-            "Heat Blast", "Microwave Beam", "Remote Detonate", "Lock-on Burst",
-            "Arbalest", "Destroyer Blade", "Energy Shield", "Mobile Turret",
-            "Savagery", "Seek and Destroy", "Blood Fueled", "Air Control",
-            "Dazed and Confused", "Saving Throw", "Chrono Strike",
-            "Equipment Fiend", "Punch and Reave",
-            "Sticky Bombs Mastery", "Full Auto Mastery", "Micro Missiles Mastery",
-            "Heat Blast Mastery", "Microwave Beam Mastery", "Lock-on Burst Mastery",
-            "Arbalest Mastery", "Energy Shield Mastery", "Mobile Turret Mastery",
-            "Precision Bolt Mastery", "Remote Detonate Mastery",
-            "Destroyer Blade Mastery", "Meat Hook Mastery",
+            "Heavy Cannon",
+            "Plasma Rifle",
+            "Rocket Launcher",
+            "Ballista",
+            "Chaingun",
+            "Chainsaw",
+            "Frag Grenade",
+            "Blood Punch",
+            "Flame Belch",
+            "Ice Bomb",
+            "Sticky Bombs",
+            "Full Auto",
+            "Precision Bolt",
+            "Micro Missiles",
+            "Heat Blast",
+            "Microwave Beam",
+            "Remote Detonate",
+            "Lock-on Burst",
+            "Arbalest",
+            "Destroyer Blade",
+            "Energy Shield",
+            "Mobile Turret",
+            "Savagery",
+            "Seek and Destroy",
+            "Blood Fueled",
+            "Air Control",
+            "Dazed and Confused",
+            "Saving Throw",
+            "Chrono Strike",
+            "Equipment Fiend",
+            "Punch and Reave",
+            "Sticky Bombs Mastery",
+            "Full Auto Mastery",
+            "Micro Missiles Mastery",
+            "Heat Blast Mastery",
+            "Microwave Beam Mastery",
+            "Lock-on Burst Mastery",
+            "Arbalest Mastery",
+            "Energy Shield Mastery",
+            "Mobile Turret Mastery",
+            "Precision Bolt Mastery",
+            "Remote Detonate Mastery",
+            "Destroyer Blade Mastery",
+            "Meat Hook Mastery",
             *(["Progressive Health Upgrade"] * 4),
             *(["Progressive Armor Upgrade"] * 4),
             *(["Progressive Ammo Upgrade"] * 4),
@@ -164,9 +204,9 @@ class DoomEternalWorld(World):
         pool_names.extend(self.multiworld.random.sample(suit_perk_item_names, 6))
 
         if not self.options.randomize_chainsaw:
-            self.multiworld.get_location(
-                "Hell on Earth - Chainsaw", self.player
-            ).place_locked_item(self.create_item("Chainsaw"))
+            self.multiworld.get_location("Hell on Earth - Chainsaw", self.player).place_locked_item(
+                self.create_item("Chainsaw")
+            )
             pool_names.remove("Chainsaw")
 
         if self.options.randomize_dash:
@@ -182,16 +222,10 @@ class DoomEternalWorld(World):
             self.multiworld.get_location(
                 "Exultia - Sentinel Battery - King Novik Return Path", self.player
             ).place_locked_item(self.create_item("Sentinel Battery"))
-            pool_names.extend(
-                ["Sentinel Battery"] * (randomized_battery_singles - 1)
-            )
-        pool_names.extend(
-            ["Sentinel Battery Bundle"] * BASE_CAMPAIGN_SENTINEL_BATTERY_BUNDLES
-        )
+            pool_names.extend(["Sentinel Battery"] * (randomized_battery_singles - 1))
+        pool_names.extend(["Sentinel Battery Bundle"] * BASE_CAMPAIGN_SENTINEL_BATTERY_BUNDLES)
 
-        self.multiworld.get_location(
-            CAMPAIGN_GOAL_LOCATION, self.player
-        ).place_locked_item(self.create_item("Victory"))
+        self.multiworld.get_location(CAMPAIGN_GOAL_LOCATION, self.player).place_locked_item(self.create_item("Victory"))
 
         locations_count = len(self.multiworld.get_unfilled_locations(self.player))
 
@@ -249,26 +283,19 @@ class DoomEternalWorld(World):
         )
 
         prerequisite_table = build_location_prerequisites(set(location_data_table))
-        validate_location_prerequisites(
-            prerequisite_table, set(location_data_table), set(item_data_table)
-        )
+        validate_location_prerequisites(prerequisite_table, set(location_data_table), set(item_data_table))
         validate_external_vanilla_prerequisites(
             EXTERNAL_VANILLA_PREREQUISITES,
             prerequisite_table,
             set(location_data_table),
             set(item_data_table),
-            {
-                item.name for item in self.multiworld.get_items()
-                if item.player == self.player
-            },
+            {item.name for item in self.multiworld.get_items() if item.player == self.player},
         )
         for location_name, requirement in prerequisite_table.items():
             location = self.multiworld.get_location(location_name, self.player)
             set_rule(
                 location,
-                lambda state, requirement=requirement: requirement_satisfied(
-                    requirement, state, self.player
-                ),
+                partial(requirement_satisfied, requirement, player=self.player),
             )
             for item_name in required_item_names(requirement):
                 forbid_item(location, item_name, self.player)
@@ -276,6 +303,4 @@ class DoomEternalWorld(World):
                 forbid_item(location, "Sentinel Battery", self.player)
                 forbid_item(location, "Sentinel Battery Bundle", self.player)
 
-        self.multiworld.completion_condition[self.player] = (
-            lambda state: state.has("Victory", self.player)
-        )
+        self.multiworld.completion_condition[self.player] = lambda state: state.has("Victory", self.player)

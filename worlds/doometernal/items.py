@@ -2,18 +2,17 @@ from typing import NamedTuple
 
 from BaseClasses import Item, ItemClassification
 
-try:
-    from .identity import GAME_NAME
-except ImportError:  # build_apworld_identity loads this module standalone
-    GAME_NAME = "DOOM Eternal"
+from .identity import GAME_NAME
 
 
 class DoomEternalItem(Item):
     game: str = GAME_NAME
 
+
 class ItemData(NamedTuple):
     code: int | None
     classification: ItemClassification
+
 
 ITEM_ID_BASE = 7770000
 
@@ -110,7 +109,6 @@ item_data_table: dict[str, ItemData] = {
     "Extended Ice Bomb Duration": ItemData(7770116, ItemClassification.useful),
     "Health from Frozen Demons": ItemData(7770117, ItemClassification.useful),
     "Frozen Melee Shatter": ItemData(7770118, ItemClassification.useful),
-
     # Useful Items
     # Kept for compatibility with old data packages. New seeds use named runes.
     "Rune": ItemData(7770020, ItemClassification.useful),
@@ -124,7 +122,6 @@ item_data_table: dict[str, ItemData] = {
     "BFG Ammo": ItemData(7770028, ItemClassification.useful),
     "Soulsphere": ItemData(7770029, ItemClassification.useful),
     "Berserk": ItemData(7770030, ItemClassification.useful),
-
     # Filler Items
     "Small Health": ItemData(7770031, ItemClassification.filler),
     "Large Health": ItemData(7770032, ItemClassification.filler),
@@ -138,7 +135,6 @@ item_data_table: dict[str, ItemData] = {
     "One Extra Life": ItemData(7770040, ItemClassification.filler),
     "Armor Shard": ItemData(7770041, ItemClassification.filler),
     "Ammo Cache": ItemData(7770042, ItemClassification.filler),
-
     # Traps
     "Imp Trap": ItemData(7770043, ItemClassification.trap),
     "Carcass Trap": ItemData(7770044, ItemClassification.trap),
@@ -154,33 +150,28 @@ item_data_table: dict[str, ItemData] = {
     "Ammo Drain Trap": ItemData(7770054, ItemClassification.trap),
     "Fuel Drain Trap": ItemData(7770055, ItemClassification.trap),
     "BFG Drain Trap": ItemData(7770056, ItemClassification.trap),
-
     # Locked to the runtime mission-completion check; it has no in-game command.
     "Victory": ItemData(7770096, ItemClassification.progression),
 }
 
-item_name_to_id = {
-    name: data.code for name, data in item_data_table.items()
-    if data.code is not None
-}
+item_name_to_id = {name: data.code for name, data in item_data_table.items() if data.code is not None}
 
 suit_perk_item_names = [
-    name for name, data in item_data_table.items()
-    if data.code is not None and 7770097 <= data.code <= 7770121
+    name for name, data in item_data_table.items() if data.code is not None and 7770097 <= data.code <= 7770121
 ]
 
 # Canonical eligibility for the parent Dossier > Suit page. Crystal
 # progressives are displayed there; Frag and Ice have vanilla Suit-family
 # preReqStats. Flame Belch is not part of that Suit group, so its base item is
 # deliberately not a page unlocker.
-SUIT_PAGE_UNLOCKING_ITEM_NAMES = frozenset({
-    "Progressive Health Upgrade",
-    "Progressive Armor Upgrade",
-    "Progressive Ammo Upgrade",
-    "Frag Grenade",
-    "Ice Bomb",
-    *suit_perk_item_names,
-})
-SUIT_PAGE_UNLOCKING_ITEM_IDS = frozenset(
-    item_data_table[name].code for name in SUIT_PAGE_UNLOCKING_ITEM_NAMES
+SUIT_PAGE_UNLOCKING_ITEM_NAMES = frozenset(
+    {
+        "Progressive Health Upgrade",
+        "Progressive Armor Upgrade",
+        "Progressive Ammo Upgrade",
+        "Frag Grenade",
+        "Ice Bomb",
+        *suit_perk_item_names,
+    }
 )
+SUIT_PAGE_UNLOCKING_ITEM_IDS = frozenset(item_data_table[name].code for name in SUIT_PAGE_UNLOCKING_ITEM_NAMES)

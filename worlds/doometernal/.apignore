@@ -1,0 +1,3 @@
+.apignore
+test/
+sync_version.py

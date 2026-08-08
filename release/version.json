@@ -1,9 +1,0 @@
-{
-  "public_version": "0.4.0-beta.1",
-  "game": "DOOM Eternal",
-  "apworld_revision": "0.4.0-beta.1",
-  "content_revision": "0.4.0-beta.1",
-  "bridge_protocol": 4,
-  "content_schema": 3,
-  "compiler_revision": 1
-}

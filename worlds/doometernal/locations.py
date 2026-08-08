@@ -1,24 +1,11 @@
 """APWorld location facade backed by generated content data."""
 
 from typing import NamedTuple
-import importlib.util
-from pathlib import Path
 
 from BaseClasses import Location
-try:
-    from .identity import GAME_NAME
-except ImportError:  # build_apworld_identity loads this module standalone
-    GAME_NAME = "DOOM Eternal"
 
-try:
-    from .generated_content import LOCATION_NAME_TO_ID, LOCATION_ROWS
-except ImportError:  # build_apworld_identity loads this file outside its package
-    _spec = importlib.util.spec_from_file_location("doometernal_generated_content", Path(__file__).with_name("generated_content.py"))
-    assert _spec and _spec.loader
-    _generated = importlib.util.module_from_spec(_spec)
-    _spec.loader.exec_module(_generated)
-    LOCATION_NAME_TO_ID = _generated.LOCATION_NAME_TO_ID
-    LOCATION_ROWS = _generated.LOCATION_ROWS
+from .generated_content import LOCATION_NAME_TO_ID, LOCATION_ROWS
+from .identity import GAME_NAME
 
 
 class DoomEternalLocation(Location):
