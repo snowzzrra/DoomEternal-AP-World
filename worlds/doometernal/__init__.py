@@ -40,6 +40,7 @@ from .logic import (
 )
 from .options import DoomEternalOptions
 from .regions import regions
+from .version import APWORLD_REVISION, BRIDGE_PROTOCOL, COMPILER_REVISION, CONTENT_REVISION
 
 
 def launch_client(*args: str):
@@ -103,6 +104,11 @@ class DoomEternalWorld(World):
     def fill_slot_data(self) -> dict:
         return {
             "death_link": bool(self.options.death_link.value),
+            "randomize_dash": bool(self.options.randomize_dash.value),
+            "apworld_revision": APWORLD_REVISION,
+            "content_revision": CONTENT_REVISION,
+            "bridge_protocol": BRIDGE_PROTOCOL,
+            "compiler_revision": COMPILER_REVISION,
         }
 
     # Suffice to say this isn't even close to being complete, but it's a start. I'll be adding more locations, items, and rules as I continue development.
@@ -114,6 +120,8 @@ class DoomEternalWorld(World):
 
         # Place locations in their respective regions
         for loc_name, loc_data in location_data_table.items():
+            if loc_name == "Exultia - Dash" and not self.options.randomize_dash:
+                continue
             region = self.multiworld.get_region(loc_data.region, self.player)
             location = DoomEternalLocation(self.player, loc_name, loc_data.code, region)
             region.locations.append(location)
@@ -163,10 +171,6 @@ class DoomEternalWorld(World):
 
         if self.options.randomize_dash:
             pool_names.append("Dash")
-        else:
-            self.multiworld.get_location(
-                "Exultia - Dash", self.player
-            ).place_locked_item(self.create_item("Dash"))
 
         randomized_battery_singles = BASE_CAMPAIGN_SENTINEL_BATTERY_SINGLES
         if self.options.randomize_first_battery:

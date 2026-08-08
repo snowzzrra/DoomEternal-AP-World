@@ -15,11 +15,11 @@ from Utils import messagebox
 
 try:
     from .identity import GAME_NAME, LEGACY_GAME_NAME
+    from .version import BRIDGE_PROTOCOL
 except ImportError:  # packaged launcher audit loads this module standalone
     GAME_NAME = "DOOM Eternal"
     LEGACY_GAME_NAME = "Doom Eternal"
-
-BRIDGE_PROTOCOL = 3
+    BRIDGE_PROTOCOL = 4
 
 
 def _client_directory() -> Path:
