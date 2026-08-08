@@ -29,7 +29,7 @@ def _render_python(version: dict) -> str:
 def _render_manifest(version: dict) -> str:
     return json.dumps({
         "game": version["game"],
-        "authors": ["snow"],
+        "authors": ["snowzzrra"],
         "world_version": version["public_version"].split("-", 1)[0],
         "release_label": version["public_version"],
         "minimum_ap_version": "0.6.7",
