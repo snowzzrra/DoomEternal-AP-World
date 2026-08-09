@@ -40,3 +40,6 @@ Version 0.4.0-beta.1 requires a player-supplied DOOM Eternal installation and ex
 injection is unavailable because EternalModManager has no stable public CLI; its final injector action is manual. Linux
 uses EternalModInjectorShell through Steam/Proton. Back up saves and expect unsupported game updates to require a new
 compatible build.
+
+Players connect through the matching standalone DOOM Eternal launcher. The APWorld is used for generation and does not
+register a client button in Archipelago Launcher.

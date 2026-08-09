@@ -1,20 +1,9 @@
 from functools import partial
 from typing import ClassVar
 
-import settings
 from BaseClasses import CollectionState, Entrance, Region, Tutorial
 from worlds.AutoWorld import WebWorld, World
 from worlds.generic.Rules import forbid_item, set_rule
-from worlds.LauncherComponents import (
-    Component,
-    Type,
-    components,
-    icon_paths,
-)
-from worlds.LauncherComponents import (
-    launch as launch_component,
-)
-
 from .generated_content import (
     CAMPAIGN_CONNECTIONS,
     CAMPAIGN_GOAL_LOCATION,
@@ -44,33 +33,6 @@ from .regions import regions
 from .version import APWORLD_REVISION, BRIDGE_PROTOCOL, COMPILER_REVISION, CONTENT_REVISION
 
 
-def launch_client(*args: str) -> None:
-    from .client import launch
-
-    launch_component(launch, name="DoomEternalClient", args=args)
-
-
-components.append(
-    Component(
-        "DOOM Eternal Client",
-        game_name=GAME_NAME,
-        func=launch_client,
-        component_type=Type.CLIENT,
-        icon="doom_eternal",
-    )
-)
-icon_paths["doom_eternal"] = f"ap:{__name__}/doom_logo.png"
-
-
-class DoomEternalSettings(settings.Group):
-    class ClientDirectory(settings.UserFolderPath):
-        """Folder containing bridge_client.py and the native helper files."""
-
-        description = "DOOM Eternal Mod Folder (containing bridge_client.py)"
-
-    client_directory: ClientDirectory = ClientDirectory("~/DoomEternalArchipelago/client")
-
-
 class DoomEternalWeb(WebWorld):
     theme = "dirt"
     tutorials: list[Tutorial] = [  # noqa: RUF012
@@ -95,7 +57,6 @@ class DoomEternalWorld(World):
     web = DoomEternalWeb()
     options_dataclass = DoomEternalOptions
     options: DoomEternalOptions
-    settings: ClassVar[DoomEternalSettings]
     required_client_version = (0, 6, 7)
 
     item_name_to_id = item_name_to_id
