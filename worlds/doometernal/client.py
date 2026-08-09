@@ -76,13 +76,14 @@ def _bridge_identity(bridge: Path) -> tuple[str, str]:
 def launch(*launch_args: str) -> None:
     client_directory = _client_directory()
     bridge = client_directory / "bridge_client.py"
-    if not bridge.is_file():
+    integration = client_directory / "launcher_integration.py"
+    missing = [path.name for path in (bridge, integration) if not path.is_file()]
+    if missing:
         messagebox(
             "DOOM Eternal Client files not found",
-            f"Searched in: {client_directory}\n\n"
+            f"Searched in: {client_directory}\n\nMissing: {', '.join(missing)}\n\n"
             "Open Archipelago Settings and set "
-            "doom_eternal_options.client_directory to the Mod folder "
-            "where 'bridge_client.py' and 'ap_client.exe' are located.",
+            "doom_eternal_options.client_directory to the extracted release client folder.",
             error=True,
         )
         return
@@ -101,8 +102,14 @@ def launch(*launch_args: str) -> None:
     os.chdir(client_directory)
     sys.path.insert(0, str(client_directory))
     try:
-        bridge_globals = runpy.run_path(str(bridge), run_name="doom_eternal_external_client")
-        bridge_globals["launch"](*launch_args)
+        integration_globals = runpy.run_path(
+            str(integration),
+            run_name="doom_eternal_integrated_launcher",
+        )
+        integration_globals["launch_in_process"](
+            *launch_args,
+            icon_path=str(client_directory / "doom_logo.png"),
+        )
     except Exception as error:
         traceback.print_exc()
         messagebox(
