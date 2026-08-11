@@ -5,6 +5,7 @@ from typing import ClassVar
 from BaseClasses import CollectionState, Entrance, ItemClassification, Region, Tutorial
 from worlds.AutoWorld import WebWorld, World
 from worlds.generic.Rules import forbid_item, set_rule
+
 from .generated_content import (
     CAMPAIGN_CONNECTIONS,
     CAMPAIGN_GOAL_LOCATION,
@@ -14,6 +15,8 @@ from .identity import GAME_NAME
 from .items import (
     BASE_CAMPAIGN_SENTINEL_BATTERY_BUNDLES,
     BASE_CAMPAIGN_SENTINEL_BATTERY_SINGLES,
+    DEVINV_NON_PERSISTENT_USEFUL_ITEM_NAMES,
+    DEVINV_START_INVENTORY_ITEM_NAMES,
     SENTINEL_BATTERY_BUNDLE_VALUE,
     DoomEternalItem,
     item_data_table,
@@ -63,14 +66,58 @@ class DoomEternalWorld(World):
     def generate_early(self) -> None:
         """Common start_inventory is ownership bootstrap, never consumable replay."""
         unsafe = []
-        for name in self.options.start_inventory.value:
+        invalid_quantity = []
+        unavailable = []
+        for name, quantity in self.options.start_inventory.value.items():
             data = item_data_table.get(name)
-            if data is None or not (data.classification & (ItemClassification.progression | ItemClassification.useful)):
+            if data is None:
                 unsafe.append(name)
+                continue
+            if name not in DEVINV_START_INVENTORY_ITEM_NAMES:
+                if data.classification & ItemClassification.trap:
+                    unsafe.append(f"{name} (trap)")
+                elif data.classification & ItemClassification.filler:
+                    unsafe.append(f"{name} (filler/consumable)")
+                elif name in DEVINV_NON_PERSISTENT_USEFUL_ITEM_NAMES:
+                    unsafe.append(f"{name} (consumable)")
+                elif name == "Victory":
+                    unsafe.append(f"{name} (goal item)")
+                else:
+                    unavailable.append(f"{name} (not in current persistent pool)")
+                continue
+            if isinstance(quantity, bool) or not isinstance(quantity, int) or quantity < 1:
+                invalid_quantity.append(name)
+            elif name.startswith("Progressive ") and quantity > 4:
+                invalid_quantity.append(f"{name} (maximum 4 ordered tiers)")
+            elif name in suit_perk_item_names and quantity > 1:
+                invalid_quantity.append(f"{name} (maximum 1 pool copy)")
         if unsafe:
             raise ValueError(
-                "DOOM Eternal start_inventory supports persistent progression/useful items only: "
+                "DOOM Eternal start_inventory cannot contain traps, filler/consumables, or Victory: "
                 + ", ".join(sorted(unsafe))
+            )
+        if unavailable:
+            raise ValueError(
+                "DOOM Eternal start_inventory item is not legal in current persistent pool: "
+                + ", ".join(sorted(unavailable))
+            )
+        if invalid_quantity:
+            raise ValueError(
+                "DOOM Eternal start_inventory has invalid quantity: "
+                + ", ".join(sorted(invalid_quantity))
+            )
+        if self.options.start_inventory.value.get("Chainsaw", 0) and not self.options.randomize_chainsaw.value:
+            raise ValueError("DOOM Eternal start_inventory Chainsaw unavailable when randomize_chainsaw is disabled")
+        if self.options.start_inventory.value.get("Dash", 0) and not self.options.randomize_dash.value:
+            raise ValueError("DOOM Eternal start_inventory Dash unavailable when randomize_dash is disabled")
+        battery_quantity = self.options.start_inventory.value.get("Sentinel Battery", 0)
+        available_batteries = BASE_CAMPAIGN_SENTINEL_BATTERY_SINGLES - (
+            0 if self.options.randomize_first_battery.value else 1
+        )
+        if battery_quantity > available_batteries:
+            raise ValueError(
+                "DOOM Eternal start_inventory Sentinel Battery exceeds current pool quantity: "
+                f"requested {battery_quantity}, available {available_batteries}"
             )
         selected_weapon = self.options.starting_weapon.selected_weapon_name
         if selected_weapon and self.options.start_inventory.value.get(selected_weapon, 0):
@@ -146,6 +193,7 @@ class DoomEternalWorld(World):
             entrance.connect(destination)
 
     def create_items(self) -> None:
+        start_inventory = Counter(self.options.start_inventory.value)
         # Base progression items to seed into the world
         pool_names = [
             # Cultist Base still uses a vanilla scripted reward for the
@@ -195,22 +243,26 @@ class DoomEternalWorld(World):
             *(["Progressive Armor Upgrade"] * 4),
             *(["Progressive Ammo Upgrade"] * 4),
         ]
-        pool_names.extend(self.multiworld.random.sample(suit_perk_item_names, 6))
+        requested_suits = [name for name in suit_perk_item_names if start_inventory[name]]
+        if len(requested_suits) > 6:
+            raise ValueError("DOOM Eternal start_inventory requests more than six Suit perks")
+        pool_names.extend(requested_suits)
+        suit_candidates = [name for name in suit_perk_item_names if name not in requested_suits]
+        pool_names.extend(self.multiworld.random.sample(suit_candidates, 6 - len(requested_suits)))
 
-        if not self.options.randomize_chainsaw:
+        if not self.options.randomize_chainsaw.value:
             pool_names.remove("Chainsaw")
 
-        if self.options.randomize_dash:
+        if self.options.randomize_dash.value:
             pool_names.append("Dash")
 
         randomized_battery_singles = BASE_CAMPAIGN_SENTINEL_BATTERY_SINGLES
-        if self.options.randomize_first_battery:
+        if self.options.randomize_first_battery.value:
             pool_names.extend(["Sentinel Battery"] * randomized_battery_singles)
         else:
             pool_names.extend(["Sentinel Battery"] * (randomized_battery_singles - 1))
         pool_names.extend(["Sentinel Battery Bundle"] * BASE_CAMPAIGN_SENTINEL_BATTERY_BUNDLES)
 
-        start_inventory = Counter(self.options.start_inventory.value)
         available = Counter(pool_names)
         unavailable = {
             name: quantity

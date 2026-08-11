@@ -166,6 +166,33 @@ suit_perk_item_names = [
     name for name, data in item_data_table.items() if data.code is not None and 7770097 <= data.code <= 7770121
 ]
 
+# Persistent items that create_items can actually remove from current base
+# campaign pool. Conditional entries remain legal here; option availability
+# is checked during generation.
+DEVINV_START_INVENTORY_ITEM_NAMES = frozenset({
+    "Heavy Cannon", "Plasma Rifle", "Rocket Launcher", "Super Shotgun", "Ballista", "Chaingun", "Combat Shotgun",
+    "Chainsaw", "Frag Grenade", "Blood Punch", "Flame Belch", "Ice Bomb", "Dash",
+    "Sticky Bombs", "Full Auto", "Precision Bolt", "Micro Missiles", "Heat Blast", "Microwave Beam",
+    "Remote Detonate", "Lock-on Burst", "Arbalest", "Destroyer Blade", "Energy Shield", "Mobile Turret",
+    "Savagery", "Seek and Destroy", "Blood Fueled", "Air Control", "Dazed and Confused", "Saving Throw",
+    "Chrono Strike", "Equipment Fiend", "Punch and Reave", "Sticky Bombs Mastery", "Full Auto Mastery",
+    "Micro Missiles Mastery", "Heat Blast Mastery", "Microwave Beam Mastery", "Lock-on Burst Mastery",
+    "Arbalest Mastery", "Energy Shield Mastery", "Mobile Turret Mastery", "Precision Bolt Mastery",
+    "Remote Detonate Mastery", "Destroyer Blade Mastery", "Meat Hook Mastery",
+    "Progressive Health Upgrade", "Progressive Armor Upgrade", "Progressive Ammo Upgrade",
+    "Faster Ledge Grab", "Faster Weapon Swap", "Faster Dash Recharge", "Dash Refill on Glory Kill",
+    "Reveal Automap Stations", "Reveal Automap Progression Items", "Larger Automap Reveal",
+    "Reveal Dossier Progression Items", "Reduced Hazard Damage", "Reduced Self Damage", "Respawning Barrels",
+    "Ammo from Barrels", "Powerup Extender", "Frag Grenade Cooldown", "Frag Grenade Concussive Blast",
+    "Frag Grenade Cluster Bombs", "Second Frag Grenade", "Ice Bomb Cooldown", "Extended Ice Bomb Duration",
+    "Health from Frozen Demons", "Frozen Melee Shatter", "Sentinel Battery", "Sentinel Battery Bundle",
+})
+
+DEVINV_NON_PERSISTENT_USEFUL_ITEM_NAMES = frozenset({
+    "Extra Life", "Extra Life Pack", "Ammo Refill", "Full Heal", "Full Armor", "Fuel",
+    "BFG Ammo", "Soulsphere", "Berserk",
+})
+
 # Canonical eligibility for the parent Dossier > Suit page. Crystal
 # progressives are displayed there; Frag and Ice have vanilla Suit-family
 # preReqStats. Flame Belch is not part of that Suit group, so its base item is
