@@ -12,6 +12,7 @@ class DoomEternalItem(Item):
 class ItemData(NamedTuple):
     code: int | None
     classification: ItemClassification
+    normal_pool_weapon: bool = False
 
 
 ITEM_ID_BASE = 7770000
@@ -32,13 +33,14 @@ RESERVED_LOCATION_IDS = frozenset({7770055, 7770068})
 
 item_data_table: dict[str, ItemData] = {
     # Progression Items (Weapons & Equipment)
-    "Heavy Cannon": ItemData(7770000, ItemClassification.progression),
-    "Plasma Rifle": ItemData(7770001, ItemClassification.progression),
-    "Rocket Launcher": ItemData(7770002, ItemClassification.progression),
+    "Heavy Cannon": ItemData(7770000, ItemClassification.progression, True),
+    "Plasma Rifle": ItemData(7770001, ItemClassification.progression, True),
+    "Rocket Launcher": ItemData(7770002, ItemClassification.progression, True),
     "Super Shotgun": ItemData(7770003, ItemClassification.progression),
-    "Ballista": ItemData(7770004, ItemClassification.progression),
-    "Chaingun": ItemData(7770005, ItemClassification.progression),
+    "Ballista": ItemData(7770004, ItemClassification.progression, True),
+    "Chaingun": ItemData(7770005, ItemClassification.progression, True),
     "BFG-9000": ItemData(7770006, ItemClassification.progression),
+    "Combat Shotgun": ItemData(7770900, ItemClassification.progression, True),
     "The Unmaykr": ItemData(7770008, ItemClassification.progression),
     "Sentinel Hammer": ItemData(7770009, ItemClassification.progression),
     "Chainsaw": ItemData(7770010, ItemClassification.progression),
@@ -155,6 +157,10 @@ item_data_table: dict[str, ItemData] = {
 }
 
 item_name_to_id = {name: data.code for name, data in item_data_table.items() if data.code is not None}
+
+normal_pool_weapon_item_names = tuple(
+    name for name, data in item_data_table.items() if data.normal_pool_weapon
+)
 
 suit_perk_item_names = [
     name for name, data in item_data_table.items() if data.code is not None and 7770097 <= data.code <= 7770121
