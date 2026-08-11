@@ -17,7 +17,6 @@ class LocationData(NamedTuple):
     region: str
 
 
-# Kept for public compatibility with older tooling.
 LOCATION_ID_BASE = 7770000
 location_data_table: dict[str, LocationData] = {
     name: LocationData(code, region) for name, code, region in LOCATION_ROWS

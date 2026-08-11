@@ -27,7 +27,7 @@ SENTINEL_BATTERY_BUNDLE_VALUE = 2
 
 # Tombstones: never allocate these IDs again in the item namespace.  7770019
 # remains a Hell on Earth location ID; 7770057 remains a Cultist Battery
-# location ID. Their former item allocations are deprecated and never reused.
+# location ID. They are excluded from current item definitions.
 RESERVED_ITEM_IDS = frozenset({7770019, 7770057, 7770105, 7770119, 7770120, 7770121})
 RESERVED_LOCATION_IDS = frozenset({7770055, 7770068})
 
@@ -112,12 +112,11 @@ item_data_table: dict[str, ItemData] = {
     "Health from Frozen Demons": ItemData(7770117, ItemClassification.useful),
     "Frozen Melee Shatter": ItemData(7770118, ItemClassification.useful),
     # Useful Items
-    # Kept for compatibility with old data packages. New seeds use named runes.
     "Rune": ItemData(7770020, ItemClassification.useful),
     "Suit Point": ItemData(7770021, ItemClassification.useful),
     "Extra Life": ItemData(7770022, ItemClassification.useful),
     "Extra Life Pack": ItemData(7770023, ItemClassification.useful),
-    "Ammo Refill": ItemData(7770024, ItemClassification.useful),
+    "Ammo Refill": ItemData(7770024, ItemClassification.filler),
     "Full Heal": ItemData(7770025, ItemClassification.useful),
     "Full Armor": ItemData(7770026, ItemClassification.useful),
     "Fuel": ItemData(7770027, ItemClassification.useful),
@@ -162,13 +161,13 @@ normal_pool_weapon_item_names = tuple(
     name for name, data in item_data_table.items() if data.normal_pool_weapon
 )
 
+PRAETOR_SUIT_UPGRADE_ID_RANGE = range(7770097, 7770122)
 suit_perk_item_names = [
-    name for name, data in item_data_table.items() if data.code is not None and 7770097 <= data.code <= 7770121
+    name
+    for name, data in item_data_table.items()
+    if data.code in PRAETOR_SUIT_UPGRADE_ID_RANGE and data.code not in RESERVED_ITEM_IDS
 ]
 
-# Persistent items that create_items can actually remove from current base
-# campaign pool. Conditional entries remain legal here; option availability
-# is checked during generation.
 DEVINV_START_INVENTORY_ITEM_NAMES = frozenset({
     "Heavy Cannon", "Plasma Rifle", "Rocket Launcher", "Super Shotgun", "Ballista", "Chaingun", "Combat Shotgun",
     "Chainsaw", "Frag Grenade", "Blood Punch", "Flame Belch", "Ice Bomb", "Dash",

@@ -2,7 +2,7 @@ from collections import Counter
 from functools import partial
 from typing import ClassVar
 
-from BaseClasses import CollectionState, Entrance, ItemClassification, Region, Tutorial
+from BaseClasses import Entrance, ItemClassification, Region, Tutorial
 from worlds.AutoWorld import WebWorld, World
 from worlds.generic.Rules import forbid_item, set_rule
 
@@ -17,7 +17,6 @@ from .items import (
     BASE_CAMPAIGN_SENTINEL_BATTERY_SINGLES,
     DEVINV_NON_PERSISTENT_USEFUL_ITEM_NAMES,
     DEVINV_START_INVENTORY_ITEM_NAMES,
-    SENTINEL_BATTERY_BUNDLE_VALUE,
     DoomEternalItem,
     item_data_table,
     item_name_to_id,
@@ -26,15 +25,14 @@ from .items import (
 )
 from .locations import DoomEternalLocation, location_data_table, location_name_to_id
 from .logic import (
-    EXTERNAL_VANILLA_PREREQUISITES,
     build_location_prerequisites,
+    connection_requirement_from_metadata,
+    connection_requirement_satisfied,
     required_item_names,
     requirement_satisfied,
-    validate_external_vanilla_prerequisites,
     validate_location_prerequisites,
 )
-from .options import DoomEternalOptions
-from .regions import regions
+from .options import DoomEternalOptions, resolve_praetor_suit_upgrade_count
 from .version import APWORLD_REVISION, BRIDGE_PROTOCOL, COMPILER_REVISION, CONTENT_REVISION
 
 
@@ -133,13 +131,6 @@ class DoomEternalWorld(World):
         item_data = item_data_table[name]
         return DoomEternalItem(name, item_data.classification, item_data.code, self.player)
 
-    @staticmethod
-    def has_sentinel_battery_currency(state: CollectionState, player: int, amount: int) -> bool:
-        return (
-            state.count("Sentinel Battery", player)
-            + SENTINEL_BATTERY_BUNDLE_VALUE * state.count("Sentinel Battery Bundle", player)
-        ) >= amount
-
     def fill_slot_data(self) -> dict[str, object]:
         start_inventory = dict(self.options.start_inventory.value)
         capabilities = ["room_mod_v1"]
@@ -149,6 +140,8 @@ class DoomEternalWorld(World):
         capabilities.append("starting_weapon_v1")
         return {
             "death_link": bool(self.options.death_link.value),
+            "death_link_mode": self.options.death_link_mode.current_key,
+            "praetor_suit_upgrades_in_pool": self.praetor_suit_upgrades_in_pool,
             "randomize_chainsaw": bool(self.options.randomize_chainsaw.value),
             "randomize_dash": bool(self.options.randomize_dash.value),
             "randomize_first_battery": bool(self.options.randomize_first_battery.value),
@@ -164,8 +157,7 @@ class DoomEternalWorld(World):
         }
 
     def create_regions(self) -> None:
-        # Create regions
-        for region_name in dict.fromkeys((*regions, *CAMPAIGN_REGIONS)):
+        for region_name in CAMPAIGN_REGIONS:
             region = Region(region_name, self.player, self.multiworld)
             self.multiworld.regions.append(region)
 
@@ -182,13 +174,14 @@ class DoomEternalWorld(World):
             location = DoomEternalLocation(self.player, loc_name, loc_data.code, region)
             region.locations.append(location)
 
-        for source_name, destination_name, entrance_name in CAMPAIGN_CONNECTIONS:
+        for source_name, destination_name, entrance_name, condition in CAMPAIGN_CONNECTIONS:
             source = self.multiworld.get_region(source_name, self.player)
             destination = self.multiworld.get_region(destination_name, self.player)
-            if not entrance_name:
+            if not entrance_name and not condition:
                 source.connect(destination)
                 continue
-            entrance = Entrance(self.player, entrance_name, source)
+            generated_entrance_name = entrance_name or f"{source_name} -> {destination_name}"
+            entrance = Entrance(self.player, generated_entrance_name, source)
             source.exits.append(entrance)
             entrance.connect(destination)
 
@@ -196,9 +189,8 @@ class DoomEternalWorld(World):
         start_inventory = Counter(self.options.start_inventory.value)
         # Base progression items to seed into the world
         pool_names = [
-            # Cultist Base still uses a vanilla scripted reward for the
-            # Super Shotgun/Revenant sequence, but Super Shotgun remains
-            # eligible for normal starting-weapon randomization.
+            # Super Shotgun remains eligible for normal starting-weapon
+            # randomization.
             *normal_pool_weapon_item_names,
             "Chainsaw",
             "Frag Grenade",
@@ -244,11 +236,17 @@ class DoomEternalWorld(World):
             *(["Progressive Ammo Upgrade"] * 4),
         ]
         requested_suits = [name for name in suit_perk_item_names if start_inventory[name]]
-        if len(requested_suits) > 6:
-            raise ValueError("DOOM Eternal start_inventory requests more than six Suit perks")
+        requested_suit_count = sum(start_inventory[name] for name in requested_suits)
+        suit_count = self.resolve_praetor_suit_upgrade_count()
+        self.praetor_suit_upgrades_in_pool = suit_count
+        if requested_suit_count > suit_count:
+            raise ValueError(
+                "DOOM Eternal start_inventory requests more Praetor Suit upgrades than option allows: "
+                f"requested {requested_suit_count}, pool limit {suit_count}"
+            )
         pool_names.extend(requested_suits)
         suit_candidates = [name for name in suit_perk_item_names if name not in requested_suits]
-        pool_names.extend(self.multiworld.random.sample(suit_candidates, 6 - len(requested_suits)))
+        pool_names.extend(self.multiworld.random.sample(suit_candidates, suit_count - requested_suit_count))
 
         if not self.options.randomize_chainsaw.value:
             pool_names.remove("Chainsaw")
@@ -298,7 +296,11 @@ class DoomEternalWorld(World):
 
         filler_weights = {
             "Extra Life": 10,
-            "Ammo Refill": 40,
+            "Ammo Refill": 80 if self.options.randomize_chainsaw.value else 20,
+            "Full Heal": 8,
+            "Full Armor": 8,
+            "Soulsphere": 5,
+            "Berserk": 3,
             "Small Health": 10,
             "Small Armor": 1,
             "Large Health": 10,
@@ -333,34 +335,28 @@ class DoomEternalWorld(World):
         pool = [self.create_item(name) for name in pool_names]
         self.multiworld.itempool += pool
 
+    def resolve_praetor_suit_upgrade_count(self) -> int:
+        return resolve_praetor_suit_upgrade_count(
+            self.options.praetor_suit_upgrades_in_pool.value,
+            self.multiworld.random,
+        )
+
     def set_rules(self) -> None:
-        set_rule(
-            self.multiworld.get_entrance("Portal to Exultia", self.player),
-            lambda state: state.has("Heavy Cannon", self.player),
-        )
-
-        set_rule(
-            self.multiworld.get_entrance("Portal to Cultist Base", self.player),
-            lambda state: self.has_sentinel_battery_currency(state, self.player, 1),
-        )
-
-        set_rule(
-            self.multiworld.get_entrance("Continue to Final Sin", self.player),
-            lambda state: state.has("Blood Punch", self.player),
-        )
+        for source_name, destination_name, entrance_name, metadata in CAMPAIGN_CONNECTIONS:
+            if not metadata:
+                continue
+            requirement = connection_requirement_from_metadata(metadata)
+            generated_entrance_name = entrance_name or f"{source_name} -> {destination_name}"
+            set_rule(
+                self.multiworld.get_entrance(generated_entrance_name, self.player),
+                partial(connection_requirement_satisfied, requirement, player=self.player),
+            )
 
         active_location_names = {
             location.name for location in self.multiworld.get_locations(self.player)
         }
         prerequisite_table = build_location_prerequisites(active_location_names)
         validate_location_prerequisites(prerequisite_table, active_location_names, set(item_data_table))
-        validate_external_vanilla_prerequisites(
-            EXTERNAL_VANILLA_PREREQUISITES,
-            prerequisite_table,
-            active_location_names,
-            set(item_data_table),
-            {item.name for item in self.multiworld.get_items() if item.player == self.player},
-        )
         for location_name, requirement in prerequisite_table.items():
             location = self.multiworld.get_location(location_name, self.player)
             set_rule(
@@ -369,8 +365,5 @@ class DoomEternalWorld(World):
             )
             for item_name in required_item_names(requirement):
                 forbid_item(location, item_name, self.player)
-            if requirement.battery_currency:
-                forbid_item(location, "Sentinel Battery", self.player)
-                forbid_item(location, "Sentinel Battery Bundle", self.player)
 
         self.multiworld.completion_condition[self.player] = lambda state: state.has("Victory", self.player)

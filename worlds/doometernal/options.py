@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 
-from Options import Choice, DeathLinkMixin, PerGameCommonOptions, Toggle
+from Options import Choice, DeathLinkMixin, NamedRange, PerGameCommonOptions, Toggle
+
+from .items import suit_perk_item_names
 
 
 class RandomizeChainsaw(Toggle):
@@ -74,9 +76,54 @@ class StartingWeapon(Choice):
         return _STARTING_WEAPON_OPTION_NAMES.get(self.value)
 
 
+class PraetorSuitUpgradesInPool(NamedRange):
+    """Number of individual Praetor Suit upgrades placed in the item pool.
+
+    ``Random`` is resolved from the seeded world RNG. Its bounded, middle-biased
+    range avoids both empty and nearly-complete upgrade sets while explicit
+    values remain available across the full catalog range.
+    """
+
+    display_name = "Praetor Suit Upgrades in Pool"
+    range_start = 0
+    range_end = len(suit_perk_item_names)
+    default = 6
+    special_range_names = {"random": -1}
+
+
+def resolve_praetor_suit_upgrade_count(option_value: int, rng, maximum: int = len(suit_perk_item_names)) -> int:
+    if option_value >= 0:
+        if option_value > maximum:
+            raise ValueError(f"Praetor Suit upgrade count exceeds catalog maximum {maximum}")
+        return option_value
+    if option_value != PraetorSuitUpgradesInPool.special_range_names["random"]:
+        raise ValueError(f"Unknown Praetor Suit upgrade count: {option_value}")
+    lower = max(1, maximum // 3)
+    upper = min(maximum - 1, (2 * maximum + 2) // 3)
+    candidates = list(range(lower, upper + 1))
+    weights = [maximum + 1 - abs(2 * value - maximum) for value in candidates]
+    return rng.choices(candidates, weights=weights, k=1)[0]
+
+
+class DeathLinkMode(Choice):
+    """DeathLink gameplay mode sent to the runtime DeathLink lane.
+
+    Hardcore applies incoming deaths directly. Extra Lives requires verified
+    runtime outcome telemetry; unsupported runtimes reject this mode.
+    """
+
+    display_name = "DeathLink Mode"
+    auto_display_name = True
+    option_hardcore = 0
+    option_extra_lives = 1
+    default = option_hardcore
+
+
 @dataclass
 class DoomEternalOptions(DeathLinkMixin, PerGameCommonOptions):
     randomize_chainsaw: RandomizeChainsaw
     randomize_dash: RandomizeDash
     randomize_first_battery: RandomizeFirstBattery
     starting_weapon: StartingWeapon
+    praetor_suit_upgrades_in_pool: PraetorSuitUpgradesInPool
+    death_link_mode: DeathLinkMode

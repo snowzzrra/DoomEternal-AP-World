@@ -7,31 +7,16 @@ from dataclasses import dataclass
 
 from BaseClasses import CollectionState
 
+from .items import normal_pool_weapon_item_names
+
 MASTERY_SUFFIX = " - Weapon Mastery Challenge"
 MEAT_HOOK_MASTERY_LOCATION = "Meat Hook - Weapon Mastery Challenge"
-MEAT_HOOK_VANILLA_SOURCE = "Cultist Base: scripted Super Shotgun/Meat Hook sequence"
-MARS_BFG_VANILLA_SOURCE = "Mars Core: mandatory route BFG-9000 grant (inventory declaration 4701)"
-NEKRAVOL_CRUCIBLE_VANILLA_SOURCE = "Nekravol: mandatory route Crucible grant (inventory declaration 4137)"
-AUDITED_VANILLA_GRANT_SOURCES = {
-    MEAT_HOOK_VANILLA_SOURCE: {
-        "map": "Cultist Base",
-        "grant": "mandatory scripted Super Shotgun/Meat Hook sequence",
-    },
-    MARS_BFG_VANILLA_SOURCE: {
-        "map": "Mars Core",
-        "grant": "mandatory route BFG-9000 grant 4701",
-    },
-    NEKRAVOL_CRUCIBLE_VANILLA_SOURCE: {
-        "map": "Nekravol",
-        "grant": "mandatory route Crucible grant 4137",
-    },
-}
 
-# Delivery evidence: these base weapons and their mods are separate progression
-# items in the current pool. Combat Shotgun is the starting weapon; Super
-# Shotgun/Meat Hook remain vanilla-scripted, so neither gets an invented AP
-# weapon requirement.
+# Base weapons and mods are separate progression items in current pool. Mod
+# requirements never imply a vanilla grant for a stripped or AP item.
 MOD_BASE_WEAPON_REQUIREMENTS: Mapping[str, str] = {
+    "Full Auto": "Combat Shotgun",
+    "Sticky Bombs": "Combat Shotgun",
     "Precision Bolt": "Heavy Cannon",
     "Micro Missiles": "Heavy Cannon",
     "Heat Blast": "Plasma Rifle",
@@ -47,52 +32,86 @@ MOD_BASE_WEAPON_REQUIREMENTS: Mapping[str, str] = {
 
 @dataclass(frozen=True)
 class LocationRequirement:
+    """Location access from direct item, combat, and battery requirements."""
+
     all_of: tuple[str, ...] = ()
     any_of: tuple[tuple[str, ...], ...] = ()
+    combat_all_of: tuple[str, ...] = ()
+    combat_any_of: tuple[str, ...] = ()
     battery_currency: int = 0
 
 
-@dataclass(frozen=True)
-class ExternalVanillaPrerequisite:
-    kind: str
-    capability: str
-    source: str
-    ap_pool_representation: str
-    rationale: str
-
-
-EXTERNAL_VANILLA_PREREQUISITES: Mapping[str, ExternalVanillaPrerequisite] = {
-    MEAT_HOOK_MASTERY_LOCATION: ExternalVanillaPrerequisite(
-        kind="mandatory_vanilla_grant",
-        capability="Meat Hook",
-        source=MEAT_HOOK_VANILLA_SOURCE,
-        ap_pool_representation="none",
-        rationale="no AP self-lock surface",
-    ),
-    "Mars Core - Mission Challenge - Big Ba-Da Boom": ExternalVanillaPrerequisite(
-        kind="route_guaranteed_vanilla_grant",
-        capability="BFG-9000",
-        source=MARS_BFG_VANILLA_SOURCE,
-        ap_pool_representation="randomized_copy_does_not_replace_route_grant",
-        rationale="the current route grants vanilla BFG 4701 before the challenge",
-    ),
-    "Nekravol - Mission Challenge - Die by the Sword": ExternalVanillaPrerequisite(
-        kind="route_guaranteed_vanilla_grant",
-        capability="Crucible",
-        source=NEKRAVOL_CRUCIBLE_VANILLA_SOURCE,
-        ap_pool_representation="none",
-        rationale="the current route grants vanilla Crucible 4137 before the challenge",
-    ),
+COMBAT_CAPABILITIES: Mapping[str, tuple[tuple[str, ...], ...]] = {
+    "weak_point": (("Heavy Cannon", "Precision Bolt"), ("Ballista",), ("Combat Shotgun", "Sticky Bombs")),
+    "flame_belch": (("Flame Belch",),),
+    "frag_grenade": (("Frag Grenade",),),
+    "plasma_rifle": (("Plasma Rifle",),),
+    "ice_bomb": (("Ice Bomb",),),
+    "blood_punch": (("Blood Punch",),),
 }
+
+WEAPON_COVERAGE_PREFIX = "weapon_coverage_"
+NORMAL_WEAPON_NAMES = frozenset(normal_pool_weapon_item_names)
+def weapon_coverage_capability(required_count: int) -> str:
+    if required_count < 1:
+        raise ValueError("Weapon coverage threshold must be positive")
+    return f"{WEAPON_COVERAGE_PREFIX}{required_count}"
+
+
+def weapon_coverage_threshold(capability: str) -> int | None:
+    if not capability.startswith(WEAPON_COVERAGE_PREFIX):
+        return None
+    raw_threshold = capability.removeprefix(WEAPON_COVERAGE_PREFIX)
+    try:
+        threshold = int(raw_threshold)
+    except ValueError as error:
+        raise ValueError(f"Invalid weapon coverage capability: {capability}") from error
+    if threshold < 1:
+        raise ValueError(f"Invalid weapon coverage capability: {capability}")
+    return threshold
+
+
+def weapon_coverage_satisfied(state: CollectionState, player: int, required_count: int) -> bool:
+    if required_count < 1:
+        raise ValueError("Weapon coverage threshold must be positive")
+    return sum(state.has(name, player) for name in NORMAL_WEAPON_NAMES) >= required_count
+
+
+def combat_capability_alternatives(capability: str) -> tuple[tuple[str, ...], ...]:
+    if capability in COMBAT_CAPABILITIES:
+        return COMBAT_CAPABILITIES[capability]
+    if capability.startswith("mod:"):
+        mod_name = capability.removeprefix("mod:")
+        base_weapon = MOD_BASE_WEAPON_REQUIREMENTS.get(mod_name)
+        if base_weapon:
+            return ((base_weapon, mod_name),)
+    raise ValueError(f"Unknown combat capability: {capability}")
+
+
+def _requirement_item_names(requirement: LocationRequirement) -> frozenset[str]:
+    names = set(requirement.all_of)
+    # Only conjunctive requirements can make their own location inaccessible.
+    # Alternatives remain gameplay choices, not placement bans.
+    for capability in requirement.combat_all_of:
+        names.update(
+            item
+            for alternative in combat_capability_alternatives(capability)
+            for item in alternative
+        )
+    return frozenset(names)
 
 
 def build_location_prerequisites(location_names: set[str]) -> dict[str, LocationRequirement]:
     mastery_locations = sorted(name for name in location_names if name.endswith(MASTERY_SUFFIX))
     table: dict[str, LocationRequirement] = {
-        "Cultist Base - Mission Challenge - Armored Rain": LocationRequirement(all_of=("Flame Belch",)),
+        "Cultist Base - Mission Challenge - Armored Rain": LocationRequirement(
+            combat_all_of=("flame_belch",)
+        ),
         # This aggregate is the conjunction of its three native children. Only
         # Armored Rain currently has a proven mandatory inventory prerequisite.
-        "Cultist Base - All Mission Challenges Completed": LocationRequirement(all_of=("Flame Belch",)),
+        "Cultist Base - All Mission Challenges Completed": LocationRequirement(
+            combat_all_of=("flame_belch",)
+        ),
         "Fortress of Doom - Praetor Suit Token - Battery Room Upper East": LocationRequirement(battery_currency=2),
         "Fortress of Doom - Praetor Suit Token - Battery Room Upper West": LocationRequirement(battery_currency=3),
         "Fortress of Doom - Modbot - Battery Room Upper West": LocationRequirement(battery_currency=5),
@@ -106,37 +125,45 @@ def build_location_prerequisites(location_names: set[str]) -> dict[str, Location
         "Fortress of Doom - Praetor Suit": LocationRequirement(battery_currency=2),
         "Fortress of Doom - Sentinel Armor": LocationRequirement(battery_currency=4),
         "Fortress of Doom - Classic Marine Suit": LocationRequirement(battery_currency=6),
-        "Doom Hunter Base - Mission Challenge - Fire in the Hole": LocationRequirement(all_of=("Frag Grenade",)),
-        "Doom Hunter Base - All Mission Challenges Completed": LocationRequirement(all_of=("Frag Grenade",)),
-        "ARC Complex - Mission Challenge - External Combustion": LocationRequirement(all_of=("Plasma Rifle",)),
-        "ARC Complex - All Mission Challenges Completed": LocationRequirement(all_of=("Plasma Rifle",)),
-        "Taras Nabad - Mission Challenge - Keeping Cool": LocationRequirement(all_of=("Ice Bomb",)),
-        "Taras Nabad - All Mission Challenges Completed": LocationRequirement(all_of=("Ice Bomb",)),
-        "Nekravol Part II - Mission Challenge - Punched by Blood": LocationRequirement(all_of=("Blood Punch",)),
-        "Nekravol Part II - All Mission Challenges Completed": LocationRequirement(all_of=("Blood Punch",)),
+        "Doom Hunter Base - Mission Challenge - Fire in the Hole": LocationRequirement(
+            combat_all_of=("frag_grenade",)
+        ),
+        "Doom Hunter Base - All Mission Challenges Completed": LocationRequirement(
+            combat_all_of=("frag_grenade",)
+        ),
+        "ARC Complex - Mission Challenge - External Combustion": LocationRequirement(
+            combat_all_of=("plasma_rifle",)
+        ),
+        "ARC Complex - All Mission Challenges Completed": LocationRequirement(
+            combat_all_of=("plasma_rifle",)
+        ),
+        "Taras Nabad - Mission Challenge - Keeping Cool": LocationRequirement(
+            combat_all_of=("ice_bomb",)
+        ),
+        "Taras Nabad - All Mission Challenges Completed": LocationRequirement(
+            combat_all_of=("ice_bomb",)
+        ),
+        "Nekravol Part II - Mission Challenge - Punched by Blood": LocationRequirement(
+            combat_all_of=("blood_punch",)
+        ),
+        "Nekravol Part II - All Mission Challenges Completed": LocationRequirement(
+            combat_all_of=("blood_punch",)
+        ),
         "Urdak - Mission Challenge - Angel of Death": LocationRequirement(
-            any_of=(
-                ("Heavy Cannon", "Precision Bolt"),
-                ("Ballista",),
-                ("Sticky Bombs",),
-            )
+            combat_any_of=("weak_point",)
         ),
         "Urdak - All Mission Challenges Completed": LocationRequirement(
-            any_of=(
-                ("Heavy Cannon", "Precision Bolt"),
-                ("Ballista",),
-                ("Sticky Bombs",),
-            )
+            combat_any_of=("weak_point",)
         ),
-        "Urdak - Mission Complete": LocationRequirement(all_of=("Blood Punch",)),
     }
     for location_name in mastery_locations:
-        if location_name in EXTERNAL_VANILLA_PREREQUISITES:
+        if location_name in NO_RULE_PROVEN:
             continue
         mod_name = location_name.removesuffix(MASTERY_SUFFIX)
         base_weapon = MOD_BASE_WEAPON_REQUIREMENTS.get(mod_name)
-        requirements = (base_weapon, mod_name) if base_weapon else (mod_name,)
-        table[location_name] = LocationRequirement(all_of=requirements)
+        if base_weapon is None:
+            raise ValueError(f"No audited weapon/mod capability for mastery: {mod_name}")
+        table[location_name] = LocationRequirement(combat_all_of=(f"mod:{mod_name}",))
     return table
 
 
@@ -159,38 +186,19 @@ def validate_location_prerequisites(
         unknown_any = {item for alternative in requirement.any_of for item in alternative if item not in item_names}
         if unknown_any:
             raise ValueError(f"Unknown any_of item(s) for {location_name}: {sorted(unknown_any)}")
+        for capability in (*requirement.combat_all_of, *requirement.combat_any_of):
+            alternatives = combat_capability_alternatives(capability)
+            unknown_combat = {
+                item for alternative in alternatives for item in alternative if item not in item_names
+            }
+            if unknown_combat:
+                raise ValueError(
+                    f"Unknown combat capability item(s) for {location_name}: {sorted(unknown_combat)}"
+                )
         if requirement.battery_currency < 0:
             raise ValueError(f"Negative Battery requirement: {location_name}")
         if requirement.battery_currency and not {"Sentinel Battery", "Sentinel Battery Bundle"}.issubset(item_names):
             raise ValueError(f"Battery items are absent for {location_name}")
-
-
-def validate_external_vanilla_prerequisites(
-    metadata: Mapping[str, ExternalVanillaPrerequisite],
-    prerequisite_table: Mapping[str, LocationRequirement],
-    location_names: set[str],
-    item_names: set[str],
-    active_pool_item_names: set[str],
-) -> None:
-    for location_name, record in metadata.items():
-        if location_name not in location_names:
-            raise ValueError(f"Unknown external prerequisite location: {location_name}")
-        if not isinstance(record, ExternalVanillaPrerequisite):
-            raise ValueError(f"Unknown or unused external prerequisite metadata: {location_name}")
-        expected = EXTERNAL_VANILLA_PREREQUISITES.get(location_name)
-        if expected is None:
-            raise ValueError(f"Unaudited external prerequisite location: {location_name}")
-        if record != expected:
-            raise ValueError(f"External prerequisite contract drift: {location_name}")
-        source_evidence = AUDITED_VANILLA_GRANT_SOURCES.get(record.source)
-        if source_evidence is None:
-            raise ValueError(f"External prerequisite source is not audited: {record.source}")
-        if record.kind == "mandatory_vanilla_grant" and record.capability not in item_names:
-            raise ValueError(f"Unknown external capability: {record.capability}")
-        if record.kind == "mandatory_vanilla_grant" and record.capability in active_pool_item_names:
-            raise ValueError(f"External prerequisite cannot replace active AP item: {record.capability}")
-        if location_name in prerequisite_table:
-            raise ValueError(f"External prerequisite also has an AP access rule: {location_name}")
 
 
 def requirement_satisfied(requirement: LocationRequirement, state: CollectionState, player: int) -> bool:
@@ -202,14 +210,63 @@ def requirement_satisfied(requirement: LocationRequirement, state: CollectionSta
         < requirement.battery_currency
     ):
         return False
-    return not requirement.any_of or any(
+    if requirement.any_of and not any(
         all(state.has(item_name, player) for item_name in alternative) for alternative in requirement.any_of
+    ):
+        return False
+    if not all(
+        any(
+            all(state.has(item_name, player) for item_name in alternative)
+            for alternative in combat_capability_alternatives(capability)
+        )
+        for capability in requirement.combat_all_of
+    ):
+        return False
+    return not requirement.combat_any_of or any(
+        any(
+            all(state.has(item_name, player) for item_name in alternative)
+            for alternative in combat_capability_alternatives(capability)
+        )
+        for capability in requirement.combat_any_of
     )
 
 
+@dataclass(frozen=True)
+class ConnectionRequirement:
+    """Conservative, bypassable gameplay capability for a canonical transition."""
+
+    soft_capabilities: tuple[str, ...] = ()
+
+
+def connection_requirement_satisfied(
+    requirement: ConnectionRequirement, state: CollectionState, player: int
+) -> bool:
+    return all(
+        weapon_coverage_satisfied(state, player, threshold)
+        if (threshold := weapon_coverage_threshold(capability)) is not None
+        else any(
+            all(state.has(item_name, player) for item_name in alternative)
+            for alternative in combat_capability_alternatives(capability)
+        )
+        for capability in requirement.soft_capabilities
+    )
+
+
+def connection_requirement_from_metadata(metadata: Mapping[str, object]) -> ConnectionRequirement:
+    if set(metadata) - {"soft_capabilities"}:
+        raise ValueError(f"Unknown connection condition fields: {sorted(set(metadata) - {'soft_capabilities'})}")
+    capabilities = metadata.get("soft_capabilities", ())
+    if not isinstance(capabilities, (list, tuple)) or any(not isinstance(value, str) for value in capabilities):
+        raise ValueError("Connection soft_capabilities must contain strings")
+    for capability in capabilities:
+        if weapon_coverage_threshold(capability) is None:
+            combat_capability_alternatives(capability)
+    return ConnectionRequirement(tuple(capabilities))
+
+
 def required_item_names(requirement: LocationRequirement) -> frozenset[str]:
-    """Return every item which must be excluded from its own ruled location."""
-    return frozenset(requirement.all_of).union(item for alternative in requirement.any_of for item in alternative)
+    """Return direct and conjunctive combat items to exclude from own ruled location."""
+    return _requirement_item_names(requirement)
 
 
 # Audited checks with no proven mandatory item prerequisite. Keep this explicit
@@ -218,6 +275,7 @@ NO_RULE_PROVEN = frozenset(
     {
         "Cultist Base - Mission Challenge - Pull the Crystal",
         "Cultist Base - Mission Challenge - Master of Turrets",
+        MEAT_HOOK_MASTERY_LOCATION,
         "Doom Hunter Base - Mission Challenge - Musical Interlude",
         "Doom Hunter Base - Mission Challenge - Big Reveal",
         "ARC Complex - Mission Challenge - Rune Finder",
