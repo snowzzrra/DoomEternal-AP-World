@@ -36,7 +36,7 @@ item_data_table: dict[str, ItemData] = {
     "Heavy Cannon": ItemData(7770000, ItemClassification.progression, True),
     "Plasma Rifle": ItemData(7770001, ItemClassification.progression, True),
     "Rocket Launcher": ItemData(7770002, ItemClassification.progression, True),
-    "Super Shotgun": ItemData(7770003, ItemClassification.progression),
+    "Super Shotgun": ItemData(7770003, ItemClassification.progression, True),
     "Ballista": ItemData(7770004, ItemClassification.progression, True),
     "Chaingun": ItemData(7770005, ItemClassification.progression, True),
     "BFG-9000": ItemData(7770006, ItemClassification.progression),

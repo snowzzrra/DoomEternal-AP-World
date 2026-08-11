@@ -149,9 +149,8 @@ class DoomEternalWorld(World):
         # Base progression items to seed into the world
         pool_names = [
             # Cultist Base still uses a vanilla scripted reward for the
-            # Super Shotgun/Revenant sequence. Keep only that weapon and its
-            # bundled Meat Hook out of the PTB pool for now; Rocket Launcher
-            # remains in scope.
+            # Super Shotgun/Revenant sequence, but Super Shotgun remains
+            # eligible for normal starting-weapon randomization.
             *normal_pool_weapon_item_names,
             "Chainsaw",
             "Frag Grenade",

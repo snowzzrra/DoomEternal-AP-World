@@ -2,8 +2,6 @@ from dataclasses import dataclass
 
 from Options import Choice, DeathLinkMixin, PerGameCommonOptions, Toggle
 
-from .items import normal_pool_weapon_item_names
-
 
 class RandomizeChainsaw(Toggle):
     """
@@ -36,8 +34,15 @@ class RandomizeFirstBattery(Toggle):
     default = 0
 
 
+# Keep existing public values stable; new weapons append at next value.
 _STARTING_WEAPON_OPTION_NAMES = {
-    index: name for index, name in enumerate(normal_pool_weapon_item_names, start=1)
+    1: "Heavy Cannon",
+    2: "Plasma Rifle",
+    3: "Rocket Launcher",
+    4: "Ballista",
+    5: "Chaingun",
+    6: "Combat Shotgun",
+    7: "Super Shotgun",
 }
 
 
@@ -50,7 +55,7 @@ class StartingWeapon(Choice):
         f"option_{name.lower().replace(' ', '_').replace('-', '_')}": index
         for index, name in _STARTING_WEAPON_OPTION_NAMES.items()
     })
-    default = normal_pool_weapon_item_names.index("Combat Shotgun") + 1
+    default = 6
 
     @classmethod
     def from_text(cls, text: str):
