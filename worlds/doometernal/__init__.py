@@ -27,6 +27,8 @@ from .items import (
 from .locations import DoomEternalLocation, location_data_table, location_name_to_id
 from .logic import (
     build_location_prerequisites,
+    connection_requirement,
+    mission_clear_event_name,
     required_item_names,
     requirement_satisfied,
     validate_location_prerequisites,
@@ -126,6 +128,11 @@ class DoomEternalWorld(World):
     item_name_to_id = item_name_to_id
     location_name_to_id = location_name_to_id
 
+    def _campaign_entrance_access(self, event_name, requirement, state) -> bool:
+        if event_name and not state.has(event_name, self.player):
+            return False
+        return requirement_satisfied(requirement, state, self.player)
+
     def create_item(self, name: str) -> DoomEternalItem:
         item_data = item_data_table[name]
         return DoomEternalItem(name, item_data.classification, item_data.code, self.player)
@@ -139,7 +146,6 @@ class DoomEternalWorld(World):
         capabilities.append("starting_weapon_v1")
         return {
             "death_link": bool(self.options.death_link.value),
-            "death_link_mode": self.options.death_link_mode.current_key,
             "praetor_suit_upgrades_in_pool": self.praetor_suit_upgrades_in_pool,
             "randomize_chainsaw": bool(self.options.randomize_chainsaw.value),
             "randomize_dash": bool(self.options.randomize_dash.value),
@@ -173,16 +179,59 @@ class DoomEternalWorld(World):
             location = DoomEternalLocation(self.player, loc_name, loc_data.code, region)
             region.locations.append(location)
 
+        mission_clear_events: dict[str, str] = {}
+        for mission_name in {
+            location.removesuffix(" - Mission Complete")
+            for location in location_data_table
+            if location.endswith(" - Mission Complete")
+        }:
+            mission_location = f"{mission_name} - Mission Complete"
+            public_location = self.multiworld.get_location(mission_location, self.player)
+            region = public_location.parent_region
+            if region is None:
+                raise ValueError(f"Mission Complete location has no terminal region: {mission_location}")
+            event_name = mission_clear_event_name(mission_name)
+            event_item = region.add_event(
+                event_name,
+                event_name,
+                rule=lambda state, public_location=public_location: public_location.can_reach(state),
+                location_type=DoomEternalLocation,
+                item_type=DoomEternalItem,
+            )
+            event_item.classification = ItemClassification.progression_skip_balancing
+            mission_clear_events[region.name] = event_name
+
         for source_name, destination_name, entrance_name, condition in CAMPAIGN_CONNECTIONS:
             source = self.multiworld.get_region(source_name, self.player)
             destination = self.multiworld.get_region(destination_name, self.player)
             if not entrance_name and not condition:
-                source.connect(destination)
+                boundary_event = mission_clear_events.get(source_name)
+                if not boundary_event:
+                    source.connect(destination)
+                    continue
+                entrance = source.create_exit(entrance_name or f"{source_name} -> {destination_name}")
+                entrance.connect(destination)
+                set_rule(
+                    entrance,
+                    partial(
+                        self._campaign_entrance_access,
+                        boundary_event,
+                        connection_requirement(condition),
+                    ),
+                )
                 continue
             generated_entrance_name = entrance_name or f"{source_name} -> {destination_name}"
             entrance = Entrance(self.player, generated_entrance_name, source)
             source.exits.append(entrance)
             entrance.connect(destination)
+            set_rule(
+                entrance,
+                partial(
+                    self._campaign_entrance_access,
+                    mission_clear_events.get(source_name),
+                    connection_requirement(condition),
+                ),
+            )
 
     def create_items(self) -> None:
         start_inventory = Counter(self.options.start_inventory.value)
@@ -190,6 +239,7 @@ class DoomEternalWorld(World):
         pool_names = [
             *world_pool_weapon_item_names,
             "Chainsaw",
+            "Meat Hook",
             "Frag Grenade",
             "Blood Punch",
             "Flame Belch",

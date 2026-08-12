@@ -101,15 +101,6 @@ def resolve_praetor_suit_upgrade_count(option_value: int, rng, maximum: int = le
     return rng.choices(candidates, weights=weights, k=1)[0]
 
 
-class DeathLinkMode(Choice):
-    """DeathLink gameplay mode sent to runtime DeathLink lane."""
-
-    display_name = "DeathLink Mode"
-    auto_display_name = True
-    option_hardcore = 0
-    default = option_hardcore
-
-
 @dataclass
 class DoomEternalOptions(DeathLinkMixin, PerGameCommonOptions):
     randomize_chainsaw: RandomizeChainsaw
@@ -117,4 +108,3 @@ class DoomEternalOptions(DeathLinkMixin, PerGameCommonOptions):
     randomize_first_battery: RandomizeFirstBattery
     starting_weapon: StartingWeapon
     praetor_suit_upgrades_in_pool: PraetorSuitUpgradesInPool
-    death_link_mode: DeathLinkMode
