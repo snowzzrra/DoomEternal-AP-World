@@ -20,14 +20,13 @@ from .items import (
     DoomEternalItem,
     item_data_table,
     item_name_to_id,
-    normal_pool_weapon_item_names,
+    starting_weapon_item_names,
+    world_pool_weapon_item_names,
     suit_perk_item_names,
 )
 from .locations import DoomEternalLocation, location_data_table, location_name_to_id
 from .logic import (
     build_location_prerequisites,
-    connection_requirement_from_metadata,
-    connection_requirement_satisfied,
     required_item_names,
     requirement_satisfied,
     validate_location_prerequisites,
@@ -189,9 +188,7 @@ class DoomEternalWorld(World):
         start_inventory = Counter(self.options.start_inventory.value)
         # Base progression items to seed into the world
         pool_names = [
-            # Super Shotgun remains eligible for normal starting-weapon
-            # randomization.
-            *normal_pool_weapon_item_names,
+            *world_pool_weapon_item_names,
             "Chainsaw",
             "Frag Grenade",
             "Blood Punch",
@@ -277,7 +274,7 @@ class DoomEternalWorld(World):
         self.starting_weapon_name = self.options.starting_weapon.selected_weapon_name
         if self.starting_weapon_name is None:
             eligible_weapons = [
-                name for name in normal_pool_weapon_item_names
+                name for name in starting_weapon_item_names
                 if available[name] and not start_inventory[name]
             ]
             if not eligible_weapons:
@@ -342,16 +339,6 @@ class DoomEternalWorld(World):
         )
 
     def set_rules(self) -> None:
-        for source_name, destination_name, entrance_name, metadata in CAMPAIGN_CONNECTIONS:
-            if not metadata:
-                continue
-            requirement = connection_requirement_from_metadata(metadata)
-            generated_entrance_name = entrance_name or f"{source_name} -> {destination_name}"
-            set_rule(
-                self.multiworld.get_entrance(generated_entrance_name, self.player),
-                partial(connection_requirement_satisfied, requirement, player=self.player),
-            )
-
         active_location_names = {
             location.name for location in self.multiworld.get_locations(self.player)
         }

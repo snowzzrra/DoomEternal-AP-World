@@ -16,11 +16,7 @@ class RandomizeChainsaw(Toggle):
 
 
 class RandomizeDash(Toggle):
-    """
-    Randomize the Dash pickup. Dash is not required by the current PTB logic
-    because it is not technically mandatory until Khan Maykr, so enabling this
-    option can place it anywhere allowed by that logic.
-    """
+    """Shuffle the Dash pickup into the item pool."""
 
     display_name = "Randomize Dash"
     default = 0
@@ -106,16 +102,11 @@ def resolve_praetor_suit_upgrade_count(option_value: int, rng, maximum: int = le
 
 
 class DeathLinkMode(Choice):
-    """DeathLink gameplay mode sent to the runtime DeathLink lane.
-
-    Hardcore applies incoming deaths directly. Extra Lives requires verified
-    runtime outcome telemetry; unsupported runtimes reject this mode.
-    """
+    """DeathLink gameplay mode sent to runtime DeathLink lane."""
 
     display_name = "DeathLink Mode"
     auto_display_name = True
     option_hardcore = 0
-    option_extra_lives = 1
     default = option_hardcore
 
 

@@ -7,10 +7,7 @@ from dataclasses import dataclass
 
 from BaseClasses import CollectionState
 
-from .items import normal_pool_weapon_item_names
-
 MASTERY_SUFFIX = " - Weapon Mastery Challenge"
-MEAT_HOOK_MASTERY_LOCATION = "Meat Hook - Weapon Mastery Challenge"
 
 # Base weapons and mods are separate progression items in current pool. Mod
 # requirements never imply a vanilla grant for a stripped or AP item.
@@ -27,6 +24,11 @@ MOD_BASE_WEAPON_REQUIREMENTS: Mapping[str, str] = {
     "Arbalest": "Ballista",
     "Mobile Turret": "Chaingun",
     "Energy Shield": "Chaingun",
+}
+
+# Meat Hook is native to Super Shotgun; its mastery has no separate AP base item.
+NATIVE_MASTERY_BASE_WEAPON_REQUIREMENTS: Mapping[str, str] = {
+    "Meat Hook": "Super Shotgun",
 }
 
 
@@ -49,33 +51,6 @@ COMBAT_CAPABILITIES: Mapping[str, tuple[tuple[str, ...], ...]] = {
     "ice_bomb": (("Ice Bomb",),),
     "blood_punch": (("Blood Punch",),),
 }
-
-WEAPON_COVERAGE_PREFIX = "weapon_coverage_"
-NORMAL_WEAPON_NAMES = frozenset(normal_pool_weapon_item_names)
-def weapon_coverage_capability(required_count: int) -> str:
-    if required_count < 1:
-        raise ValueError("Weapon coverage threshold must be positive")
-    return f"{WEAPON_COVERAGE_PREFIX}{required_count}"
-
-
-def weapon_coverage_threshold(capability: str) -> int | None:
-    if not capability.startswith(WEAPON_COVERAGE_PREFIX):
-        return None
-    raw_threshold = capability.removeprefix(WEAPON_COVERAGE_PREFIX)
-    try:
-        threshold = int(raw_threshold)
-    except ValueError as error:
-        raise ValueError(f"Invalid weapon coverage capability: {capability}") from error
-    if threshold < 1:
-        raise ValueError(f"Invalid weapon coverage capability: {capability}")
-    return threshold
-
-
-def weapon_coverage_satisfied(state: CollectionState, player: int, required_count: int) -> bool:
-    if required_count < 1:
-        raise ValueError("Weapon coverage threshold must be positive")
-    return sum(state.has(name, player) for name in NORMAL_WEAPON_NAMES) >= required_count
-
 
 def combat_capability_alternatives(capability: str) -> tuple[tuple[str, ...], ...]:
     if capability in COMBAT_CAPABILITIES:
@@ -107,11 +82,6 @@ def build_location_prerequisites(location_names: set[str]) -> dict[str, Location
         "Cultist Base - Mission Challenge - Armored Rain": LocationRequirement(
             combat_all_of=("flame_belch",)
         ),
-        # This aggregate is the conjunction of its three native children. Only
-        # Armored Rain currently has a proven mandatory inventory prerequisite.
-        "Cultist Base - All Mission Challenges Completed": LocationRequirement(
-            combat_all_of=("flame_belch",)
-        ),
         "Fortress of Doom - Praetor Suit Token - Battery Room Upper East": LocationRequirement(battery_currency=2),
         "Fortress of Doom - Praetor Suit Token - Battery Room Upper West": LocationRequirement(battery_currency=3),
         "Fortress of Doom - Modbot - Battery Room Upper West": LocationRequirement(battery_currency=5),
@@ -128,42 +98,74 @@ def build_location_prerequisites(location_names: set[str]) -> dict[str, Location
         "Doom Hunter Base - Mission Challenge - Fire in the Hole": LocationRequirement(
             combat_all_of=("frag_grenade",)
         ),
-        "Doom Hunter Base - All Mission Challenges Completed": LocationRequirement(
-            combat_all_of=("frag_grenade",)
-        ),
         "ARC Complex - Mission Challenge - External Combustion": LocationRequirement(
-            combat_all_of=("plasma_rifle",)
-        ),
-        "ARC Complex - All Mission Challenges Completed": LocationRequirement(
             combat_all_of=("plasma_rifle",)
         ),
         "Taras Nabad - Mission Challenge - Keeping Cool": LocationRequirement(
             combat_all_of=("ice_bomb",)
         ),
-        "Taras Nabad - All Mission Challenges Completed": LocationRequirement(
-            combat_all_of=("ice_bomb",)
-        ),
         "Nekravol Part II - Mission Challenge - Punched by Blood": LocationRequirement(
-            combat_all_of=("blood_punch",)
-        ),
-        "Nekravol Part II - All Mission Challenges Completed": LocationRequirement(
             combat_all_of=("blood_punch",)
         ),
         "Urdak - Mission Challenge - Angel of Death": LocationRequirement(
             combat_any_of=("weak_point",)
         ),
-        "Urdak - All Mission Challenges Completed": LocationRequirement(
-            combat_any_of=("weak_point",)
+        "Mars Core - Mission Challenge - Big Ba-Da Boom": LocationRequirement(
+            all_of=("BFG-9000",)
+        ),
+        "Nekravol - Mission Challenge - Die by the Sword": LocationRequirement(
+            all_of=("The Crucible",)
         ),
     }
+    for aggregate_name in sorted(
+        name for name in location_names if name.endswith(" - All Mission Challenges Completed")
+    ):
+        mission_prefix = aggregate_name.removesuffix(" - All Mission Challenges Completed")
+        children = sorted(
+            name
+            for name in location_names
+            if name.startswith(f"{mission_prefix} - Mission Challenge - ")
+        )
+        child_requirements = [table.get(child, LocationRequirement()) for child in children]
+        table[aggregate_name] = LocationRequirement(
+            all_of=tuple(dict.fromkeys(item for requirement in child_requirements for item in requirement.all_of)),
+            any_of=tuple(
+                dict.fromkeys(
+                    alternative
+                    for requirement in child_requirements
+                    for alternative in requirement.any_of
+                )
+            ),
+            combat_all_of=tuple(
+                dict.fromkeys(
+                    capability
+                    for requirement in child_requirements
+                    for capability in requirement.combat_all_of
+                )
+            ),
+            combat_any_of=tuple(
+                dict.fromkeys(
+                    capability
+                    for requirement in child_requirements
+                    for capability in requirement.combat_any_of
+                )
+            ),
+            battery_currency=max(
+                (requirement.battery_currency for requirement in child_requirements),
+                default=0,
+            ),
+        )
     for location_name in mastery_locations:
-        if location_name in NO_RULE_PROVEN:
-            continue
         mod_name = location_name.removesuffix(MASTERY_SUFFIX)
         base_weapon = MOD_BASE_WEAPON_REQUIREMENTS.get(mod_name)
         if base_weapon is None:
-            raise ValueError(f"No audited weapon/mod capability for mastery: {mod_name}")
-        table[location_name] = LocationRequirement(combat_all_of=(f"mod:{mod_name}",))
+            base_weapon = NATIVE_MASTERY_BASE_WEAPON_REQUIREMENTS.get(mod_name)
+        if base_weapon is None:
+            continue
+        if mod_name in NATIVE_MASTERY_BASE_WEAPON_REQUIREMENTS:
+            table[location_name] = LocationRequirement(all_of=(base_weapon,))
+        else:
+            table[location_name] = LocationRequirement(combat_all_of=(f"mod:{mod_name}",))
     return table
 
 
@@ -231,66 +233,6 @@ def requirement_satisfied(requirement: LocationRequirement, state: CollectionSta
     )
 
 
-@dataclass(frozen=True)
-class ConnectionRequirement:
-    """Conservative, bypassable gameplay capability for a canonical transition."""
-
-    soft_capabilities: tuple[str, ...] = ()
-
-
-def connection_requirement_satisfied(
-    requirement: ConnectionRequirement, state: CollectionState, player: int
-) -> bool:
-    return all(
-        weapon_coverage_satisfied(state, player, threshold)
-        if (threshold := weapon_coverage_threshold(capability)) is not None
-        else any(
-            all(state.has(item_name, player) for item_name in alternative)
-            for alternative in combat_capability_alternatives(capability)
-        )
-        for capability in requirement.soft_capabilities
-    )
-
-
-def connection_requirement_from_metadata(metadata: Mapping[str, object]) -> ConnectionRequirement:
-    if set(metadata) - {"soft_capabilities"}:
-        raise ValueError(f"Unknown connection condition fields: {sorted(set(metadata) - {'soft_capabilities'})}")
-    capabilities = metadata.get("soft_capabilities", ())
-    if not isinstance(capabilities, (list, tuple)) or any(not isinstance(value, str) for value in capabilities):
-        raise ValueError("Connection soft_capabilities must contain strings")
-    for capability in capabilities:
-        if weapon_coverage_threshold(capability) is None:
-            combat_capability_alternatives(capability)
-    return ConnectionRequirement(tuple(capabilities))
-
-
 def required_item_names(requirement: LocationRequirement) -> frozenset[str]:
     """Return direct and conjunctive combat items to exclude from own ruled location."""
     return _requirement_item_names(requirement)
-
-
-# Audited checks with no proven mandatory item prerequisite. Keep this explicit
-# so future audits do not silently turn absence of evidence into logic.
-NO_RULE_PROVEN = frozenset(
-    {
-        "Cultist Base - Mission Challenge - Pull the Crystal",
-        "Cultist Base - Mission Challenge - Master of Turrets",
-        MEAT_HOOK_MASTERY_LOCATION,
-        "Doom Hunter Base - Mission Challenge - Musical Interlude",
-        "Doom Hunter Base - Mission Challenge - Big Reveal",
-        "ARC Complex - Mission Challenge - Rune Finder",
-        "ARC Complex - Mission Challenge - Solitary Confinement",
-        "Mars Core - Mission Challenge - Big Ba-Da Boom",
-        "Mars Core - Mission Challenge - Disarmament",
-        "Mars Core - Mission Challenge - Lock and Key",
-        "Taras Nabad - Mission Challenge - Man Made Wiki",
-        "Taras Nabad - Mission Challenge - Painkiller",
-        "Nekravol - Mission Challenge - Die by the Sword",
-        "Nekravol - Mission Challenge - Tricks and Traps",
-        "Nekravol - Mission Challenge - Doom Hunt",
-        "Nekravol Part II - Mission Challenge - Cut Down to Size",
-        "Nekravol Part II - Mission Challenge - Resurrect No More",
-        "Urdak - Mission Challenge - Accessories Not Included",
-        "Urdak - Mission Challenge - Inflight Devastation",
-    }
-)

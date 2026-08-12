@@ -12,7 +12,8 @@ class DoomEternalItem(Item):
 class ItemData(NamedTuple):
     code: int | None
     classification: ItemClassification
-    normal_pool_weapon: bool = False
+    world_pool_weapon: bool = False
+    starting_weapon: bool = False
 
 
 ITEM_ID_BASE = 7770000
@@ -25,22 +26,22 @@ BASE_CAMPAIGN_SENTINEL_BATTERY_BUNDLES = 8
 BASE_CAMPAIGN_SENTINEL_BATTERY_SINGLES = 2
 SENTINEL_BATTERY_BUNDLE_VALUE = 2
 
-# Tombstones: never allocate these IDs again in the item namespace.  7770019
-# remains a Hell on Earth location ID; 7770057 remains a Cultist Battery
-# location ID. They are excluded from current item definitions.
+# Reserved IDs stay unavailable to current item definitions.  7770019 and
+# 7770057 belong to location records; 7770105 and 7770119..7770121 are unused.
 RESERVED_ITEM_IDS = frozenset({7770019, 7770057, 7770105, 7770119, 7770120, 7770121})
 RESERVED_LOCATION_IDS = frozenset({7770055, 7770068})
 
 item_data_table: dict[str, ItemData] = {
     # Progression Items (Weapons & Equipment)
-    "Heavy Cannon": ItemData(7770000, ItemClassification.progression, True),
-    "Plasma Rifle": ItemData(7770001, ItemClassification.progression, True),
-    "Rocket Launcher": ItemData(7770002, ItemClassification.progression, True),
-    "Super Shotgun": ItemData(7770003, ItemClassification.progression, True),
-    "Ballista": ItemData(7770004, ItemClassification.progression, True),
-    "Chaingun": ItemData(7770005, ItemClassification.progression, True),
-    "BFG-9000": ItemData(7770006, ItemClassification.progression),
-    "Combat Shotgun": ItemData(7770900, ItemClassification.progression, True),
+    "Heavy Cannon": ItemData(7770000, ItemClassification.progression, True, True),
+    "Plasma Rifle": ItemData(7770001, ItemClassification.progression, True, True),
+    "Rocket Launcher": ItemData(7770002, ItemClassification.progression, True, True),
+    "Super Shotgun": ItemData(7770003, ItemClassification.progression, True, True),
+    "Ballista": ItemData(7770004, ItemClassification.progression, True, True),
+    "Chaingun": ItemData(7770005, ItemClassification.progression, True, True),
+    "BFG-9000": ItemData(7770006, ItemClassification.progression, True),
+    "The Crucible": ItemData(7770007, ItemClassification.progression, True),
+    "Combat Shotgun": ItemData(7770900, ItemClassification.progression, True, True),
     "The Unmaykr": ItemData(7770008, ItemClassification.progression),
     "Sentinel Hammer": ItemData(7770009, ItemClassification.progression),
     "Chainsaw": ItemData(7770010, ItemClassification.progression),
@@ -157,8 +158,11 @@ item_data_table: dict[str, ItemData] = {
 
 item_name_to_id = {name: data.code for name, data in item_data_table.items() if data.code is not None}
 
-normal_pool_weapon_item_names = tuple(
-    name for name, data in item_data_table.items() if data.normal_pool_weapon
+world_pool_weapon_item_names = tuple(
+    name for name, data in item_data_table.items() if data.world_pool_weapon
+)
+starting_weapon_item_names = tuple(
+    name for name, data in item_data_table.items() if data.starting_weapon
 )
 
 PRAETOR_SUIT_UPGRADE_ID_RANGE = range(7770097, 7770122)
