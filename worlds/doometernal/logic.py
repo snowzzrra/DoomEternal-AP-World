@@ -170,24 +170,19 @@ def build_location_prerequisites(
     for location_name in location_names:
         if location_name.endswith(" - Mission Complete"):
             mission_name = location_name.removesuffix(" - Mission Complete")
+            all_of: tuple[str, ...] = ()
             if mission_name == "Urdak":
-                table[location_name] = LocationRequirement(
-                    all_of=("Blood Punch",),
-                )
-            elif mission_name == "Final Sin":
-                table[location_name] = LocationRequirement()
-            else:
-                table[location_name] = LocationRequirement(
-                    normal_weapon_count=MISSION_COMPLETION_WEAPON_THRESHOLDS.get(
-                        mission_name,
-                        DEFAULT_MISSION_COMPLETION_WEAPON_THRESHOLD,
-                    )
-                )
+                all_of = ("Blood Punch",)
+            normal_weapon_count = MISSION_COMPLETION_WEAPON_THRESHOLDS.get(
+                mission_name,
+                DEFAULT_MISSION_COMPLETION_WEAPON_THRESHOLD,
+            )
             if mission_name == "Hell on Earth" and randomize_chainsaw:
-                table[location_name] = LocationRequirement(
-                    all_of=("Chainsaw",),
-                    normal_weapon_count=MISSION_COMPLETION_WEAPON_THRESHOLDS[mission_name],
-                )
+                all_of = (*all_of, "Chainsaw")
+            table[location_name] = LocationRequirement(
+                all_of=all_of,
+                normal_weapon_count=normal_weapon_count,
+            )
     for location_name in FORTRESS_BATTERY_CONSUMER_LOCATIONS & location_names:
         table[location_name] = LocationRequirement(battery_currency=2)
     for location_name in mastery_locations:

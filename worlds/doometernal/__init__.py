@@ -167,6 +167,8 @@ class DoomEternalWorld(World):
             "randomize_chainsaw": bool(self.options.randomize_chainsaw.value),
             "randomize_dash": bool(self.options.randomize_dash.value),
             "randomize_first_battery": bool(self.options.randomize_first_battery.value),
+            "trap_percentage": int(self.options.trap_percentage.value),
+            "enabled_traps": sorted(self.options.enabled_traps.value),
             "start_with_automap": bool(self.options.start_with_automap.value),
             "apworld_revision": APWORLD_REVISION,
             "content_revision": CONTENT_REVISION,
@@ -388,31 +390,20 @@ class DoomEternalWorld(World):
             "Large Health": 10,
             "Large Armor": 10,
             "Armor Shard": 5,
-            "Imp Trap": 2,
-            "Carcass Trap": 2,
-            "Revenant Trap": 2,
-            "Arachnotron Trap": 2,
-            "Hell Knight Trap": 2,
-            "Dread Knight Trap": 2,
-            "Baron Trap": 2,
-            "Tyrant Trap": 2,
-            "Marauder Trap": 2,
-            "Archvile Trap": 2,
-            "Cueball Trap": 2,
-            "Ammo Drain Trap": 2,
-            "Fuel Drain Trap": 2,
-            "BFG Drain Trap": 2,
         }
 
-        # Pad with filler
+        # Pad with filler; traps replace only this padding.
         amount_needed = locations_count - len(pool_names)
         if amount_needed > 0:
+            enabled_traps = sorted(self.options.enabled_traps.value)
+            trap_count = amount_needed * self.options.trap_percentage.value // 100 if enabled_traps else 0
             fillers = self.multiworld.random.choices(
                 list(filler_weights),
                 weights=list(filler_weights.values()),
-                k=amount_needed,
+                k=amount_needed - trap_count,
             )
             pool_names.extend(fillers)
+            pool_names.extend(self.multiworld.random.choices(enabled_traps, k=trap_count))
 
         pool = [self.create_item(name) for name in pool_names]
         self.multiworld.itempool += pool

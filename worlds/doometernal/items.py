@@ -158,6 +158,23 @@ item_data_table: dict[str, ItemData] = {
 
 item_name_to_id = {name: data.code for name, data in item_data_table.items() if data.code is not None}
 
+SAFE_TRAP_NAMES = frozenset({
+    "Imp Trap",
+    "Carcass Trap",
+    "Revenant Trap",
+    "Arachnotron Trap",
+    "Hell Knight Trap",
+    "Dread Knight Trap",
+    "Baron Trap",
+    "Tyrant Trap",
+    "Marauder Trap",
+    "Archvile Trap",
+    "Cueball Trap",
+    "Ammo Drain Trap",
+    "Fuel Drain Trap",
+    "BFG Drain Trap",
+})
+
 world_pool_weapon_item_names = tuple(
     name for name, data in item_data_table.items() if data.world_pool_weapon
 )

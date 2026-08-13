@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
-from Options import Choice, DeathLinkMixin, NamedRange, PerGameCommonOptions, Toggle
+from Options import Choice, DeathLinkMixin, NamedRange, OptionSet, PerGameCommonOptions, Range, Toggle
 
-from .items import suit_perk_item_names
+from .items import SAFE_TRAP_NAMES, suit_perk_item_names
 
 
 class RandomizeChainsaw(Toggle):
@@ -39,6 +39,23 @@ class StartWithAutomap(Toggle):
     default = 0
 
 
+class TrapPercentage(Range):
+    """Percentage of filler padding replaced by enabled traps."""
+
+    display_name = "Trap Percentage"
+    range_start = 0
+    range_end = 100
+    default = 10
+
+
+class EnabledTraps(OptionSet):
+    """Trap types eligible for filler-padding replacement."""
+
+    display_name = "Enabled Traps"
+    valid_keys = SAFE_TRAP_NAMES
+    default = SAFE_TRAP_NAMES
+
+
 class DeathLinkMode(Choice):
     """Select DeathLink behavior for this slot. Soft is the safe default and dispatches each received DeathLink once; Hardcore retries until confirmed."""
 
@@ -48,7 +65,7 @@ class DeathLinkMode(Choice):
     default = option_soft
 
 
-# Keep existing public values stable; new weapons append at next value.
+# Starting Weapon option values are public and stable.
 _STARTING_WEAPON_OPTION_NAMES = {
     1: "Heavy Cannon",
     2: "Plasma Rifle",
@@ -132,3 +149,5 @@ class DoomEternalOptions(DeathLinkMixin, PerGameCommonOptions):
     death_link_mode: DeathLinkMode
     starting_weapon: StartingWeapon
     praetor_suit_upgrades_in_pool: PraetorSuitUpgradesInPool
+    trap_percentage: TrapPercentage
+    enabled_traps: EnabledTraps
