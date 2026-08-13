@@ -2,7 +2,7 @@
 
 # This file has no timestamp: stable input yields a stable diff.
 CONTENT_SCHEMA_VERSION = 3
-CONTENT_REVISION = "0.4.0-beta.3"
+CONTENT_REVISION = "0.4.0-beta.4"
 BRIDGE_PROTOCOL_VERSION = 4
 COMPILER_REVISION = 2
 
@@ -310,7 +310,7 @@ LOCATION_ROWS = (
     ("Mars Core - Infinite Onslaught Cheat Code", 7770277, "Mars Core - Meteor - Martian Chunks"),
     ("Mars Core - BFG-10000 Codex", 7770278, "Mars Core - Hell - Temple of Sin"),
     ("Mars Core - Lost City of Hebeth Codex", 7770279, "Mars Core - Hell - Temple of Sin"),
-    ("Mars Core - Slayer Key - Tentacle Control-Panel Vent", 7770280, "Mars Core - Hell - Temple of Sin"),
+    ("Mars Core - Slayer Key - Tentacle Vent", 7770280, "Mars Core - Hell - Temple of Sin"),
     ("Mars Core - Sentinel Crystal - Flying-Island Blue-Vent Landing", 7770281, "Mars Core - Hell - Temple of Sin"),
     ("Mars Core - Secret Encounter - Post-BFG Cracked-Wall Side Room", 7770283, "Mars Core - Hell - Temple of Sin"),
     ("Mars Core - Secret Encounter - Tentacle Portal Arena", 7770284, "Mars Core - Hell - Temple of Sin"),
@@ -789,7 +789,7 @@ LOCATION_NAMES_BY_REGION = {
         "Mars Core - Quake Champions - Goroth Vinyl Record",
         "Mars Core - BFG-10000 Codex",
         "Mars Core - Lost City of Hebeth Codex",
-        "Mars Core - Slayer Key - Tentacle Control-Panel Vent",
+        "Mars Core - Slayer Key - Tentacle Vent",
         "Mars Core - Sentinel Crystal - Flying-Island Blue-Vent Landing",
         "Mars Core - Secret Encounter - Post-BFG Cracked-Wall Side Room",
         "Mars Core - Secret Encounter - Tentacle Portal Arena",

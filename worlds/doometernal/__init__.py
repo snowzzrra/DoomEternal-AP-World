@@ -63,8 +63,21 @@ class DoomEternalWorld(World):
     options_dataclass = DoomEternalOptions
     options: DoomEternalOptions
 
+    AUTOMAP_STARTING_ITEM = "Reveal Automap Progression Items"
+
     def generate_early(self) -> None:
         """Common start_inventory is ownership bootstrap, never consumable replay."""
+        if self.options.start_with_automap.value:
+            manual_start_inventory = Counter(
+                {
+                    name: quantity
+                    for name, quantity in self.options.start_inventory.value.items()
+                    if name != self.AUTOMAP_STARTING_ITEM
+                }
+            )
+            manual_start_inventory[self.AUTOMAP_STARTING_ITEM] = 1
+            self.options.start_inventory.value.clear()
+            self.options.start_inventory.value.update(manual_start_inventory)
         unsafe = []
         invalid_quantity = []
         unavailable = []
@@ -184,10 +197,6 @@ class DoomEternalWorld(World):
             location = DoomEternalLocation(self.player, loc_name, loc_data.code, region)
             if loc_name in FORTRESS_BATTERY_CONSUMER_LOCATIONS:
                 location.progress_type = LocationProgressType.EXCLUDED
-                location.item_rule = lambda item, player=self.player: (
-                    item.player == player
-                    and item.name in {"Sentinel Battery", "Sentinel Battery Bundle"}
-                )
             region.locations.append(location)
 
         mission_clear_events: dict[str, str] = {}
@@ -299,7 +308,11 @@ class DoomEternalWorld(World):
             *(["Progressive Armor Upgrade"] * 4),
             *(["Progressive Ammo Upgrade"] * 4),
         ]
-        requested_suits = [name for name in suit_perk_item_names if start_inventory[name]]
+        suit_names = [
+            name for name in suit_perk_item_names
+            if not self.options.start_with_automap.value or name != self.AUTOMAP_STARTING_ITEM
+        ]
+        requested_suits = [name for name in suit_names if start_inventory[name]]
         requested_suit_count = sum(start_inventory[name] for name in requested_suits)
         suit_count = self.resolve_praetor_suit_upgrade_count()
         self.praetor_suit_upgrades_in_pool = suit_count
@@ -308,8 +321,9 @@ class DoomEternalWorld(World):
                 "DOOM Eternal start_inventory requests more Praetor Suit upgrades than option allows: "
                 f"requested {requested_suit_count}, pool limit {suit_count}"
             )
-        pool_names.extend(requested_suits)
-        suit_candidates = [name for name in suit_perk_item_names if name not in requested_suits]
+        for name in requested_suits:
+            pool_names.extend([name] * start_inventory[name])
+        suit_candidates = [name for name in suit_names if name not in requested_suits]
         pool_names.extend(self.multiworld.random.sample(suit_candidates, suit_count - requested_suit_count))
 
         if not self.options.randomize_chainsaw.value:
@@ -317,6 +331,9 @@ class DoomEternalWorld(World):
 
         if self.options.randomize_dash.value:
             pool_names.append("Dash")
+
+        if self.options.start_with_automap.value:
+            pool_names.append(self.AUTOMAP_STARTING_ITEM)
 
         randomized_battery_singles = BASE_CAMPAIGN_SENTINEL_BATTERY_SINGLES
         if self.options.randomize_first_battery.value:
@@ -329,6 +346,7 @@ class DoomEternalWorld(World):
         unavailable = {
             name: quantity
             for name, quantity in start_inventory.items()
+            if name != self.AUTOMAP_STARTING_ITEM
             if available[name] < quantity
         }
         if unavailable:

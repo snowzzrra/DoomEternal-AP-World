@@ -61,7 +61,7 @@ _STARTING_WEAPON_OPTION_NAMES = {
 
 
 class StartingWeapon(Choice):
-    """Choose the weapon you start with. Random selects one eligible weapon when the seed is generated. The selected weapon is removed from the item pool."""
+    """Choose the weapon you start with. Random selects one eligible weapon when the seed is generated. That weapon belongs to your starting inventory."""
 
     display_name = "Starting Weapon"
     option_random_weapon = 0
