@@ -1160,7 +1160,7 @@ CAMPAIGN_CONNECTIONS = (
     ("Exultia - Hell - Precipice of Recompense", "Exultia - Hell - Ichor Expanse", "", {}),
     ("Exultia - Hell - Ichor Expanse", "Exultia - Hell - Isle of Torment", "", {}),
     ("Exultia - Hell - Isle of Torment", "Fortress of Doom - Second Visit", "Return to Fortress after Exultia", {}),
-    ("Fortress of Doom - Second Visit", "Cultist Base - Grotto of Penance", "Portal to Cultist Base", {}),
+    ("Fortress of Doom - Second Visit", "Cultist Base - Grotto of Penance", "Portal to Cultist Base", {'soft_capabilities': ('requires_first_battery',)}),
     ("Cultist Base - Grotto of Penance", "Cultist Base - Station of Inquisition", "", {}),
     ("Cultist Base - Station of Inquisition", "Cultist Base - Basilica of Adjuration", "", {}),
     ("Cultist Base - Basilica of Adjuration", "Cultist Base - Forge of Transfiguration", "", {}),

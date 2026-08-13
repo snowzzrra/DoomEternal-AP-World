@@ -32,10 +32,19 @@ MOD_BASE_WEAPON_REQUIREMENTS: Mapping[str, str] = {
 MISSION_COMPLETION_WEAPON_THRESHOLDS: Mapping[str, int] = {
     "Hell on Earth": 1,
     "Exultia": 2,
-    "Cultist Base": 2,
+    "Cultist Base": 4,
+    "Doom Hunter Base": 5,
+    "Super Gore Nest": 6,
+    "ARC Complex": 7,
 }
-DEFAULT_MISSION_COMPLETION_WEAPON_THRESHOLD = 3
+DEFAULT_MISSION_COMPLETION_WEAPON_THRESHOLD = 7
 MISSION_CLEAR_EVENT_PREFIX = "Internal Mission Clear: "
+
+FORTRESS_BATTERY_CONSUMER_LOCATIONS = frozenset({
+    "Fortress of Doom - Praetor Suit",
+    "Fortress of Doom - Sentinel Armor",
+    "Fortress of Doom - Classic Marine Suit",
+})
 
 
 @dataclass(frozen=True)
@@ -71,12 +80,21 @@ def combat_capability_alternatives(capability: str) -> tuple[tuple[str, ...], ..
     raise ValueError(f"Unknown combat capability: {capability}")
 
 
-def connection_requirement(condition: Mapping[str, object]) -> LocationRequirement:
+def connection_requirement(
+    condition: Mapping[str, object], *, randomize_first_battery: bool = False
+) -> LocationRequirement:
     """Convert generated connection metadata into AP access logic."""
     capabilities = condition.get("soft_capabilities", ())
     if not isinstance(capabilities, (list, tuple)):
         raise ValueError("Generated connection soft_capabilities must be a sequence")
-    return LocationRequirement(combat_all_of=tuple(capabilities))
+    first_battery_gate = "requires_first_battery" in capabilities
+    combat_capabilities = tuple(
+        capability for capability in capabilities if capability != "requires_first_battery"
+    )
+    return LocationRequirement(
+        battery_currency=1 if first_battery_gate and randomize_first_battery else 0,
+        combat_all_of=combat_capabilities,
+    )
 
 
 def mission_clear_event_name(mission_name: str) -> str:
@@ -96,25 +114,14 @@ def _requirement_item_names(requirement: LocationRequirement) -> frozenset[str]:
     return frozenset(names)
 
 
-def build_location_prerequisites(location_names: set[str]) -> dict[str, LocationRequirement]:
+def build_location_prerequisites(
+    location_names: set[str], *, randomize_chainsaw: bool = False
+) -> dict[str, LocationRequirement]:
     mastery_locations = sorted(name for name in location_names if name.endswith(MASTERY_SUFFIX))
     table: dict[str, LocationRequirement] = {
         "Cultist Base - Mission Challenge - Armored Rain": LocationRequirement(
             combat_all_of=("flame_belch",)
         ),
-        "Fortress of Doom - Praetor Suit Token - Battery Room Upper East": LocationRequirement(battery_currency=2),
-        "Fortress of Doom - Praetor Suit Token - Battery Room Upper West": LocationRequirement(battery_currency=3),
-        "Fortress of Doom - Modbot - Battery Room Upper West": LocationRequirement(battery_currency=5),
-        "Fortress of Doom - Modbot - Battery Room Upper East": LocationRequirement(battery_currency=7),
-        "Fortress of Doom - Sentinel Crystal - Battery Room Lower East": LocationRequirement(battery_currency=9),
-        "Fortress of Doom - Sentinel Crystal - Battery Room Lower West": LocationRequirement(battery_currency=11),
-        "Fortress of Doom - Praetor Suit Token - Elevator Room West": LocationRequirement(battery_currency=12),
-        "Fortress of Doom - Praetor Suit Token - Elevator Room East": LocationRequirement(battery_currency=13),
-        "Fortress of Doom - All Runes Cheat Code": LocationRequirement(battery_currency=15),
-        "Fortress of Doom - Fully Upgraded Suit Cheat Code": LocationRequirement(battery_currency=17),
-        "Fortress of Doom - Praetor Suit": LocationRequirement(battery_currency=2),
-        "Fortress of Doom - Sentinel Armor": LocationRequirement(battery_currency=4),
-        "Fortress of Doom - Classic Marine Suit": LocationRequirement(battery_currency=6),
         "Doom Hunter Base - Mission Challenge - Fire in the Hole": LocationRequirement(
             combat_all_of=("frag_grenade",)
         ),
@@ -153,12 +160,26 @@ def build_location_prerequisites(location_names: set[str]) -> dict[str, Location
     for location_name in location_names:
         if location_name.endswith(" - Mission Complete"):
             mission_name = location_name.removesuffix(" - Mission Complete")
-            table[location_name] = LocationRequirement(
-                normal_weapon_count=MISSION_COMPLETION_WEAPON_THRESHOLDS.get(
-                    mission_name,
-                    DEFAULT_MISSION_COMPLETION_WEAPON_THRESHOLD,
+            if mission_name == "Urdak":
+                table[location_name] = LocationRequirement(
+                    all_of=("Blood Punch",),
                 )
-            )
+            elif mission_name == "Final Sin":
+                table[location_name] = LocationRequirement()
+            else:
+                table[location_name] = LocationRequirement(
+                    normal_weapon_count=MISSION_COMPLETION_WEAPON_THRESHOLDS.get(
+                        mission_name,
+                        DEFAULT_MISSION_COMPLETION_WEAPON_THRESHOLD,
+                    )
+                )
+            if mission_name == "Hell on Earth" and randomize_chainsaw:
+                table[location_name] = LocationRequirement(
+                    all_of=("Chainsaw",),
+                    normal_weapon_count=MISSION_COMPLETION_WEAPON_THRESHOLDS[mission_name],
+                )
+    for location_name in FORTRESS_BATTERY_CONSUMER_LOCATIONS & location_names:
+        table[location_name] = LocationRequirement(battery_currency=2)
     for location_name in mastery_locations:
         mod_name = location_name.removesuffix(MASTERY_SUFFIX)
         base_weapon = MOD_BASE_WEAPON_REQUIREMENTS.get(mod_name)

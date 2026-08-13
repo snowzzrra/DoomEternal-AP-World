@@ -86,6 +86,12 @@ class PraetorSuitUpgradesInPool(NamedRange):
     default = 6
     special_range_names = {"random": -1}
 
+    @classmethod
+    def get_option_name(cls, value: int) -> str:
+        if value == cls.special_range_names["random"]:
+            return "Random"
+        return super().get_option_name(value)
+
 
 def resolve_praetor_suit_upgrade_count(option_value: int, rng, maximum: int = len(suit_perk_item_names)) -> int:
     if option_value >= 0:

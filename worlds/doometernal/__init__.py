@@ -2,7 +2,7 @@ from collections import Counter
 from functools import partial
 from typing import ClassVar
 
-from BaseClasses import Entrance, ItemClassification, Region, Tutorial
+from BaseClasses import Entrance, ItemClassification, LocationProgressType, Region, Tutorial
 from worlds.AutoWorld import WebWorld, World
 from worlds.generic.Rules import forbid_item, set_rule
 
@@ -28,6 +28,7 @@ from .locations import DoomEternalLocation, location_data_table, location_name_t
 from .logic import (
     build_location_prerequisites,
     connection_requirement,
+    FORTRESS_BATTERY_CONSUMER_LOCATIONS,
     mission_clear_event_name,
     required_item_names,
     requirement_satisfied,
@@ -177,6 +178,8 @@ class DoomEternalWorld(World):
                 continue
             region = self.multiworld.get_region(loc_data.region, self.player)
             location = DoomEternalLocation(self.player, loc_name, loc_data.code, region)
+            if loc_name in FORTRESS_BATTERY_CONSUMER_LOCATIONS:
+                location.progress_type = LocationProgressType.EXCLUDED
             region.locations.append(location)
 
         mission_clear_events: dict[str, str] = {}
@@ -216,7 +219,10 @@ class DoomEternalWorld(World):
                     partial(
                         self._campaign_entrance_access,
                         boundary_event,
-                        connection_requirement(condition),
+                        connection_requirement(
+                            condition,
+                            randomize_first_battery=bool(self.options.randomize_first_battery.value),
+                        ),
                     ),
                 )
                 continue
@@ -229,7 +235,10 @@ class DoomEternalWorld(World):
                 partial(
                     self._campaign_entrance_access,
                     mission_clear_events.get(source_name),
-                    connection_requirement(condition),
+                    connection_requirement(
+                        condition,
+                        randomize_first_battery=bool(self.options.randomize_first_battery.value),
+                    ),
                 ),
             )
 
@@ -392,7 +401,10 @@ class DoomEternalWorld(World):
         active_location_names = {
             location.name for location in self.multiworld.get_locations(self.player)
         }
-        prerequisite_table = build_location_prerequisites(active_location_names)
+        prerequisite_table = build_location_prerequisites(
+            active_location_names,
+            randomize_chainsaw=bool(self.options.randomize_chainsaw.value),
+        )
         validate_location_prerequisites(prerequisite_table, active_location_names, set(item_data_table))
         for location_name, requirement in prerequisite_table.items():
             location = self.multiworld.get_location(location_name, self.player)
