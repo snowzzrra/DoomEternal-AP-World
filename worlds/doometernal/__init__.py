@@ -34,7 +34,7 @@ from .logic import (
     requirement_satisfied,
     validate_location_prerequisites,
 )
-from .options import DoomEternalOptions, resolve_praetor_suit_upgrade_count
+from .options import DeathLinkMode, DoomEternalOptions, resolve_praetor_suit_upgrade_count
 from .version import APWORLD_REVISION, BRIDGE_PROTOCOL, COMPILER_REVISION, CONTENT_REVISION
 
 
@@ -147,10 +147,14 @@ class DoomEternalWorld(World):
         capabilities.append("starting_weapon_v1")
         return {
             "death_link": bool(self.options.death_link.value),
+            "death_link_mode": self.options.death_link_mode.get_option_name(
+                self.options.death_link_mode.value
+            ).lower(),
             "praetor_suit_upgrades_in_pool": self.praetor_suit_upgrades_in_pool,
             "randomize_chainsaw": bool(self.options.randomize_chainsaw.value),
             "randomize_dash": bool(self.options.randomize_dash.value),
             "randomize_first_battery": bool(self.options.randomize_first_battery.value),
+            "start_with_automap": bool(self.options.start_with_automap.value),
             "apworld_revision": APWORLD_REVISION,
             "content_revision": CONTENT_REVISION,
             "bridge_protocol": BRIDGE_PROTOCOL,
@@ -180,6 +184,10 @@ class DoomEternalWorld(World):
             location = DoomEternalLocation(self.player, loc_name, loc_data.code, region)
             if loc_name in FORTRESS_BATTERY_CONSUMER_LOCATIONS:
                 location.progress_type = LocationProgressType.EXCLUDED
+                location.item_rule = lambda item, player=self.player: (
+                    item.player == player
+                    and item.name in {"Sentinel Battery", "Sentinel Battery Bundle"}
+                )
             region.locations.append(location)
 
         mission_clear_events: dict[str, str] = {}

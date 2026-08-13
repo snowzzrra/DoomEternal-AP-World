@@ -32,6 +32,22 @@ class RandomizeFirstBattery(Toggle):
     default = 0
 
 
+class StartWithAutomap(Toggle):
+    """Start with the Automap available."""
+
+    display_name = "Start With Automap"
+    default = 0
+
+
+class DeathLinkMode(Choice):
+    """Select DeathLink behavior for this slot. Soft is the safe default and dispatches each received DeathLink once; Hardcore retries until confirmed."""
+
+    display_name = "DeathLink Mode"
+    option_soft = 0
+    option_hardcore = 1
+    default = option_soft
+
+
 # Keep existing public values stable; new weapons append at next value.
 _STARTING_WEAPON_OPTION_NAMES = {
     1: "Heavy Cannon",
@@ -112,5 +128,7 @@ class DoomEternalOptions(DeathLinkMixin, PerGameCommonOptions):
     randomize_chainsaw: RandomizeChainsaw
     randomize_dash: RandomizeDash
     randomize_first_battery: RandomizeFirstBattery
+    start_with_automap: StartWithAutomap
+    death_link_mode: DeathLinkMode
     starting_weapon: StartingWeapon
     praetor_suit_upgrades_in_pool: PraetorSuitUpgradesInPool

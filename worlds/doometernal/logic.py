@@ -41,6 +41,16 @@ DEFAULT_MISSION_COMPLETION_WEAPON_THRESHOLD = 7
 MISSION_CLEAR_EVENT_PREFIX = "Internal Mission Clear: "
 
 FORTRESS_BATTERY_CONSUMER_LOCATIONS = frozenset({
+    "Fortress of Doom - Sentinel Crystal - Battery Room Lower East",
+    "Fortress of Doom - Sentinel Crystal - Battery Room Lower West",
+    "Fortress of Doom - Praetor Suit Token - Battery Room Upper East",
+    "Fortress of Doom - Praetor Suit Token - Battery Room Upper West",
+    "Fortress of Doom - Modbot - Battery Room Upper West",
+    "Fortress of Doom - Modbot - Battery Room Upper East",
+    "Fortress of Doom - Praetor Suit Token - Elevator Room West",
+    "Fortress of Doom - Praetor Suit Token - Elevator Room East",
+    "Fortress of Doom - All Runes Cheat Code",
+    "Fortress of Doom - Fully Upgraded Suit Cheat Code",
     "Fortress of Doom - Praetor Suit",
     "Fortress of Doom - Sentinel Armor",
     "Fortress of Doom - Classic Marine Suit",
