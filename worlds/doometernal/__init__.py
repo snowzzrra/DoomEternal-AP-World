@@ -310,32 +310,28 @@ class DoomEternalWorld(World):
             *(["Progressive Armor Upgrade"] * 4),
             *(["Progressive Ammo Upgrade"] * 4),
         ]
-        suit_names = [
-            name for name in suit_perk_item_names
-            if not self.options.start_with_automap.value or name != self.AUTOMAP_STARTING_ITEM
-        ]
+        suit_names = suit_perk_item_names
         requested_suits = [name for name in suit_names if start_inventory[name]]
         requested_suit_count = sum(start_inventory[name] for name in requested_suits)
         suit_count = self.resolve_praetor_suit_upgrade_count()
-        self.praetor_suit_upgrades_in_pool = suit_count
-        if requested_suit_count > suit_count:
+        automap_start_count = int(bool(self.options.start_with_automap.value))
+        target_suit_count = max(suit_count, automap_start_count)
+        self.praetor_suit_upgrades_in_pool = target_suit_count - automap_start_count
+        if requested_suit_count > target_suit_count:
             raise ValueError(
                 "DOOM Eternal start_inventory requests more Praetor Suit upgrades than option allows: "
-                f"requested {requested_suit_count}, pool limit {suit_count}"
+                f"requested {requested_suit_count}, pool limit {target_suit_count}"
             )
         for name in requested_suits:
             pool_names.extend([name] * start_inventory[name])
         suit_candidates = [name for name in suit_names if name not in requested_suits]
-        pool_names.extend(self.multiworld.random.sample(suit_candidates, suit_count - requested_suit_count))
+        pool_names.extend(self.multiworld.random.sample(suit_candidates, target_suit_count - requested_suit_count))
 
         if not self.options.randomize_chainsaw.value:
             pool_names.remove("Chainsaw")
 
         if self.options.randomize_dash.value:
             pool_names.append("Dash")
-
-        if self.options.start_with_automap.value:
-            pool_names.append(self.AUTOMAP_STARTING_ITEM)
 
         randomized_battery_singles = BASE_CAMPAIGN_SENTINEL_BATTERY_SINGLES
         if self.options.randomize_first_battery.value:
