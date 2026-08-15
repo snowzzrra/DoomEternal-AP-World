@@ -66,18 +66,11 @@ class DoomEternalWorld(World):
     AUTOMAP_STARTING_ITEM = "Reveal Automap Progression Items"
 
     def generate_early(self) -> None:
-        """Common start_inventory is ownership bootstrap, never consumable replay."""
-        if self.options.start_with_automap.value:
-            manual_start_inventory = Counter(
-                {
-                    name: quantity
-                    for name, quantity in self.options.start_inventory.value.items()
-                    if name != self.AUTOMAP_STARTING_ITEM
-                }
-            )
-            manual_start_inventory[self.AUTOMAP_STARTING_ITEM] = 1
-            self.options.start_inventory.value.clear()
-            self.options.start_inventory.value.update(manual_start_inventory)
+        if (
+            self.options.start_with_automap.value
+            and not self.options.start_inventory.value.get(self.AUTOMAP_STARTING_ITEM, 0)
+        ):
+            self.multiworld.push_precollected(self.create_item(self.AUTOMAP_STARTING_ITEM))
         unsafe = []
         invalid_quantity = []
         unavailable = []
@@ -167,6 +160,7 @@ class DoomEternalWorld(World):
             "randomize_chainsaw": bool(self.options.randomize_chainsaw.value),
             "randomize_dash": bool(self.options.randomize_dash.value),
             "randomize_first_battery": bool(self.options.randomize_first_battery.value),
+            "include_weapon_mastery_challenges": bool(self.options.include_weapon_mastery_challenges.value),
             "trap_percentage": int(self.options.trap_percentage.value),
             "enabled_traps": sorted(self.options.enabled_traps.value),
             "start_with_automap": bool(self.options.start_with_automap.value),
@@ -194,6 +188,8 @@ class DoomEternalWorld(World):
         }
         for loc_name, loc_data in location_data_table.items():
             if loc_name in vanilla_physical_locations and not vanilla_physical_locations[loc_name]:
+                continue
+            if loc_data.region == "Weapon Masteries" and not self.options.include_weapon_mastery_challenges.value:
                 continue
             region = self.multiworld.get_region(loc_data.region, self.player)
             location = DoomEternalLocation(self.player, loc_name, loc_data.code, region)
@@ -311,10 +307,16 @@ class DoomEternalWorld(World):
             *(["Progressive Ammo Upgrade"] * 4),
         ]
         suit_names = suit_perk_item_names
-        requested_suits = [name for name in suit_names if start_inventory[name]]
-        requested_suit_count = sum(start_inventory[name] for name in requested_suits)
+        manual_automap_count = int(bool(start_inventory[self.AUTOMAP_STARTING_ITEM]))
+        option_automap_count = int(bool(self.options.start_with_automap.value))
+        automap_start_count = max(option_automap_count, manual_automap_count)
+        requested_suits = [
+            name for name in suit_names
+            if name != self.AUTOMAP_STARTING_ITEM and start_inventory[name]
+        ]
+        requested_real_suit_count = sum(start_inventory[name] for name in requested_suits)
+        requested_suit_count = requested_real_suit_count + automap_start_count
         suit_count = self.resolve_praetor_suit_upgrade_count()
-        automap_start_count = int(bool(self.options.start_with_automap.value))
         target_suit_count = max(suit_count, automap_start_count)
         self.praetor_suit_upgrades_in_pool = target_suit_count - automap_start_count
         if requested_suit_count > target_suit_count:
@@ -324,8 +326,15 @@ class DoomEternalWorld(World):
             )
         for name in requested_suits:
             pool_names.extend([name] * start_inventory[name])
-        suit_candidates = [name for name in suit_names if name not in requested_suits]
-        pool_names.extend(self.multiworld.random.sample(suit_candidates, target_suit_count - requested_suit_count))
+        suit_candidates = [
+            name for name in suit_names
+            if name != self.AUTOMAP_STARTING_ITEM or not automap_start_count
+            if name not in requested_suits
+        ]
+        pool_names.extend(self.multiworld.random.sample(
+            suit_candidates,
+            target_suit_count - automap_start_count - requested_real_suit_count,
+        ))
 
         if not self.options.randomize_chainsaw.value:
             pool_names.remove("Chainsaw")
@@ -367,6 +376,8 @@ class DoomEternalWorld(World):
         pool_names.remove(self.starting_weapon_name)
         self.multiworld.push_precollected(self.create_item(self.starting_weapon_name))
         for name, quantity in start_inventory.items():
+            if name == self.AUTOMAP_STARTING_ITEM:
+                continue
             for _ in range(quantity):
                 pool_names.remove(name)
 

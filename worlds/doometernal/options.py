@@ -32,6 +32,13 @@ class RandomizeFirstBattery(Toggle):
     default = 0
 
 
+class IncludeWeaponMasteryChallenges(Toggle):
+    """Include the 13 Weapon Mastery Challenge locations."""
+
+    display_name = "Include Weapon Mastery Challenges"
+    default = 1
+
+
 class StartWithAutomap(Toggle):
     """Start with the Automap available."""
 
@@ -145,6 +152,7 @@ class DoomEternalOptions(DeathLinkMixin, PerGameCommonOptions):
     randomize_chainsaw: RandomizeChainsaw
     randomize_dash: RandomizeDash
     randomize_first_battery: RandomizeFirstBattery
+    include_weapon_mastery_challenges: IncludeWeaponMasteryChallenges
     start_with_automap: StartWithAutomap
     death_link_mode: DeathLinkMode
     starting_weapon: StartingWeapon
