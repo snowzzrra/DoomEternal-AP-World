@@ -64,12 +64,14 @@ class DoomEternalWorld(World):
 
     AUTOMAP_STARTING_ITEM = "Reveal Automap Progression Items"
 
+    def effective_starting_inventory(self) -> Counter[str]:
+        """Return every item materialized before normal AP receipt delivery."""
+        inventory = Counter(self.options.start_inventory.value)
+        if self.options.start_with_automap.value:
+            inventory[self.AUTOMAP_STARTING_ITEM] = 1
+        return inventory
+
     def generate_early(self) -> None:
-        if (
-            self.options.start_with_automap.value
-            and not self.options.start_inventory.value.get(self.AUTOMAP_STARTING_ITEM, 0)
-        ):
-            self.multiworld.push_precollected(self.create_item(self.AUTOMAP_STARTING_ITEM))
         unsafe = []
         invalid_quantity = []
         unavailable = []
@@ -129,6 +131,9 @@ class DoomEternalWorld(World):
             raise ValueError(
                 f"Starting Weapon '{selected_weapon}' is redundant with start_inventory"
             )
+        for name, quantity in self.effective_starting_inventory().items():
+            for _ in range(quantity):
+                self.multiworld.push_precollected(self.create_item(name))
     required_client_version = (0, 6, 7)
 
     item_name_to_id = item_name_to_id
@@ -144,7 +149,7 @@ class DoomEternalWorld(World):
         return DoomEternalItem(name, item_data.classification, item_data.code, self.player)
 
     def fill_slot_data(self) -> dict[str, object]:
-        start_inventory = dict(self.options.start_inventory.value)
+        start_inventory = dict(self.effective_starting_inventory())
         capabilities = ["room_mod_v1"]
         capabilities.append("physical_options_v1")
         if start_inventory:
@@ -255,7 +260,7 @@ class DoomEternalWorld(World):
             )
 
     def create_items(self) -> None:
-        start_inventory = Counter(self.options.start_inventory.value)
+        start_inventory = self.effective_starting_inventory()
         # Base progression items to seed into the world
         pool_names = [
             *world_pool_weapon_item_names,
@@ -305,8 +310,7 @@ class DoomEternalWorld(World):
         ]
         suit_names = suit_perk_item_names
         manual_automap_count = int(bool(start_inventory[self.AUTOMAP_STARTING_ITEM]))
-        option_automap_count = int(bool(self.options.start_with_automap.value))
-        automap_start_count = max(option_automap_count, manual_automap_count)
+        automap_start_count = manual_automap_count
         requested_suits = [
             name for name in suit_names
             if name != self.AUTOMAP_STARTING_ITEM and start_inventory[name]
@@ -373,10 +377,9 @@ class DoomEternalWorld(World):
         pool_names.remove(self.starting_weapon_name)
         self.multiworld.push_precollected(self.create_item(self.starting_weapon_name))
         for name, quantity in start_inventory.items():
-            if name == self.AUTOMAP_STARTING_ITEM:
-                continue
-            for _ in range(quantity):
-                pool_names.remove(name)
+            if name != self.AUTOMAP_STARTING_ITEM:
+                for _ in range(quantity):
+                    pool_names.remove(name)
 
         self.multiworld.get_location(CAMPAIGN_GOAL_LOCATION, self.player).place_locked_item(self.create_item("Victory"))
 
