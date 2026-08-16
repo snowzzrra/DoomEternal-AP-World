@@ -2,7 +2,7 @@ from collections import Counter
 from functools import partial
 from typing import ClassVar
 
-from BaseClasses import Entrance, ItemClassification, LocationProgressType, Region, Tutorial
+from BaseClasses import Entrance, ItemClassification, Region, Tutorial
 from worlds.AutoWorld import WebWorld, World
 from worlds.generic.Rules import forbid_item, set_rule
 
@@ -28,7 +28,6 @@ from .locations import DoomEternalLocation, location_data_table, location_name_t
 from .logic import (
     build_location_prerequisites,
     connection_requirement,
-    FORTRESS_BATTERY_CONSUMER_LOCATIONS,
     mission_clear_event_name,
     required_item_names,
     requirement_satisfied,
@@ -193,8 +192,6 @@ class DoomEternalWorld(World):
                 continue
             region = self.multiworld.get_region(loc_data.region, self.player)
             location = DoomEternalLocation(self.player, loc_name, loc_data.code, region)
-            if loc_name in FORTRESS_BATTERY_CONSUMER_LOCATIONS:
-                location.progress_type = LocationProgressType.EXCLUDED
             region.locations.append(location)
 
         mission_clear_events: dict[str, str] = {}
