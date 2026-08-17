@@ -39,10 +39,10 @@ class IncludeWeaponMasteryChallenges(Toggle):
     default = 1
 
 
-class StartWithAutomap(Toggle):
-    """Start with the Automap available."""
+class RevealAPLocationsOnAutomap(Toggle):
+    """Start with the AP progression-item reveal capability on the Automap."""
 
-    display_name = "Start With Automap"
+    display_name = "Reveal AP Locations on Automap"
     default = 0
 
 
@@ -153,7 +153,7 @@ class DoomEternalOptions(DeathLinkMixin, PerGameCommonOptions):
     randomize_dash: RandomizeDash
     randomize_first_battery: RandomizeFirstBattery
     include_weapon_mastery_challenges: IncludeWeaponMasteryChallenges
-    start_with_automap: StartWithAutomap
+    reveal_ap_locations_on_automap: RevealAPLocationsOnAutomap
     death_link_mode: DeathLinkMode
     starting_weapon: StartingWeapon
     praetor_suit_upgrades_in_pool: PraetorSuitUpgradesInPool

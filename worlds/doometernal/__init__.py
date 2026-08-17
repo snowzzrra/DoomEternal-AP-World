@@ -67,7 +67,7 @@ class DoomEternalWorld(World):
     def effective_starting_inventory(self) -> Counter[str]:
         """Return every item materialized before normal AP receipt delivery."""
         inventory = Counter(self.options.start_inventory.value)
-        if self.options.start_with_automap.value:
+        if self.options.reveal_ap_locations_on_automap.value:
             inventory[self.AUTOMAP_STARTING_ITEM] = 1
         return inventory
 
@@ -165,9 +165,9 @@ class DoomEternalWorld(World):
             "randomize_dash": bool(self.options.randomize_dash.value),
             "randomize_first_battery": bool(self.options.randomize_first_battery.value),
             "include_weapon_mastery_challenges": bool(self.options.include_weapon_mastery_challenges.value),
+            "reveal_ap_locations_on_automap": bool(self.options.reveal_ap_locations_on_automap.value),
             "trap_percentage": int(self.options.trap_percentage.value),
             "enabled_traps": sorted(self.options.enabled_traps.value),
-            "start_with_automap": bool(self.options.start_with_automap.value),
             "apworld_revision": APWORLD_REVISION,
             "content_revision": CONTENT_REVISION,
             "bridge_protocol": BRIDGE_PROTOCOL,
