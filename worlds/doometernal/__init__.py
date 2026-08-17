@@ -26,6 +26,7 @@ from .items import (
 )
 from .locations import DoomEternalLocation, location_data_table, location_name_to_id
 from .logic import (
+    FORTRESS_BATTERY_CONSUMER_LOCATIONS,
     build_location_prerequisites,
     connection_requirement,
     mission_clear_event_name,
@@ -131,9 +132,9 @@ class DoomEternalWorld(World):
             raise ValueError(
                 f"Starting Weapon '{selected_weapon}' is redundant with start_inventory"
             )
-        for name, quantity in self.effective_starting_inventory().items():
-            for _ in range(quantity):
-                self.multiworld.push_precollected(self.create_item(name))
+        if self.options.reveal_ap_locations_on_automap.value:
+            if self.AUTOMAP_STARTING_ITEM not in self.options.start_inventory.value:
+                self.multiworld.push_precollected(self.create_item(self.AUTOMAP_STARTING_ITEM))
     required_client_version = (0, 6, 7)
 
     item_name_to_id = item_name_to_id
@@ -239,6 +240,7 @@ class DoomEternalWorld(World):
                         connection_requirement(
                             condition,
                             randomize_first_battery=bool(self.options.randomize_first_battery.value),
+                            randomize_dash=bool(self.options.randomize_dash.value),
                         ),
                     ),
                 )
@@ -255,6 +257,7 @@ class DoomEternalWorld(World):
                     connection_requirement(
                         condition,
                         randomize_first_battery=bool(self.options.randomize_first_battery.value),
+                        randomize_dash=bool(self.options.randomize_dash.value),
                     ),
                 ),
             )
@@ -428,6 +431,8 @@ class DoomEternalWorld(World):
         prerequisite_table = build_location_prerequisites(
             active_location_names,
             randomize_chainsaw=bool(self.options.randomize_chainsaw.value),
+            randomize_dash=bool(self.options.randomize_dash.value),
+            randomize_first_battery=bool(self.options.randomize_first_battery.value),
         )
         validate_location_prerequisites(prerequisite_table, active_location_names, set(item_data_table))
         for location_name, requirement in prerequisite_table.items():
@@ -438,5 +443,10 @@ class DoomEternalWorld(World):
             )
             for item_name in required_item_names(requirement):
                 forbid_item(location, item_name, self.player)
+
+        for location_name in FORTRESS_BATTERY_CONSUMER_LOCATIONS & active_location_names:
+            location = self.multiworld.get_location(location_name, self.player)
+            forbid_item(location, "Sentinel Battery", self.player)
+            forbid_item(location, "Sentinel Battery Bundle", self.player)
 
         self.multiworld.completion_condition[self.player] = lambda state: state.has("Victory", self.player)

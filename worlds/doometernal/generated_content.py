@@ -1234,7 +1234,7 @@ CAMPAIGN_CONNECTIONS = (
     ("Urdak - Infernal Demodulator", "Urdak - The Sanctuary", "", {}),
     ("Urdak - The Sanctuary", "Urdak - Guardians of Sanctuary", "", {}),
     ("Urdak - Guardians of Sanctuary", "Urdak - Abyss of Sanctuary", "", {}),
-    ("Urdak - Abyss of Sanctuary", "Urdak - Dimensional Lacerator", "", {}),
+    ("Urdak - Abyss of Sanctuary", "Urdak - Dimensional Lacerator", "", {'soft_capabilities': ('requires_dash',)}),
     ("Urdak - Dimensional Lacerator", "Urdak - Perse Harmonizer", "", {}),
     ("Urdak - Perse Harmonizer", "Urdak - Xanthous Harmonizer", "", {}),
     ("Urdak - Xanthous Harmonizer", "Urdak - Challenges - Mission Challenges", "Urdak Mission Challenges", {}),

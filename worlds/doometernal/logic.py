@@ -90,18 +90,30 @@ def combat_capability_alternatives(capability: str) -> tuple[tuple[str, ...], ..
     raise ValueError(f"Unknown combat capability: {capability}")
 
 
+def fortress_battery_consumer_cost(*, randomize_first_battery: bool = False) -> int:
+    return len(FORTRESS_BATTERY_CONSUMER_LOCATIONS) * 2 + (1 if randomize_first_battery else 0)
+
+
 def connection_requirement(
-    condition: Mapping[str, object], *, randomize_first_battery: bool = False
+    condition: Mapping[str, object],
+    *,
+    randomize_first_battery: bool = False,
+    randomize_dash: bool = False,
 ) -> LocationRequirement:
     """Convert generated connection metadata into AP access logic."""
     capabilities = condition.get("soft_capabilities", ())
     if not isinstance(capabilities, (list, tuple)):
         raise ValueError("Generated connection soft_capabilities must be a sequence")
     first_battery_gate = "requires_first_battery" in capabilities
+    dash_gate = "requires_dash" in capabilities
     combat_capabilities = tuple(
-        capability for capability in capabilities if capability != "requires_first_battery"
+        capability
+        for capability in capabilities
+        if capability not in {"requires_first_battery", "requires_dash"}
     )
+    all_of: tuple[str, ...] = ("Dash",) if dash_gate and randomize_dash else ()
     return LocationRequirement(
+        all_of=all_of,
         battery_currency=1 if first_battery_gate and randomize_first_battery else 0,
         combat_all_of=combat_capabilities,
     )
@@ -125,7 +137,11 @@ def _requirement_item_names(requirement: LocationRequirement) -> frozenset[str]:
 
 
 def build_location_prerequisites(
-    location_names: set[str], *, randomize_chainsaw: bool = False
+    location_names: set[str],
+    *,
+    randomize_chainsaw: bool = False,
+    randomize_dash: bool = False,
+    randomize_first_battery: bool = False,
 ) -> dict[str, LocationRequirement]:
     mastery_locations = sorted(name for name in location_names if name.endswith(MASTERY_SUFFIX))
     table: dict[str, LocationRequirement] = {
@@ -173,18 +189,19 @@ def build_location_prerequisites(
             all_of: tuple[str, ...] = ()
             if mission_name == "Urdak":
                 all_of = ("Blood Punch",)
+                if randomize_dash:
+                    all_of = (*all_of, "Dash")
             normal_weapon_count = MISSION_COMPLETION_WEAPON_THRESHOLDS.get(
                 mission_name,
                 DEFAULT_MISSION_COMPLETION_WEAPON_THRESHOLD,
             )
-            if mission_name == "Hell on Earth" and randomize_chainsaw:
-                all_of = (*all_of, "Chainsaw")
             table[location_name] = LocationRequirement(
                 all_of=all_of,
                 normal_weapon_count=normal_weapon_count,
             )
+    battery_cost = fortress_battery_consumer_cost(randomize_first_battery=randomize_first_battery)
     for location_name in FORTRESS_BATTERY_CONSUMER_LOCATIONS & location_names:
-        table[location_name] = LocationRequirement(battery_currency=2)
+        table[location_name] = LocationRequirement(battery_currency=battery_cost)
     for location_name in mastery_locations:
         mod_name = location_name.removesuffix(MASTERY_SUFFIX)
         base_weapon = MOD_BASE_WEAPON_REQUIREMENTS.get(mod_name)
