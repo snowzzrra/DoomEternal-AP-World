@@ -63,15 +63,6 @@ class EnabledTraps(OptionSet):
     default = SAFE_TRAP_NAMES
 
 
-class DeathLinkMode(Choice):
-    """Select DeathLink behavior for this slot. Soft is the safe default and dispatches each received DeathLink once; Hardcore retries until confirmed."""
-
-    display_name = "DeathLink Mode"
-    option_soft = 0
-    option_hardcore = 1
-    default = option_soft
-
-
 # Starting Weapon option values are public and stable.
 _STARTING_WEAPON_OPTION_NAMES = {
     1: "Heavy Cannon",
@@ -154,7 +145,6 @@ class DoomEternalOptions(DeathLinkMixin, PerGameCommonOptions):
     randomize_first_battery: RandomizeFirstBattery
     include_weapon_mastery_challenges: IncludeWeaponMasteryChallenges
     reveal_ap_locations_on_automap: RevealAPLocationsOnAutomap
-    death_link_mode: DeathLinkMode
     starting_weapon: StartingWeapon
     praetor_suit_upgrades_in_pool: PraetorSuitUpgradesInPool
     trap_percentage: TrapPercentage

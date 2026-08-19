@@ -34,7 +34,7 @@ from .logic import (
     requirement_satisfied,
     validate_location_prerequisites,
 )
-from .options import DeathLinkMode, DoomEternalOptions, resolve_praetor_suit_upgrade_count
+from .options import DoomEternalOptions, resolve_praetor_suit_upgrade_count
 from .version import APWORLD_REVISION, BRIDGE_PROTOCOL, COMPILER_REVISION, CONTENT_REVISION
 
 
@@ -158,9 +158,6 @@ class DoomEternalWorld(World):
         capabilities.append("starting_weapon_v1")
         return {
             "death_link": bool(self.options.death_link.value),
-            "death_link_mode": self.options.death_link_mode.get_option_name(
-                self.options.death_link_mode.value
-            ).lower(),
             "praetor_suit_upgrades_in_pool": self.praetor_suit_upgrades_in_pool,
             "randomize_chainsaw": bool(self.options.randomize_chainsaw.value),
             "randomize_dash": bool(self.options.randomize_dash.value),
