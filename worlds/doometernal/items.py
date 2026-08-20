@@ -115,8 +115,8 @@ item_data_table: dict[str, ItemData] = {
     "Rune": ItemData(7770020, ItemClassification.useful),
     "Suit Point": ItemData(7770021, ItemClassification.useful),
     # Filler Items
-    "Extra Life": ItemData(7770022, ItemClassification.filler),
-    "Extra Life Pack": ItemData(7770023, ItemClassification.filler),
+    "Extra Life": ItemData(7770022, ItemClassification.useful),
+    "Extra Life Pack": ItemData(7770023, ItemClassification.useful),
     "Ammo Refill": ItemData(7770024, ItemClassification.filler),
     "Full Heal": ItemData(7770025, ItemClassification.filler),
     "Full Armor": ItemData(7770026, ItemClassification.filler),
@@ -133,7 +133,7 @@ item_data_table: dict[str, ItemData] = {
     "Cell Ammo": ItemData(7770037, ItemClassification.filler),
     "Rocket Ammo": ItemData(7770038, ItemClassification.filler),
     "Chainsaw Fuel": ItemData(7770039, ItemClassification.filler),
-    "One Extra Life": ItemData(7770040, ItemClassification.filler),
+    "One Extra Life": ItemData(7770040, ItemClassification.useful),
     "Armor Shard": ItemData(7770041, ItemClassification.filler),
     "Ammo Cache": ItemData(7770042, ItemClassification.filler),
     # Traps
@@ -208,8 +208,7 @@ DEVINV_START_INVENTORY_ITEM_NAMES = frozenset({
 })
 
 DEVINV_NON_PERSISTENT_USEFUL_ITEM_NAMES = frozenset({
-    "Extra Life", "Extra Life Pack", "Ammo Refill", "Full Heal", "Full Armor", "Fuel",
-    "BFG Ammo", "Soulsphere", "Berserk",
+    "Extra Life", "Extra Life Pack", "One Extra Life",
 })
 
 # Canonical eligibility for the parent Dossier > Suit page. Crystal
