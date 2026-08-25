@@ -39,6 +39,40 @@ MISSION_COMPLETION_WEAPON_THRESHOLDS: Mapping[str, int] = {
 }
 DEFAULT_MISSION_COMPLETION_WEAPON_THRESHOLD = 7
 MISSION_CLEAR_EVENT_PREFIX = "Internal Mission Clear: "
+VICTORY_REQUIREMENT_EVENT_PREFIX = "Internal Victory Requirement: "
+GOAL_ENDPOINT_EVENT_PREFIX = "Internal Goal Endpoint: "
+
+DLC_REGION_NAMES = frozenset({
+    "UAC Atlantica Facility",
+    "The Blood Swamps",
+    "The Holt",
+    "The World Spear",
+    "Reclaimed Earth",
+    "Immora",
+    "Immora - The Dark Lord",
+})
+DLC_MISSION_NAMES = frozenset(DLC_REGION_NAMES)
+VICTORY_REQUIREMENT_NAMES = frozenset({
+    "Complete All Enabled Missions",
+    "Complete All Slayer Gates",
+    "Complete All Escalation Encounters",
+    "Complete All Secret Encounters",
+    "Complete All Mission Challenges",
+    "Complete All Weapon Mastery Challenges",
+    "Acquire the Unmaykr",
+})
+GOAL_NAMES = frozenset({
+    "Acquire the Unmaykr",
+    "Kill the Icon of Sin",
+    "Kill the Dark Lord",
+    "Complete the Full Saga",
+})
+GOAL_ENDPOINT_LOCATIONS = {
+    "Acquire the Unmaykr": "Fortress of Doom - Unmaykr Acquired",
+    "Kill the Icon of Sin": "Final Sin - Mission Complete",
+    "Kill the Dark Lord": "The Dark Lord - Defeated",
+    "Complete the Full Saga": "The Dark Lord - Defeated",
+}
 
 FORTRESS_BATTERY_CONSUMER_LOCATIONS = frozenset({
     "Fortress of Doom - Sentinel Crystal - Battery Room Lower East",
@@ -109,7 +143,7 @@ def connection_requirement(
     combat_capabilities = tuple(
         capability
         for capability in capabilities
-        if capability not in {"requires_first_battery", "requires_dash"}
+        if capability not in {"requires_first_battery", "requires_dash", "requires_dlc_content"}
     )
     all_of: tuple[str, ...] = ("Dash",) if dash_gate and randomize_dash else ()
     return LocationRequirement(
@@ -121,6 +155,85 @@ def connection_requirement(
 
 def mission_clear_event_name(mission_name: str) -> str:
     return f"{MISSION_CLEAR_EVENT_PREFIX}{mission_name}"
+
+
+def goal_endpoint_event_name(goal_name: str) -> str:
+    if goal_name not in GOAL_NAMES:
+        raise ValueError(f"Unknown goal: {goal_name}")
+    return f"{GOAL_ENDPOINT_EVENT_PREFIX}{goal_name}"
+
+
+def validate_goal_endpoint(
+    goal_name: str,
+    location_names: set[str],
+    *,
+    use_dlc_content: bool,
+) -> None:
+    if goal_name not in GOAL_NAMES:
+        raise ValueError(f"Unknown goal: {goal_name}")
+    if goal_name in {"Kill the Dark Lord", "Complete the Full Saga"} and not use_dlc_content:
+        required = "Dark Lord" if goal_name == "Kill the Dark Lord" else "Dark Lord and Full Saga"
+        raise ValueError(
+            f"DOOM Eternal Goal '{goal_name}' requires Use DLC Content for {required} content"
+        )
+    endpoint_location = GOAL_ENDPOINT_LOCATIONS.get(goal_name)
+    if endpoint_location is not None and endpoint_location not in location_names:
+        raise ValueError(
+            f"DOOM Eternal Goal '{goal_name}' is unavailable: "
+            f"required endpoint location '{endpoint_location}' is not in active catalog"
+        )
+
+
+def goal_endpoint_available(goal_name: str, location_names: set[str]) -> bool:
+    endpoint_location = GOAL_ENDPOINT_LOCATIONS.get(goal_name)
+    return endpoint_location is not None and endpoint_location in location_names
+
+
+def victory_requirement_event_name(requirement_name: str) -> str:
+    if requirement_name not in VICTORY_REQUIREMENT_NAMES:
+        raise ValueError(f"Unknown victory requirement: {requirement_name}")
+    return f"{VICTORY_REQUIREMENT_EVENT_PREFIX}{requirement_name}"
+
+
+def victory_requirement_location_event_name(requirement_name: str, location_name: str) -> str:
+    if requirement_name not in VICTORY_REQUIREMENT_NAMES:
+        raise ValueError(f"Unknown victory requirement: {requirement_name}")
+    return f"{VICTORY_REQUIREMENT_EVENT_PREFIX}{requirement_name}: {location_name}"
+
+
+def catalog_has_dlc_content(location_names: set[str]) -> bool:
+    """Return whether generated location catalog contains TAG mission content."""
+    return any(
+        location_name.split(" - ", 1)[0] in DLC_MISSION_NAMES
+        for location_name in location_names
+    )
+
+
+def effective_victory_requirements(
+    selected: set[str],
+    location_names: set[str],
+    *,
+    use_dlc_content: bool,
+) -> frozenset[str]:
+    """Drop requirements with no authored content in active catalog."""
+    if selected - VICTORY_REQUIREMENT_NAMES:
+        raise ValueError(f"Unknown victory requirement(s): {sorted(selected - VICTORY_REQUIREMENT_NAMES)}")
+    active_locations = set(location_names)
+    if not use_dlc_content:
+        active_locations = {
+            name for name in active_locations
+            if name.split(" - ", 1)[0] not in DLC_MISSION_NAMES
+        }
+    content_present = {
+        "Complete All Enabled Missions": any(name.endswith(" - Mission Complete") for name in active_locations),
+        "Complete All Slayer Gates": any(" - Slayer Gate Complete" in name for name in active_locations),
+        "Complete All Escalation Encounters": any(" - Escalation" in name for name in active_locations),
+        "Complete All Secret Encounters": any(" - Secret Encounter - " in name for name in active_locations),
+        "Complete All Mission Challenges": any(" - All Mission Challenges Completed" in name for name in active_locations),
+        "Complete All Weapon Mastery Challenges": any(name.endswith(MASTERY_SUFFIX) for name in active_locations),
+        "Acquire the Unmaykr": False,
+    }
+    return frozenset(name for name in selected if content_present[name])
 
 
 def _requirement_item_names(requirement: LocationRequirement) -> frozenset[str]:

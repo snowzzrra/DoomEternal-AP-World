@@ -31,6 +31,19 @@ SENTINEL_BATTERY_BUNDLE_VALUE = 2
 RESERVED_ITEM_IDS = frozenset({7770019, 7770057, 7770105, 7770119, 7770120, 7770121})
 RESERVED_LOCATION_IDS = frozenset({7770055, 7770068})
 
+PROGRESSIVE_SPECIAL_WEAPON_ID = 7770901
+PROGRESSIVE_SENTINEL_HAMMER_ID = 7770902
+SPECIAL_WEAPON_ITEM_NAMES = frozenset({
+    "Progressive Special Weapon",
+    "Progressive Sentinel Hammer",
+    "The Crucible",
+})
+SPECIAL_WEAPON_POOL_COUNTS = {
+    "Progressive Special Weapon": 3,
+    "Progressive Sentinel Hammer": 2,
+    "The Crucible": 1,
+}
+
 item_data_table: dict[str, ItemData] = {
     # Progression Items (Weapons & Equipment)
     "Heavy Cannon": ItemData(7770000, ItemClassification.progression, True, True),
@@ -40,10 +53,12 @@ item_data_table: dict[str, ItemData] = {
     "Ballista": ItemData(7770004, ItemClassification.progression, True, True),
     "Chaingun": ItemData(7770005, ItemClassification.progression, True, True),
     "BFG-9000": ItemData(7770006, ItemClassification.progression, True),
-    "The Crucible": ItemData(7770007, ItemClassification.progression, True),
+    "The Crucible": ItemData(7770007, ItemClassification.progression),
     "Combat Shotgun": ItemData(7770900, ItemClassification.progression, True, True),
     "The Unmaykr": ItemData(7770008, ItemClassification.progression),
     "Sentinel Hammer": ItemData(7770009, ItemClassification.progression),
+    "Progressive Special Weapon": ItemData(PROGRESSIVE_SPECIAL_WEAPON_ID, ItemClassification.progression),
+    "Progressive Sentinel Hammer": ItemData(PROGRESSIVE_SENTINEL_HAMMER_ID, ItemClassification.progression),
     "Chainsaw": ItemData(7770010, ItemClassification.progression),
     "Frag Grenade": ItemData(7770011, ItemClassification.progression),
     "Flame Belch": ItemData(7770012, ItemClassification.progression),
@@ -117,7 +132,7 @@ item_data_table: dict[str, ItemData] = {
     # Filler Items
     "Extra Life": ItemData(7770022, ItemClassification.useful),
     "Extra Life Pack": ItemData(7770023, ItemClassification.useful),
-    "Ammo Refill": ItemData(7770024, ItemClassification.filler),
+    "Ammo Refill": ItemData(7770024, ItemClassification.useful),
     "Full Heal": ItemData(7770025, ItemClassification.filler),
     "Full Armor": ItemData(7770026, ItemClassification.filler),
     "Fuel": ItemData(7770027, ItemClassification.filler),
@@ -175,7 +190,7 @@ SAFE_TRAP_NAMES = frozenset({
 })
 
 world_pool_weapon_item_names = tuple(
-    name for name, data in item_data_table.items() if data.world_pool_weapon
+    name for name, data in item_data_table.items() if data.world_pool_weapon and name not in SPECIAL_WEAPON_ITEM_NAMES
 )
 starting_weapon_item_names = tuple(
     name for name, data in item_data_table.items() if data.starting_weapon
@@ -205,6 +220,7 @@ DEVINV_START_INVENTORY_ITEM_NAMES = frozenset({
     "Ammo from Barrels", "Powerup Extender", "Frag Grenade Cooldown", "Frag Grenade Concussive Blast",
     "Frag Grenade Cluster Bombs", "Second Frag Grenade", "Ice Bomb Cooldown", "Extended Ice Bomb Duration",
     "Health from Frozen Demons", "Frozen Melee Shatter", "Sentinel Battery", "Sentinel Battery Bundle",
+    "The Crucible", "Progressive Special Weapon", "Progressive Sentinel Hammer", "Ammo Refill",
 })
 
 DEVINV_NON_PERSISTENT_USEFUL_ITEM_NAMES = frozenset({

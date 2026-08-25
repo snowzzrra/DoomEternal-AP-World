@@ -31,7 +31,7 @@ LOCATION_ROWS = (
     ("Exultia - Arachnotron Toy", 7770031, "Exultia - Exultia - Mourning Spire"),
     ("Exultia - Cacodemon Toy", 7770032, "Exultia - Exultia - Mourning Spire"),
     ("Exultia - Modbot - Purple-Goo Power-Core Cave", 7770043, "Exultia - Exultia - Belphegor's Gate"),
-    ("Exultia - Hidden Plasma Rifle", 7770034, "Exultia - Exultia - Mourning Spire"),
+    ("Exultia - Plasma Rifle", 7770034, "Exultia - Exultia - Mourning Spire"),
     ("Exultia - At Doom's Gate Vinyl Record", 7770030, "Exultia - Exultia - Mourning Spire"),
     ("Exultia - Exultia Codex Entry", 7770036, "Exultia - Exultia - Mourning Spire"),
     ("Exultia - The Wolf Codex Entry", 7770037, "Exultia - Exultia - Mourning Spire"),
@@ -77,9 +77,10 @@ LOCATION_ROWS = (
     ("Fortress of Doom - Praetor Suit", 7770253, "Fortress of Doom - Second Visit"),
     ("Fortress of Doom - Sentinel Armor", 7770254, "Fortress of Doom - Second Visit"),
     ("Fortress of Doom - Classic Marine Suit", 7770255, "Fortress of Doom - Second Visit"),
+    ("Fortress of Doom - Unmaykr Acquired", 7770418, "Fortress of Doom - Second Visit"),
     ("Cultist Base - Sentinel Crystal - Skull-Gate Chamber", 7770058, "Cultist Base - Grotto of Penance"),
     ("Cultist Base - Rocket Launcher", 7770056, "Cultist Base - Grotto of Penance"),
-    ("Cultist Base - Extra Life - Hanging Cage", 7770052, "Cultist Base - Grotto of Penance"),
+    ("Cultist Base - Extra Life - Dopefish 1", 7770052, "Cultist Base - Grotto of Penance"),
     ("Cultist Base - Praetor Suit Token - Raised-Skull Chamber", 7770065, "Cultist Base - Basilica of Adjuration"),
     ("Cultist Base - Extra Life - Dopefish 2", 7770053, "Cultist Base - Grotto of Penance"),
     ("Cultist Base - Extra Life - Dopefish 3", 7770054, "Cultist Base - Grotto of Penance"),
@@ -536,6 +537,7 @@ LOCATION_ROWS = (
     ("Urdak - All Mission Challenges Completed", 7770410, "Urdak - Challenges - Mission Challenges"),
     ("Urdak - Mission Complete", 7770411, "Urdak - Xanthous Harmonizer"),
     ("Final Sin - Mission Complete", 7770414, "Final Sin - South Station"),
+    ("The Dark Lord - Defeated", 7770419, "Immora - The Dark Lord"),
 )
 LOCATION_NAME_TO_ID = {name: code for name, code, _ in LOCATION_ROWS if code is not None}
 LOCATION_NAMES_BY_REGION = {
@@ -603,7 +605,7 @@ LOCATION_NAMES_BY_REGION = {
     "Cultist Base - Grotto of Penance": (
         "Cultist Base - Sentinel Crystal - Skull-Gate Chamber",
         "Cultist Base - Rocket Launcher",
-        "Cultist Base - Extra Life - Hanging Cage",
+        "Cultist Base - Extra Life - Dopefish 1",
         "Cultist Base - Extra Life - Dopefish 2",
         "Cultist Base - Extra Life - Dopefish 3",
         "Cultist Base - Praetor Suit Token - First Mancubus Arena Exit",
@@ -689,7 +691,7 @@ LOCATION_NAMES_BY_REGION = {
         "Exultia - Rune - First Ruined Hall",
         "Exultia - Arachnotron Toy",
         "Exultia - Cacodemon Toy",
-        "Exultia - Hidden Plasma Rifle",
+        "Exultia - Plasma Rifle",
         "Exultia - At Doom's Gate Vinyl Record",
         "Exultia - Exultia Codex Entry",
         "Exultia - The Wolf Codex Entry",
@@ -740,6 +742,7 @@ LOCATION_NAMES_BY_REGION = {
         "Fortress of Doom - Praetor Suit",
         "Fortress of Doom - Sentinel Armor",
         "Fortress of Doom - Classic Marine Suit",
+        "Fortress of Doom - Unmaykr Acquired",
     ),
     "Fortress of Doom - Third Visit": (
         "Fortress of Doom - Ballista",
@@ -776,6 +779,9 @@ LOCATION_NAMES_BY_REGION = {
     ),
     "Hell on Earth - City - Ravaged Cathedral": (
         "Hell on Earth - Heavy Cannon",
+    ),
+    "Immora - The Dark Lord": (
+        "The Dark Lord - Defeated",
     ),
     "Mars Core - Challenges - Mission Challenges": (
         "Mars Core - Mission Challenge - Big Ba-Da Boom",
@@ -1142,6 +1148,7 @@ CAMPAIGN_REGIONS = (
     "Final Sin - Oriiion, Inc.",
     "Final Sin - Mall Hotel",
     "Final Sin - South Station",
+    "Immora - The Dark Lord",
 )
 CAMPAIGN_CONNECTIONS = (
     ("Menu", "Weapon Masteries", "", {}),
@@ -1243,6 +1250,7 @@ CAMPAIGN_CONNECTIONS = (
     ("Final Sin - Viris West", "Final Sin - Oriiion, Inc.", "", {}),
     ("Final Sin - Oriiion, Inc.", "Final Sin - Mall Hotel", "", {}),
     ("Final Sin - Mall Hotel", "Final Sin - South Station", "", {}),
+    ("Final Sin - South Station", "Immora - The Dark Lord", "The Dark Lord", {'soft_capabilities': ('requires_dlc_content',)}),
 )
 CAMPAIGN_GOAL_LOCATION = "Final Sin - Mission Complete"
 RUNTIME_LOCATION_NAMES = frozenset({
@@ -1308,4 +1316,5 @@ RUNTIME_LOCATION_NAMES = frozenset({
     "Urdak - All Mission Challenges Completed",
     "Urdak - Mission Complete",
     "Final Sin - Mission Complete",
+    "The Dark Lord - Defeated",
 })

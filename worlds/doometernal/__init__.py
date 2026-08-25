@@ -8,7 +8,6 @@ from worlds.generic.Rules import forbid_item, set_rule
 
 from .generated_content import (
     CAMPAIGN_CONNECTIONS,
-    CAMPAIGN_GOAL_LOCATION,
     CAMPAIGN_REGIONS,
 )
 from .identity import GAME_NAME
@@ -18,6 +17,8 @@ from .items import (
     DEVINV_NON_PERSISTENT_USEFUL_ITEM_NAMES,
     DEVINV_START_INVENTORY_ITEM_NAMES,
     DoomEternalItem,
+    SPECIAL_WEAPON_ITEM_NAMES,
+    SPECIAL_WEAPON_POOL_COUNTS,
     item_data_table,
     item_name_to_id,
     starting_weapon_item_names,
@@ -29,13 +30,29 @@ from .logic import (
     FORTRESS_BATTERY_CONSUMER_LOCATIONS,
     build_location_prerequisites,
     connection_requirement,
+    goal_endpoint_event_name,
     mission_clear_event_name,
+    DLC_REGION_NAMES,
+    effective_victory_requirements,
+    goal_endpoint_available,
+    GOAL_ENDPOINT_LOCATIONS,
+    MASTERY_SUFFIX,
+    validate_goal_endpoint,
+    victory_requirement_location_event_name,
     required_item_names,
     requirement_satisfied,
     validate_location_prerequisites,
 )
 from .options import DoomEternalOptions, resolve_praetor_suit_upgrade_count
-from .version import APWORLD_REVISION, BRIDGE_PROTOCOL, COMPILER_REVISION, CONTENT_REVISION
+from .version import (
+    APWORLD_REVISION,
+    BRIDGE_PROTOCOL,
+    COMPILER_REVISION,
+    CONTENT_REVISION,
+    ROOM_CONTRACT_REVISION,
+    SLOT_DATA_REVISION,
+    SLOT_DATA_SCHEMA_VERSION,
+)
 
 
 class DoomEternalWeb(WebWorld):
@@ -73,6 +90,17 @@ class DoomEternalWorld(World):
         return inventory
 
     def generate_early(self) -> None:
+        catalog_location_names = set(location_data_table)
+        dlc_enabled = bool(self.options.use_dlc_content.value)
+        validate_goal_endpoint(
+            self.options.goal.current_option_name,
+            catalog_location_names,
+            use_dlc_content=dlc_enabled,
+        )
+        effective_special_weapon = (
+            "The Crucible" if not dlc_enabled else self.options.special_weapon.current_option_name
+        )
+        special_maximum = SPECIAL_WEAPON_POOL_COUNTS[effective_special_weapon]
         unsafe = []
         invalid_quantity = []
         unavailable = []
@@ -93,8 +121,13 @@ class DoomEternalWorld(World):
                 else:
                     unavailable.append(f"{name} (not in current persistent pool)")
                 continue
+            if name in SPECIAL_WEAPON_ITEM_NAMES and name != effective_special_weapon:
+                unavailable.append(f"{name} (incompatible Special Weapon mode)")
+                continue
             if isinstance(quantity, bool) or not isinstance(quantity, int) or quantity < 1:
                 invalid_quantity.append(name)
+            elif name == effective_special_weapon and quantity > special_maximum:
+                invalid_quantity.append(f"{name} (maximum {special_maximum})")
             elif name.startswith("Progressive ") and quantity > 4:
                 invalid_quantity.append(f"{name} (maximum 4 ordered tiers)")
             elif name in suit_perk_item_names and quantity > 1:
@@ -151,11 +184,24 @@ class DoomEternalWorld(World):
 
     def fill_slot_data(self) -> dict[str, object]:
         start_inventory = dict(self.effective_starting_inventory())
-        capabilities = ["room_mod_v1"]
+        catalog_location_names = set(location_data_table)
+        dlc_enabled = bool(self.options.use_dlc_content.value)
+        effective_requirements = effective_victory_requirements(
+            set(self.options.additional_victory_requirements.value),
+            {
+                name for name in catalog_location_names
+                if self.options.include_weapon_mastery_challenges.value
+                or not name.endswith(" - Weapon Mastery Challenge")
+            },
+            use_dlc_content=dlc_enabled,
+        )
+        capabilities = ["room_mod_v2", "slot_data_v3", "goal_events_v1", "goal_endpoint_events_v1"]
         capabilities.append("physical_options_v1")
         if start_inventory:
             capabilities.append("starting_inventory_v1")
         capabilities.append("starting_weapon_v1")
+        capabilities.append("special_weapon_progression_v1")
+        capabilities.append("ammo_refill_v1")
         return {
             "death_link": bool(self.options.death_link.value),
             "praetor_suit_upgrades_in_pool": self.praetor_suit_upgrades_in_pool,
@@ -166,19 +212,34 @@ class DoomEternalWorld(World):
             "reveal_ap_locations_on_automap": bool(self.options.reveal_ap_locations_on_automap.value),
             "trap_percentage": int(self.options.trap_percentage.value),
             "enabled_traps": sorted(self.options.enabled_traps.value),
+            "use_dlc_content": dlc_enabled,
+            "dlc_logic_timing": self.options.dlc_logic_timing.current_option_name,
+            "goal": self.options.goal.current_option_name,
+            "goal_endpoint_event": goal_endpoint_event_name(self.options.goal.current_option_name),
+            "goal_endpoint_available": goal_endpoint_available(
+                self.options.goal.current_option_name, catalog_location_names
+            ),
+            "additional_victory_requirements": sorted(effective_requirements),
+            "special_weapon": "The Crucible" if not dlc_enabled else self.options.special_weapon.current_option_name,
+            "enhanced_melee_damage": bool(self.options.enhanced_melee_damage.value),
             "apworld_revision": APWORLD_REVISION,
             "content_revision": CONTENT_REVISION,
             "bridge_protocol": BRIDGE_PROTOCOL,
             "compiler_revision": COMPILER_REVISION,
-            "manifest_schema_version": 2,
-            "mod_contract_revision": 1,
+            "manifest_schema_version": SLOT_DATA_SCHEMA_VERSION,
+            "slot_data_revision": SLOT_DATA_REVISION,
+            "mod_contract_revision": ROOM_CONTRACT_REVISION,
             "required_capabilities": capabilities,
             "starting_inventory": start_inventory,
             "starting_weapon": self.starting_weapon_name,
         }
 
     def create_regions(self) -> None:
+        catalog_regions = {data.region for data in location_data_table.values()}
         for region_name in CAMPAIGN_REGIONS:
+            region = Region(region_name, self.player, self.multiworld)
+            self.multiworld.regions.append(region)
+        for region_name in sorted(catalog_regions - set(CAMPAIGN_REGIONS)):
             region = Region(region_name, self.player, self.multiworld)
             self.multiworld.regions.append(region)
 
@@ -189,6 +250,8 @@ class DoomEternalWorld(World):
             "Exultia - Sentinel Battery - King Novik Return Path": self.options.randomize_first_battery.value,
         }
         for loc_name, loc_data in location_data_table.items():
+            if loc_data.region in DLC_REGION_NAMES and not self.options.use_dlc_content.value:
+                continue
             if loc_name in vanilla_physical_locations and not vanilla_physical_locations[loc_name]:
                 continue
             if loc_data.region == "Weapon Masteries" and not self.options.include_weapon_mastery_challenges.value:
@@ -199,9 +262,9 @@ class DoomEternalWorld(World):
 
         mission_clear_events: dict[str, str] = {}
         for mission_name in {
-            location.removesuffix(" - Mission Complete")
-            for location in location_data_table
-            if location.endswith(" - Mission Complete")
+            location.name.removesuffix(" - Mission Complete")
+            for location in self.multiworld.get_locations(self.player)
+            if location.name.endswith(" - Mission Complete")
         }:
             mission_location = f"{mission_name} - Mission Complete"
             public_location = self.multiworld.get_location(mission_location, self.player)
@@ -219,7 +282,56 @@ class DoomEternalWorld(World):
             event_item.classification = ItemClassification.progression_skip_balancing
             mission_clear_events[region.name] = event_name
 
+        requirement_location_suffixes = {
+            "Complete All Slayer Gates": " - Slayer Gate Complete",
+            "Complete All Escalation Encounters": " - Escalation",
+            "Complete All Secret Encounters": " - Secret Encounter - ",
+            "Complete All Mission Challenges": " - All Mission Challenges Completed",
+            "Complete All Weapon Mastery Challenges": MASTERY_SUFFIX,
+        }
+        for location_name in {
+            location.name for location in self.multiworld.get_locations(self.player)
+        }:
+            for requirement_name, suffix in requirement_location_suffixes.items():
+                if (suffix in location_name if suffix.endswith(" - ") or suffix == " - Escalation"
+                    else location_name.endswith(suffix)):
+                    public_location = self.multiworld.get_location(location_name, self.player)
+                    region = public_location.parent_region
+                    if region is None:
+                        raise ValueError(f"Victory requirement location has no region: {location_name}")
+                    event_name = victory_requirement_location_event_name(requirement_name, location_name)
+                    event_item = region.add_event(
+                        event_name,
+                        event_name,
+                        rule=lambda state, public_location=public_location: public_location.can_reach(state),
+                        location_type=DoomEternalLocation,
+                        item_type=DoomEternalItem,
+                    )
+                    event_item.classification = ItemClassification.progression_skip_balancing
+
+        active_location_names = {
+            location.name for location in self.multiworld.get_locations(self.player)
+        }
+        for endpoint_goal, endpoint_location_name in GOAL_ENDPOINT_LOCATIONS.items():
+            if not goal_endpoint_available(endpoint_goal, active_location_names):
+                continue
+            goal_location = self.multiworld.get_location(endpoint_location_name, self.player)
+            goal_region = goal_location.parent_region
+            if goal_region is None:
+                raise ValueError(f"Goal endpoint location has no region: {goal_location.name}")
+            goal_event_name = goal_endpoint_event_name(endpoint_goal)
+            goal_event = goal_region.add_event(
+                goal_event_name,
+                goal_event_name,
+                rule=lambda state, goal_location=goal_location: goal_location.can_reach(state),
+                location_type=DoomEternalLocation,
+                item_type=DoomEternalItem,
+            )
+            goal_event.classification = ItemClassification.progression_skip_balancing
+
         for source_name, destination_name, entrance_name, condition in CAMPAIGN_CONNECTIONS:
+            if "requires_dlc_content" in condition.get("soft_capabilities", ()) and not self.options.use_dlc_content.value:
+                continue
             source = self.multiworld.get_region(source_name, self.player)
             destination = self.multiworld.get_region(destination_name, self.player)
             if not entrance_name and not condition:
@@ -308,6 +420,13 @@ class DoomEternalWorld(World):
             *(["Progressive Armor Upgrade"] * 4),
             *(["Progressive Ammo Upgrade"] * 4),
         ]
+        effective_special_weapon = (
+            "The Crucible" if not self.options.use_dlc_content.value
+            else self.options.special_weapon.current_option_name
+        )
+        pool_names.extend(
+            [effective_special_weapon] * SPECIAL_WEAPON_POOL_COUNTS[effective_special_weapon]
+        )
         suit_names = suit_perk_item_names
         manual_automap_count = int(bool(start_inventory[self.AUTOMAP_STARTING_ITEM]))
         automap_start_count = manual_automap_count
@@ -349,6 +468,7 @@ class DoomEternalWorld(World):
         else:
             pool_names.extend(["Sentinel Battery"] * (randomized_battery_singles - 1))
         pool_names.extend(["Sentinel Battery Bundle"] * BASE_CAMPAIGN_SENTINEL_BATTERY_BUNDLES)
+        pool_names.extend(["Ammo Refill"] * start_inventory.get("Ammo Refill", 0))
 
         available = Counter(pool_names)
         unavailable = {
@@ -380,8 +500,6 @@ class DoomEternalWorld(World):
             if name != self.AUTOMAP_STARTING_ITEM:
                 for _ in range(quantity):
                     pool_names.remove(name)
-
-        self.multiworld.get_location(CAMPAIGN_GOAL_LOCATION, self.player).place_locked_item(self.create_item("Victory"))
 
         locations_count = len(self.multiworld.get_unfilled_locations(self.player))
 
@@ -446,4 +564,47 @@ class DoomEternalWorld(World):
             forbid_item(location, "Sentinel Battery", self.player)
             forbid_item(location, "Sentinel Battery Bundle", self.player)
 
-        self.multiworld.completion_condition[self.player] = lambda state: state.has("Victory", self.player)
+        active_location_names = {
+            location.name for location in self.multiworld.get_locations(self.player)
+        }
+        effective_requirements = effective_victory_requirements(
+            set(self.options.additional_victory_requirements.value),
+            active_location_names,
+            use_dlc_content=bool(self.options.use_dlc_content.value),
+        )
+        mission_events = {
+            mission_clear_event_name(location.removesuffix(" - Mission Complete"))
+            for location in active_location_names
+            if location.endswith(" - Mission Complete")
+        }
+        required_events = {goal_endpoint_event_name(self.options.goal.current_option_name)}
+        if self.options.goal.current_option_name == "Complete the Full Saga":
+            required_events.update(
+                goal_endpoint_event_name(goal)
+                for goal in GOAL_ENDPOINT_LOCATIONS
+                if goal != "Complete the Full Saga"
+            )
+            required_events.update(mission_events)
+        if "Complete All Enabled Missions" in effective_requirements:
+            required_events.update(mission_events)
+        for requirement_name in effective_requirements - {"Complete All Enabled Missions", "Acquire the Unmaykr"}:
+            suffix = {
+                "Complete All Slayer Gates": " - Slayer Gate Complete",
+                "Complete All Escalation Encounters": " - Escalation",
+                "Complete All Secret Encounters": " - Secret Encounter - ",
+                "Complete All Mission Challenges": " - All Mission Challenges Completed",
+                "Complete All Weapon Mastery Challenges": MASTERY_SUFFIX,
+            }[requirement_name]
+            required_events.update(
+                victory_requirement_location_event_name(requirement_name, location)
+                for location in active_location_names
+                if (suffix in location if suffix.endswith(" - ") or suffix == " - Escalation"
+                    else location.endswith(suffix))
+            )
+
+        def completion_condition(state):
+            return all(
+                state.has(event_name, self.player) for event_name in required_events
+            )
+
+        self.multiworld.completion_condition[self.player] = completion_condition

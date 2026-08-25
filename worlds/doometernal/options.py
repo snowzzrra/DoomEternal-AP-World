@@ -5,6 +5,103 @@ from Options import Choice, DeathLinkMixin, NamedRange, OptionSet, PerGameCommon
 from .items import SAFE_TRAP_NAMES, suit_perk_item_names
 
 
+class _ExactLabelChoice(Choice):
+    """Choice whose public labels are part of the APWorld contract."""
+
+    labels: dict[int, str] = {}
+
+    @classmethod
+    def get_option_name(cls, value: int) -> str:
+        return cls.labels[value]
+
+    @classmethod
+    def from_text(cls, text: str):
+        normalized = text.strip().casefold()
+        for value, label in cls.labels.items():
+            if normalized == label.casefold():
+                return cls(value)
+        return super().from_text(text)
+
+
+class UseDLCContent(Toggle):
+    """Include The Ancient Gods Part One and Part Two. Disable for Base Campaign content only."""
+
+    display_name = "Use DLC Content"
+    default = 1
+
+
+class DLCLogicTiming(_ExactLabelChoice):
+    """Late Game opens DLC when campaign readiness is established. From the Beginning opens all three campaign roots immediately."""
+
+    option_late_game = 0
+    option_from_the_beginning = 1
+    default = option_late_game
+    labels = {
+        option_late_game: "Late Game",
+        option_from_the_beginning: "From the Beginning",
+    }
+
+
+class Goal(_ExactLabelChoice):
+    """Choose victory: physically acquire the Unmaykr, defeat the Icon of Sin, defeat the Dark Lord, or complete all 19 missions plus those three physical endpoints."""
+
+    option_acquire_the_unmaykr = 0
+    option_kill_the_icon_of_sin = 1
+    option_kill_the_dark_lord = 2
+    option_complete_the_full_saga = 3
+    default = option_acquire_the_unmaykr
+    labels = {
+        option_acquire_the_unmaykr: "Acquire the Unmaykr",
+        option_kill_the_icon_of_sin: "Kill the Icon of Sin",
+        option_kill_the_dark_lord: "Kill the Dark Lord",
+        option_complete_the_full_saga: "Complete the Full Saga",
+    }
+
+
+VICTORY_REQUIREMENT_NAMES = frozenset({
+    "Complete All Enabled Missions",
+    "Complete All Slayer Gates",
+    "Complete All Escalation Encounters",
+    "Complete All Secret Encounters",
+    "Complete All Mission Challenges",
+    "Complete All Weapon Mastery Challenges",
+    "Acquire the Unmaykr",
+})
+
+
+class AdditionalVictoryRequirements(OptionSet):
+    """Additional content required after selected Goal endpoint."""
+
+    display_name = "Additional Victory Requirements"
+    valid_keys = VICTORY_REQUIREMENT_NAMES
+    default = frozenset({
+        "Complete All Enabled Missions",
+        "Complete All Slayer Gates",
+        "Complete All Escalation Encounters",
+    })
+
+
+class SpecialWeapon(_ExactLabelChoice):
+    """Choose a three-stage Crucible-to-Hammer progression, a two-stage Sentinel Hammer progression, or one standalone Crucible stage."""
+
+    option_progressive_special_weapon = 0
+    option_progressive_sentinel_hammer = 1
+    option_the_crucible = 2
+    default = option_progressive_special_weapon
+    labels = {
+        option_progressive_special_weapon: "Progressive Special Weapon",
+        option_progressive_sentinel_hammer: "Progressive Sentinel Hammer",
+        option_the_crucible: "The Crucible",
+    }
+
+
+class EnhancedMeleeDamage(Toggle):
+    """Make normal melee stronger while preserving Blood Punch behavior."""
+
+    display_name = "Enhanced Melee Damage"
+    default = 0
+
+
 class RandomizeChainsaw(Toggle):
     """
     Randomize the Chainsaw. If false, the Chainsaw will always be found at its
@@ -40,7 +137,7 @@ class IncludeWeaponMasteryChallenges(Toggle):
 
 
 class RevealAPLocationsOnAutomap(Toggle):
-    """Start with the AP progression-item reveal capability on the Automap."""
+    """Reveal Archipelago item pickups on the Automap."""
 
     display_name = "Reveal AP Locations on Automap"
     default = 0
@@ -140,6 +237,12 @@ def resolve_praetor_suit_upgrade_count(option_value: int, rng, maximum: int = le
 
 @dataclass
 class DoomEternalOptions(DeathLinkMixin, PerGameCommonOptions):
+    use_dlc_content: UseDLCContent
+    dlc_logic_timing: DLCLogicTiming
+    goal: Goal
+    additional_victory_requirements: AdditionalVictoryRequirements
+    special_weapon: SpecialWeapon
+    enhanced_melee_damage: EnhancedMeleeDamage
     randomize_chainsaw: RandomizeChainsaw
     randomize_dash: RandomizeDash
     randomize_first_battery: RandomizeFirstBattery
