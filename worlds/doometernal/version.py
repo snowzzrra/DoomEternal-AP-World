@@ -14,6 +14,7 @@ from .generated_content import (
 from .generated_content import (
     CONTENT_REVISION as GENERATED_CONTENT_REVISION,
 )
+from .generated_content import SESSION_MOD_CONTRACT_REVISION
 
 _manifest = json.loads(files(__package__).joinpath("archipelago.json").read_text(encoding="utf-8"))
 
@@ -27,4 +28,4 @@ COMPILER_REVISION = GENERATED_COMPILER_REVISION
 
 SLOT_DATA_SCHEMA_VERSION = 3
 SLOT_DATA_REVISION = "0.5-B"
-ROOM_CONTRACT_REVISION = 2
+ROOM_CONTRACT_REVISION = SESSION_MOD_CONTRACT_REVISION

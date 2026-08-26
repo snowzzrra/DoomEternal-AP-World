@@ -31,8 +31,16 @@ class UseDLCContent(Toggle):
 
 
 class DLCLogicTiming(_ExactLabelChoice):
-    """Late Game opens DLC when campaign readiness is established. From the Beginning opens all three campaign roots immediately."""
+    """Choose when The Ancient Gods can enter your Archipelago progression.
 
+    Late Game — UAC Atlantica becomes available once your weapons and abilities are strong enough for TAG1. The World Spear becomes available later, once your loadout is strong enough for TAG2.
+
+    From the Beginning — Hell on Earth, UAC Atlantica, and The World Spear are all available as starting paths from the beginning.
+
+    This changes Archipelago progression only. It does not change DOOM Eternal's difficulty or hide missions from the campaign menus.
+    """
+
+    display_name = "DLC Logic Timing"
     option_late_game = 0
     option_from_the_beginning = 1
     default = option_late_game
@@ -43,8 +51,18 @@ class DLCLogicTiming(_ExactLabelChoice):
 
 
 class Goal(_ExactLabelChoice):
-    """Choose victory: physically acquire the Unmaykr, defeat the Icon of Sin, defeat the Dark Lord, or complete all 19 missions plus those three physical endpoints."""
+    """Choose the main objective that wins your Archipelago world.
 
+    Acquire the Unmaykr — Complete the six Base Campaign Slayer Gates and claim the Unmaykr from its case in the Fortress of Doom.
+
+    Kill the Icon of Sin — Progress through the Base Campaign and defeat the Icon of Sin.
+
+    Kill the Dark Lord — Progress through The Ancient Gods Part Two and defeat the Dark Lord.
+
+    Complete the Full Saga — Complete all 19 Base Campaign, TAG1, and TAG2 missions, claim the Unmaykr, defeat the Icon of Sin, and defeat the Dark Lord.
+    """
+
+    display_name = "Goal"
     option_acquire_the_unmaykr = 0
     option_kill_the_icon_of_sin = 1
     option_kill_the_dark_lord = 2
@@ -70,7 +88,7 @@ VICTORY_REQUIREMENT_NAMES = frozenset({
 
 
 class AdditionalVictoryRequirements(OptionSet):
-    """Additional content required after selected Goal endpoint."""
+    """Choose extra objectives that must also be completed before your Goal counts as victory. Hover an objective to see exactly what it requires."""
 
     display_name = "Additional Victory Requirements"
     valid_keys = VICTORY_REQUIREMENT_NAMES
@@ -84,6 +102,7 @@ class AdditionalVictoryRequirements(OptionSet):
 class SpecialWeapon(_ExactLabelChoice):
     """Choose a three-stage Crucible-to-Hammer progression, a two-stage Sentinel Hammer progression, or one standalone Crucible stage."""
 
+    display_name = "Special Weapon Behavior"
     option_progressive_special_weapon = 0
     option_progressive_sentinel_hammer = 1
     option_the_crucible = 2
@@ -96,7 +115,7 @@ class SpecialWeapon(_ExactLabelChoice):
 
 
 class EnhancedMeleeDamage(Toggle):
-    """Make normal melee stronger while preserving Blood Punch behavior."""
+    """Increase the damage of normal punches, making melee a more useful close-range fallback."""
 
     display_name = "Enhanced Melee Damage"
     default = 0
@@ -137,7 +156,7 @@ class IncludeWeaponMasteryChallenges(Toggle):
 
 
 class RevealAPLocationsOnAutomap(Toggle):
-    """Reveal Archipelago item pickups on the Automap."""
+    """Show Archipelago pickup locations on the DOOM Eternal Automap, making checks easier to find while exploring or replaying missions."""
 
     display_name = "Reveal AP Locations on Automap"
     default = 0

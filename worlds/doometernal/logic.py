@@ -74,6 +74,18 @@ GOAL_ENDPOINT_LOCATIONS = {
     "Complete the Full Saga": "The Dark Lord - Defeated",
 }
 
+GOAL_IMPLIED_UNMAYKR = frozenset({"Acquire the Unmaykr", "Complete the Full Saga"})
+
+FULL_SAGA_TAG_MISSIONS = (
+    "UAC Atlantica Facility",
+    "The Blood Swamps",
+    "The Holt",
+    "The World Spear",
+    "Reclaimed Earth",
+    "Immora",
+)
+FULL_SAGA_MISSION_COUNT = 13 + len(FULL_SAGA_TAG_MISSIONS)
+
 FORTRESS_BATTERY_CONSUMER_LOCATIONS = frozenset({
     "Fortress of Doom - Sentinel Crystal - Battery Room Lower East",
     "Fortress of Doom - Sentinel Crystal - Battery Room Lower West",
@@ -209,15 +221,60 @@ def catalog_has_dlc_content(location_names: set[str]) -> bool:
     )
 
 
+def goal_redundant_requirements(
+    goal: str,
+    location_names: set[str],
+    *,
+    use_dlc_content: bool,
+) -> frozenset[str]:
+    """Return victory requirements fully implied by the selected Goal."""
+    if goal not in GOAL_NAMES:
+        raise ValueError(f"Unknown goal: {goal}")
+    redundant: set[str] = set()
+    if goal in GOAL_IMPLIED_UNMAYKR:
+        redundant.add("Acquire the Unmaykr")
+        if not use_dlc_content:
+            redundant.add("Complete All Slayer Gates")
+    if goal == "Complete the Full Saga":
+        redundant.add("Complete All Enabled Missions")
+    return frozenset(redundant & VICTORY_REQUIREMENT_NAMES)
+
+
+def validate_full_saga_catalog(location_names: set[str]) -> None:
+    """Fail closed unless every canonical Full Saga mission completion exists."""
+    authored = {
+        name.removesuffix(" - Mission Complete")
+        for name in location_names
+        if name.endswith(" - Mission Complete")
+    }
+    missing = sorted(set(FULL_SAGA_TAG_MISSIONS) - authored)
+    if missing:
+        raise ValueError(
+            "DOOM Eternal Goal 'Complete the Full Saga' is unavailable: "
+            f"the DLC mission-complete catalog is incomplete ({len(authored)}/{FULL_SAGA_MISSION_COUNT} "
+            f"missions authored); missing: {', '.join(missing)}"
+        )
+    if len(authored) < FULL_SAGA_MISSION_COUNT:
+        raise ValueError(
+            "DOOM Eternal Goal 'Complete the Full Saga' is unavailable: "
+            f"the mission-complete catalog is incomplete ({len(authored)}/{FULL_SAGA_MISSION_COUNT} missions authored)"
+        )
+
+
 def effective_victory_requirements(
     selected: set[str],
     location_names: set[str],
     *,
     use_dlc_content: bool,
+    goal: str | None = None,
 ) -> frozenset[str]:
-    """Drop requirements with no authored content in active catalog."""
+    """Drop requirements with no authored content or fully implied by the Goal."""
     if selected - VICTORY_REQUIREMENT_NAMES:
         raise ValueError(f"Unknown victory requirement(s): {sorted(selected - VICTORY_REQUIREMENT_NAMES)}")
+    if goal is not None:
+        selected = selected - goal_redundant_requirements(
+            goal, location_names, use_dlc_content=use_dlc_content
+        )
     active_locations = set(location_names)
     if not use_dlc_content:
         active_locations = {
@@ -231,7 +288,7 @@ def effective_victory_requirements(
         "Complete All Secret Encounters": any(" - Secret Encounter - " in name for name in active_locations),
         "Complete All Mission Challenges": any(" - All Mission Challenges Completed" in name for name in active_locations),
         "Complete All Weapon Mastery Challenges": any(name.endswith(MASTERY_SUFFIX) for name in active_locations),
-        "Acquire the Unmaykr": False,
+        "Acquire the Unmaykr": "Fortress of Doom - Unmaykr Acquired" in active_locations,
     }
     return frozenset(name for name in selected if content_present[name])
 
@@ -255,8 +312,14 @@ def build_location_prerequisites(
     randomize_chainsaw: bool = False,
     randomize_dash: bool = False,
     randomize_first_battery: bool = False,
+    special_weapon: str = "The Crucible",
 ) -> dict[str, LocationRequirement]:
     mastery_locations = sorted(name for name in location_names if name.endswith(MASTERY_SUFFIX))
+    if special_weapon == "Progressive Sentinel Hammer":
+        raise ValueError(
+            "Nekravol - Mission Challenge - Die by the Sword requires The Crucible, "
+            "which the Special Weapon option 'Progressive Sentinel Hammer' never provides"
+        )
     table: dict[str, LocationRequirement] = {
         "Cultist Base - Mission Challenge - Armored Rain": LocationRequirement(
             combat_all_of=("flame_belch",)
@@ -280,7 +343,7 @@ def build_location_prerequisites(
             all_of=("BFG-9000",)
         ),
         "Nekravol - Mission Challenge - Die by the Sword": LocationRequirement(
-            all_of=("The Crucible",)
+            all_of=(special_weapon,)
         ),
     }
     for aggregate_name in sorted(

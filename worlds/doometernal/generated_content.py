@@ -2,9 +2,10 @@
 
 # This file has no timestamp: stable input yields a stable diff.
 CONTENT_SCHEMA_VERSION = 3
-CONTENT_REVISION = "0.4.0-beta.4"
+CONTENT_REVISION = "0.5.0"
 BRIDGE_PROTOCOL_VERSION = 4
 COMPILER_REVISION = 2
+SESSION_MOD_CONTRACT_REVISION = 1
 
 LOCATION_ROWS = (
     ("Hell on Earth - Chainsaw", 7770001, "Hell on Earth - Barge - Hell Priest Barge"),

@@ -19,6 +19,7 @@ from .items import (
     DoomEternalItem,
     SPECIAL_WEAPON_ITEM_NAMES,
     SPECIAL_WEAPON_POOL_COUNTS,
+    SUPPORT_RUNE_ITEM_NAMES,
     item_data_table,
     item_name_to_id,
     starting_weapon_item_names,
@@ -37,6 +38,7 @@ from .logic import (
     goal_endpoint_available,
     GOAL_ENDPOINT_LOCATIONS,
     MASTERY_SUFFIX,
+    validate_full_saga_catalog,
     validate_goal_endpoint,
     victory_requirement_location_event_name,
     required_item_names,
@@ -44,6 +46,7 @@ from .logic import (
     validate_location_prerequisites,
 )
 from .options import DoomEternalOptions, resolve_praetor_suit_upgrade_count
+from .settings import DoomEternalSettings
 from .version import (
     APWORLD_REVISION,
     BRIDGE_PROTOCOL,
@@ -79,6 +82,7 @@ class DoomEternalWorld(World):
     web = DoomEternalWeb()
     options_dataclass = DoomEternalOptions
     options: DoomEternalOptions
+    settings: DoomEternalSettings
 
     AUTOMAP_STARTING_ITEM = "Reveal Automap Progression Items"
 
@@ -97,6 +101,8 @@ class DoomEternalWorld(World):
             catalog_location_names,
             use_dlc_content=dlc_enabled,
         )
+        if self.options.goal.current_option_name == "Complete the Full Saga":
+            validate_full_saga_catalog(catalog_location_names)
         effective_special_weapon = (
             "The Crucible" if not dlc_enabled else self.options.special_weapon.current_option_name
         )
@@ -108,6 +114,9 @@ class DoomEternalWorld(World):
             data = item_data_table.get(name)
             if data is None:
                 unsafe.append(name)
+                continue
+            if name in SUPPORT_RUNE_ITEM_NAMES:
+                unavailable.append(f"{name} (Support Rune materialization deferred until 0.5-C)")
                 continue
             if name not in DEVINV_START_INVENTORY_ITEM_NAMES:
                 if data.classification & ItemClassification.trap:
@@ -194,6 +203,7 @@ class DoomEternalWorld(World):
                 or not name.endswith(" - Weapon Mastery Challenge")
             },
             use_dlc_content=dlc_enabled,
+            goal=self.options.goal.current_option_name,
         )
         capabilities = ["room_mod_v2", "slot_data_v3", "goal_events_v1", "goal_endpoint_events_v1"]
         capabilities.append("physical_options_v1")
@@ -510,6 +520,8 @@ class DoomEternalWorld(World):
             "Full Armor": 8,
             "Soulsphere": 5,
             "Berserk": 3,
+            "Overdrive": 3,
+            "Onslaught": 3,
             "Small Health": 10,
             "Small Armor": 1,
             "Large Health": 10,
@@ -548,6 +560,11 @@ class DoomEternalWorld(World):
             randomize_chainsaw=bool(self.options.randomize_chainsaw.value),
             randomize_dash=bool(self.options.randomize_dash.value),
             randomize_first_battery=bool(self.options.randomize_first_battery.value),
+            special_weapon=(
+                "The Crucible"
+                if not self.options.use_dlc_content.value
+                else self.options.special_weapon.current_option_name
+            ),
         )
         validate_location_prerequisites(prerequisite_table, active_location_names, set(item_data_table))
         for location_name, requirement in prerequisite_table.items():
@@ -571,6 +588,7 @@ class DoomEternalWorld(World):
             set(self.options.additional_victory_requirements.value),
             active_location_names,
             use_dlc_content=bool(self.options.use_dlc_content.value),
+            goal=self.options.goal.current_option_name,
         )
         mission_events = {
             mission_clear_event_name(location.removesuffix(" - Mission Complete"))
@@ -587,6 +605,8 @@ class DoomEternalWorld(World):
             required_events.update(mission_events)
         if "Complete All Enabled Missions" in effective_requirements:
             required_events.update(mission_events)
+        if "Acquire the Unmaykr" in effective_requirements:
+            required_events.add(goal_endpoint_event_name("Acquire the Unmaykr"))
         for requirement_name in effective_requirements - {"Complete All Enabled Missions", "Acquire the Unmaykr"}:
             suffix = {
                 "Complete All Slayer Gates": " - Slayer Gate Complete",

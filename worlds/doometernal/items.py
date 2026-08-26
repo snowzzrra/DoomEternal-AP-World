@@ -44,6 +44,8 @@ SPECIAL_WEAPON_POOL_COUNTS = {
     "The Crucible": 1,
 }
 
+SUPPORT_RUNE_ITEM_NAMES = frozenset({"Break Blast", "Desperate Punch", "Take Back"})
+
 item_data_table: dict[str, ItemData] = {
     # Progression Items (Weapons & Equipment)
     "Heavy Cannon": ItemData(7770000, ItemClassification.progression, True, True),
@@ -57,8 +59,8 @@ item_data_table: dict[str, ItemData] = {
     "Combat Shotgun": ItemData(7770900, ItemClassification.progression, True, True),
     "The Unmaykr": ItemData(7770008, ItemClassification.progression),
     "Sentinel Hammer": ItemData(7770009, ItemClassification.progression),
-    "Progressive Special Weapon": ItemData(PROGRESSIVE_SPECIAL_WEAPON_ID, ItemClassification.progression),
-    "Progressive Sentinel Hammer": ItemData(PROGRESSIVE_SENTINEL_HAMMER_ID, ItemClassification.progression),
+    "Progressive Special Weapon": ItemData(7770901, ItemClassification.progression),
+    "Progressive Sentinel Hammer": ItemData(7770902, ItemClassification.progression),
     "Chainsaw": ItemData(7770010, ItemClassification.progression),
     "Frag Grenade": ItemData(7770011, ItemClassification.progression),
     "Flame Belch": ItemData(7770012, ItemClassification.progression),
@@ -128,6 +130,9 @@ item_data_table: dict[str, ItemData] = {
     "Health from Frozen Demons": ItemData(7770117, ItemClassification.useful),
     "Frozen Melee Shatter": ItemData(7770118, ItemClassification.useful),
     "Rune": ItemData(7770020, ItemClassification.useful),
+    "Break Blast": ItemData(7770145, ItemClassification.useful),
+    "Desperate Punch": ItemData(7770146, ItemClassification.useful),
+    "Take Back": ItemData(7770147, ItemClassification.useful),
     "Suit Point": ItemData(7770021, ItemClassification.useful),
     # Filler Items
     "Extra Life": ItemData(7770022, ItemClassification.useful),
@@ -151,6 +156,8 @@ item_data_table: dict[str, ItemData] = {
     "One Extra Life": ItemData(7770040, ItemClassification.useful),
     "Armor Shard": ItemData(7770041, ItemClassification.filler),
     "Ammo Cache": ItemData(7770042, ItemClassification.filler),
+    "Overdrive": ItemData(7770143, ItemClassification.filler),
+    "Onslaught": ItemData(7770144, ItemClassification.filler),
     # Traps
     "Imp Trap": ItemData(7770043, ItemClassification.trap),
     "Carcass Trap": ItemData(7770044, ItemClassification.trap),
