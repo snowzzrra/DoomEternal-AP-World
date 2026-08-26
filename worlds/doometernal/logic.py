@@ -315,11 +315,6 @@ def build_location_prerequisites(
     special_weapon: str = "The Crucible",
 ) -> dict[str, LocationRequirement]:
     mastery_locations = sorted(name for name in location_names if name.endswith(MASTERY_SUFFIX))
-    if special_weapon == "Progressive Sentinel Hammer":
-        raise ValueError(
-            "Nekravol - Mission Challenge - Die by the Sword requires The Crucible, "
-            "which the Special Weapon option 'Progressive Sentinel Hammer' never provides"
-        )
     table: dict[str, LocationRequirement] = {
         "Cultist Base - Mission Challenge - Armored Rain": LocationRequirement(
             combat_all_of=("flame_belch",)
