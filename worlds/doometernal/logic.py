@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 from BaseClasses import CollectionState
 
-from .items import starting_weapon_item_names
+from .items import BASE_GATE_KEY_ITEM_NAMES, starting_weapon_item_names
 
 MASTERY_SUFFIX = " - Weapon Mastery Challenge"
 
@@ -36,11 +36,29 @@ MISSION_COMPLETION_WEAPON_THRESHOLDS: Mapping[str, int] = {
     "Doom Hunter Base": 5,
     "Super Gore Nest": 6,
     "ARC Complex": 7,
+    "UAC Atlantica Facility": 6,
+    "The Blood Swamps": 6,
+    "The Holt": 7,
 }
 DEFAULT_MISSION_COMPLETION_WEAPON_THRESHOLD = 7
 MISSION_CLEAR_EVENT_PREFIX = "Internal Mission Clear: "
 VICTORY_REQUIREMENT_EVENT_PREFIX = "Internal Victory Requirement: "
 GOAL_ENDPOINT_EVENT_PREFIX = "Internal Goal Endpoint: "
+
+BASE_SLAYER_GATES: Mapping[str, tuple[str, str]] = {
+    "Exultia - Slayer Gate Complete": ("Exultia - Hell - Ichor Expanse", "Exultia Slayer Gate Key"),
+    "Cultist Base - Slayer Gate Complete": ("Cultist Base - Promenade of Culling", "Cultist Base Slayer Gate Key"),
+    "Super Gore Nest - Slayer Gate Complete": ("Super Gore Nest - Upper Area - Vermilion Canal", "Super Gore Nest Slayer Gate Key"),
+    "ARC Complex - Slayer Gate Complete": ("ARC Complex - Convention Parking", "ARC Complex Slayer Gate Key"),
+    "Mars Core - Slayer Gate Complete": ("Mars Core - Hell - Temple of Sin", "Mars Core Slayer Gate Key"),
+    "Taras Nabad - Slayer Gate Complete": ("Taras Nabad - City Outskirts", "Taras Nabad Slayer Gate Key"),
+}
+BASE_GATE_COMPLETE_NAMES = tuple(BASE_SLAYER_GATES)
+TAG1_GATE_COMPLETE_NAMES = (
+    "UAC Atlantica Facility - Slayer Gate Complete",
+    "The Holt - Slayer Gate Complete",
+)
+ALL_GATE_COMPLETE_NAMES = BASE_GATE_COMPLETE_NAMES + TAG1_GATE_COMPLETE_NAMES
 
 DLC_REGION_NAMES = frozenset({
     "UAC Atlantica Facility",
@@ -166,6 +184,24 @@ def connection_requirement(
     )
 
 
+def tag1_late_game_readiness(
+    *,
+    randomize_dash: bool = False,
+    randomize_chainsaw: bool = False,
+) -> LocationRequirement:
+    """Capability-based late-game readiness for entering TAG1."""
+    all_of: list[str] = []
+    if randomize_dash:
+        all_of.append("Dash")
+    if randomize_chainsaw:
+        all_of.append("Chainsaw")
+    return LocationRequirement(
+        all_of=tuple(all_of),
+        normal_weapon_count=5,
+        combat_all_of=("plasma_rifle", "weak_point", "blood_punch"),
+    )
+
+
 def mission_clear_event_name(mission_name: str) -> str:
     return f"{MISSION_CLEAR_EVENT_PREFIX}{mission_name}"
 
@@ -284,7 +320,11 @@ def effective_victory_requirements(
         }
     content_present = {
         "Complete All Enabled Missions": any(name.endswith(" - Mission Complete") for name in active_locations),
-        "Complete All Slayer Gates": any(" - Slayer Gate Complete" in name for name in active_locations),
+        "Complete All Slayer Gates": (
+            not use_dlc_content
+            or any(" - Slayer Gate Complete" in name for name in active_locations)
+            or any(name in active_locations for name in BASE_GATE_COMPLETE_NAMES)
+        ),
         "Complete All Escalation Encounters": any(" - Escalation" in name for name in active_locations),
         "Complete All Secret Encounters": any(" - Secret Encounter - " in name for name in active_locations),
         "Complete All Mission Challenges": any(" - All Mission Challenges Completed" in name for name in active_locations),
@@ -342,6 +382,23 @@ def build_location_prerequisites(
             all_of=(special_weapon,)
         ),
     }
+    gate_complete_keys = {
+        "Exultia - Slayer Gate Complete": "Exultia Slayer Gate Key",
+        "Cultist Base - Slayer Gate Complete": "Cultist Base Slayer Gate Key",
+        "Super Gore Nest - Slayer Gate Complete": "Super Gore Nest Slayer Gate Key",
+        "ARC Complex - Slayer Gate Complete": "ARC Complex Slayer Gate Key",
+        "Mars Core - Slayer Gate Complete": "Mars Core Slayer Gate Key",
+        "Taras Nabad - Slayer Gate Complete": "Taras Nabad Slayer Gate Key",
+        "UAC Atlantica Facility - Slayer Gate Complete": "UAC Atlantica Slayer Gate Key",
+        "The Holt - Slayer Gate Complete": "The Holt Slayer Gate Key",
+    }
+    for loc_name, key_name in gate_complete_keys.items():
+        if loc_name in location_names:
+            table[loc_name] = LocationRequirement(all_of=(key_name,))
+    if "Fortress of Doom - Unmaykr Acquired" in location_names:
+        table["Fortress of Doom - Unmaykr Acquired"] = LocationRequirement(
+            all_of=BASE_GATE_COMPLETE_NAMES,
+        )
     for aggregate_name in sorted(
         name for name in location_names if name.endswith(" - All Mission Challenges Completed")
     ):

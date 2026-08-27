@@ -20,6 +20,8 @@ from .items import (
     SPECIAL_WEAPON_ITEM_NAMES,
     SPECIAL_WEAPON_POOL_COUNTS,
     SUPPORT_RUNE_ITEM_NAMES,
+    BASE_GATE_KEY_ITEM_NAMES,
+    TAG1_GATE_KEY_ITEM_NAMES,
     item_data_table,
     item_name_to_id,
     starting_weapon_item_names,
@@ -33,7 +35,12 @@ from .logic import (
     connection_requirement,
     goal_endpoint_event_name,
     mission_clear_event_name,
+    BASE_SLAYER_GATES,
+    BASE_GATE_COMPLETE_NAMES,
     DLC_REGION_NAMES,
+    DLC_MISSION_NAMES,
+    LocationRequirement,
+    tag1_late_game_readiness,
     effective_victory_requirements,
     goal_endpoint_available,
     GOAL_ENDPOINT_LOCATIONS,
@@ -45,7 +52,7 @@ from .logic import (
     requirement_satisfied,
     validate_location_prerequisites,
 )
-from .options import DoomEternalOptions, resolve_praetor_suit_upgrade_count
+from .options import DLCLogicTiming, DoomEternalOptions, resolve_praetor_suit_upgrade_count
 from .settings import DoomEternalSettings
 from .version import (
     APWORLD_REVISION,
@@ -263,7 +270,7 @@ class DoomEternalWorld(World):
             "Exultia - Sentinel Battery - King Novik Return Path": self.options.randomize_first_battery.value,
         }
         for loc_name, loc_data in location_data_table.items():
-            if loc_data.region in DLC_REGION_NAMES and not self.options.use_dlc_content.value:
+            if (loc_data.region in DLC_REGION_NAMES or loc_name.split(" - ", 1)[0] in DLC_MISSION_NAMES) and not self.options.use_dlc_content.value:
                 continue
             if loc_name in vanilla_physical_locations and not vanilla_physical_locations[loc_name]:
                 continue
@@ -294,6 +301,18 @@ class DoomEternalWorld(World):
             )
             event_item.classification = ItemClassification.progression_skip_balancing
             mission_clear_events[region.name] = event_name
+            mission_clear_events[mission_name] = event_name
+
+        for gate_name, (region_name, key_name) in BASE_SLAYER_GATES.items():
+            region = self.multiworld.get_region(region_name, self.player)
+            event_item = region.add_event(
+                gate_name,
+                gate_name,
+                rule=lambda state, key_name=key_name: state.has(key_name, self.player),
+                location_type=DoomEternalLocation,
+                item_type=DoomEternalItem,
+            )
+            event_item.classification = ItemClassification.progression_skip_balancing
 
         requirement_location_suffixes = {
             "Complete All Slayer Gates": " - Slayer Gate Complete",
@@ -347,6 +366,27 @@ class DoomEternalWorld(World):
                 continue
             source = self.multiworld.get_region(source_name, self.player)
             destination = self.multiworld.get_region(destination_name, self.player)
+            if destination_name == "UAC Atlantica Facility - UAC Facility (Intact) - Landing Pad":
+                if self.options.dlc_logic_timing.value == DLCLogicTiming.option_late_game:
+                    req = tag1_late_game_readiness(
+                        randomize_dash=bool(self.options.randomize_dash.value),
+                        randomize_chainsaw=bool(self.options.randomize_chainsaw.value),
+                    )
+                else:
+                    req = LocationRequirement()
+                generated_entrance_name = entrance_name or f"{source_name} -> {destination_name}"
+                entrance = Entrance(self.player, generated_entrance_name, source)
+                source.exits.append(entrance)
+                entrance.connect(destination)
+                set_rule(
+                    entrance,
+                    partial(
+                        self._campaign_entrance_access,
+                        mission_clear_events.get(source_name),
+                        req,
+                    ),
+                )
+                continue
             if not entrance_name and not condition:
                 boundary_event = mission_clear_events.get(source_name)
                 if not boundary_event:
@@ -440,8 +480,10 @@ class DoomEternalWorld(World):
         pool_names.extend(
             [effective_special_weapon] * SPECIAL_WEAPON_POOL_COUNTS[effective_special_weapon]
         )
+        pool_names.extend(sorted(BASE_GATE_KEY_ITEM_NAMES))
         if self.options.use_dlc_content.value:
             pool_names.extend(sorted(SUPPORT_RUNE_ITEM_NAMES))
+            pool_names.extend(sorted(TAG1_GATE_KEY_ITEM_NAMES))
         suit_names = suit_perk_item_names
         manual_automap_count = int(bool(start_inventory[self.AUTOMAP_STARTING_ITEM]))
         automap_start_count = manual_automap_count
@@ -573,7 +615,11 @@ class DoomEternalWorld(World):
                 else self.options.special_weapon.current_option_name
             ),
         )
-        validate_location_prerequisites(prerequisite_table, active_location_names, set(item_data_table))
+        validate_location_prerequisites(
+            prerequisite_table,
+            active_location_names,
+            set(item_data_table) | set(BASE_GATE_COMPLETE_NAMES),
+        )
         for location_name, requirement in prerequisite_table.items():
             location = self.multiworld.get_location(location_name, self.player)
             set_rule(
@@ -624,9 +670,14 @@ class DoomEternalWorld(World):
                 "Complete All Mission Challenges": " - All Mission Challenges Completed",
                 "Complete All Weapon Mastery Challenges": MASTERY_SUFFIX,
             }[requirement_name]
+            candidate_locations = (
+                active_location_names | set(BASE_GATE_COMPLETE_NAMES)
+                if requirement_name == "Complete All Slayer Gates"
+                else active_location_names
+            )
             required_events.update(
                 victory_requirement_location_event_name(requirement_name, location)
-                for location in active_location_names
+                for location in candidate_locations
                 if (suffix in location if suffix.endswith(" - ") or suffix == " - Escalation"
                     else location.endswith(suffix))
             )
