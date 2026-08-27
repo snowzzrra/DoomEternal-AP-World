@@ -115,8 +115,8 @@ class DoomEternalWorld(World):
             if data is None:
                 unsafe.append(name)
                 continue
-            if name in SUPPORT_RUNE_ITEM_NAMES:
-                unavailable.append(f"{name} (Support Rune materialization deferred until 0.5-C)")
+            if name in SUPPORT_RUNE_ITEM_NAMES and not dlc_enabled:
+                unavailable.append(f"{name} (requires Use DLC Content ON)")
                 continue
             if name not in DEVINV_START_INVENTORY_ITEM_NAMES:
                 if data.classification & ItemClassification.trap:
@@ -140,6 +140,8 @@ class DoomEternalWorld(World):
             elif name.startswith("Progressive ") and quantity > 4:
                 invalid_quantity.append(f"{name} (maximum 4 ordered tiers)")
             elif name in suit_perk_item_names and quantity > 1:
+                invalid_quantity.append(f"{name} (maximum 1 pool copy)")
+            elif name in SUPPORT_RUNE_ITEM_NAMES and quantity > 1:
                 invalid_quantity.append(f"{name} (maximum 1 pool copy)")
         if unsafe:
             raise ValueError(
@@ -212,6 +214,7 @@ class DoomEternalWorld(World):
         capabilities.append("starting_weapon_v1")
         capabilities.append("special_weapon_progression_v1")
         capabilities.append("ammo_refill_v1")
+        capabilities.append("cross_campaign_materialization_v1")
         return {
             "death_link": bool(self.options.death_link.value),
             "praetor_suit_upgrades_in_pool": self.praetor_suit_upgrades_in_pool,
@@ -437,6 +440,8 @@ class DoomEternalWorld(World):
         pool_names.extend(
             [effective_special_weapon] * SPECIAL_WEAPON_POOL_COUNTS[effective_special_weapon]
         )
+        if self.options.use_dlc_content.value:
+            pool_names.extend(sorted(SUPPORT_RUNE_ITEM_NAMES))
         suit_names = suit_perk_item_names
         manual_automap_count = int(bool(start_inventory[self.AUTOMAP_STARTING_ITEM]))
         automap_start_count = manual_automap_count
@@ -553,7 +558,9 @@ class DoomEternalWorld(World):
 
     def set_rules(self) -> None:
         active_location_names = {
-            location.name for location in self.multiworld.get_locations(self.player)
+            location.name
+            for location in self.multiworld.get_locations(self.player)
+            if location.address is not None
         }
         prerequisite_table = build_location_prerequisites(
             active_location_names,
@@ -582,7 +589,9 @@ class DoomEternalWorld(World):
             forbid_item(location, "Sentinel Battery Bundle", self.player)
 
         active_location_names = {
-            location.name for location in self.multiworld.get_locations(self.player)
+            location.name
+            for location in self.multiworld.get_locations(self.player)
+            if location.address is not None
         }
         effective_requirements = effective_victory_requirements(
             set(self.options.additional_victory_requirements.value),

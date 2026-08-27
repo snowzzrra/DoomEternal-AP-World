@@ -228,6 +228,7 @@ DEVINV_START_INVENTORY_ITEM_NAMES = frozenset({
     "Frag Grenade Cluster Bombs", "Second Frag Grenade", "Ice Bomb Cooldown", "Extended Ice Bomb Duration",
     "Health from Frozen Demons", "Frozen Melee Shatter", "Sentinel Battery", "Sentinel Battery Bundle",
     "The Crucible", "Progressive Special Weapon", "Progressive Sentinel Hammer", "Ammo Refill",
+    "Break Blast", "Desperate Punch", "Take Back",
 })
 
 DEVINV_NON_PERSISTENT_USEFUL_ITEM_NAMES = frozenset({

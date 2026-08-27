@@ -111,6 +111,7 @@ class LocationRequirement:
     any_of: tuple[tuple[str, ...], ...] = ()
     combat_all_of: tuple[str, ...] = ()
     combat_any_of: tuple[str, ...] = ()
+    reachable_any_of: tuple[tuple[str, str], ...] = ()
     battery_currency: int = 0
     normal_weapon_count: int = 0
     all_requirements: tuple["LocationRequirement", ...] = ()
@@ -378,7 +379,18 @@ def build_location_prerequisites(
         base_weapon = MOD_BASE_WEAPON_REQUIREMENTS.get(mod_name)
         if base_weapon is None:
             continue
-        table[location_name] = LocationRequirement(combat_all_of=(f"mod:{mod_name}",))
+        reachable_any_of: tuple[tuple[str, str], ...] = ()
+        if mod_name == "Full Auto":
+            reachable_any_of = (("Region", "Doom Hunter Base - Station of Redemption"),)
+        elif mod_name == "Lock-on Burst":
+            reachable_any_of = (
+                ("Location", "Cultist Base - Slayer Key - Giant Yellow Wall Route"),
+                ("Region", "Doom Hunter Base - Station of Redemption"),
+            )
+        table[location_name] = LocationRequirement(
+            combat_all_of=(f"mod:{mod_name}",),
+            reachable_any_of=reachable_any_of,
+        )
     return table
 
 
@@ -459,6 +471,11 @@ def requirement_satisfied(requirement: LocationRequirement, state: CollectionSta
             for alternative in combat_capability_alternatives(capability)
         )
         for capability in requirement.combat_any_of
+    ):
+        return False
+    if requirement.reachable_any_of and not any(
+        state.can_reach(name, kind, player)
+        for kind, name in requirement.reachable_any_of
     ):
         return False
     return all(requirement_satisfied(child, state, player) for child in requirement.all_requirements)
