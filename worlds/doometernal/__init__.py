@@ -122,7 +122,7 @@ class DoomEternalWorld(World):
             if data is None:
                 unsafe.append(name)
                 continue
-            if name in SUPPORT_RUNE_ITEM_NAMES and not dlc_enabled:
+            if (name in SUPPORT_RUNE_ITEM_NAMES or name in TAG1_GATE_KEY_ITEM_NAMES) and not dlc_enabled:
                 unavailable.append(f"{name} (requires Use DLC Content ON)")
                 continue
             if name not in DEVINV_START_INVENTORY_ITEM_NAMES:
@@ -430,7 +430,6 @@ class DoomEternalWorld(World):
         pool_names = [
             *world_pool_weapon_item_names,
             "Chainsaw",
-            "Meat Hook",
             "Frag Grenade",
             "Blood Punch",
             "Flame Belch",

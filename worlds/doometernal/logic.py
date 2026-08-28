@@ -26,7 +26,6 @@ MOD_BASE_WEAPON_REQUIREMENTS: Mapping[str, str] = {
     "Arbalest": "Ballista",
     "Mobile Turret": "Chaingun",
     "Energy Shield": "Chaingun",
-    "Meat Hook": "Super Shotgun",
 }
 
 MISSION_COMPLETION_WEAPON_THRESHOLDS: Mapping[str, int] = {
@@ -142,6 +141,7 @@ COMBAT_CAPABILITIES: Mapping[str, tuple[tuple[str, ...], ...]] = {
     "plasma_rifle": (("Plasma Rifle",),),
     "ice_bomb": (("Ice Bomb",),),
     "blood_punch": (("Blood Punch",),),
+    "mod:Meat Hook": (("Super Shotgun",),),
 }
 
 def combat_capability_alternatives(capability: str) -> tuple[tuple[str, ...], ...]:
