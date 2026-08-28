@@ -9,6 +9,7 @@ from worlds.generic.Rules import forbid_item, set_rule
 from .generated_content import (
     CAMPAIGN_CONNECTIONS,
     CAMPAIGN_REGIONS,
+    MISSION_DIFFICULTY,
 )
 from .identity import GAME_NAME
 from .items import (
@@ -41,6 +42,7 @@ from .logic import (
     DLC_MISSION_NAMES,
     LocationRequirement,
     tag1_late_game_readiness,
+    tag2_very_late_game_readiness,
     effective_victory_requirements,
     goal_endpoint_available,
     GOAL_ENDPOINT_LOCATIONS,
@@ -240,6 +242,9 @@ class DoomEternalWorld(World):
                 self.options.goal.current_option_name, catalog_location_names
             ),
             "additional_victory_requirements": sorted(effective_requirements),
+            "mission_difficulty": {
+                mission: dict(metadata) for mission, metadata in MISSION_DIFFICULTY.items()
+            },
             "special_weapon": "The Crucible" if not dlc_enabled else self.options.special_weapon.current_option_name,
             "enhanced_melee_damage": bool(self.options.enhanced_melee_damage.value),
             "apworld_revision": APWORLD_REVISION,
@@ -255,10 +260,19 @@ class DoomEternalWorld(World):
         }
 
     def create_regions(self) -> None:
-        catalog_regions = {data.region for data in location_data_table.values()}
         for region_name in CAMPAIGN_REGIONS:
+            if (
+                not self.options.use_dlc_content.value
+                and region_name.split(" - ", 1)[0] in DLC_MISSION_NAMES
+            ):
+                continue
             region = Region(region_name, self.player, self.multiworld)
             self.multiworld.regions.append(region)
+        catalog_regions = {
+            data.region for data in location_data_table.values()
+            if self.options.use_dlc_content.value
+            or data.region.split(" - ", 1)[0] not in DLC_MISSION_NAMES
+        }
         for region_name in sorted(catalog_regions - set(CAMPAIGN_REGIONS)):
             region = Region(region_name, self.player, self.multiworld)
             self.multiworld.regions.append(region)
@@ -316,7 +330,7 @@ class DoomEternalWorld(World):
 
         requirement_location_suffixes = {
             "Complete All Slayer Gates": " - Slayer Gate Complete",
-            "Complete All Escalation Encounters": " - Escalation",
+            "Complete All Escalation Encounters": " - Escalation Encounter Wave ",
             "Complete All Secret Encounters": " - Secret Encounter - ",
             "Complete All Mission Challenges": " - All Mission Challenges Completed",
             "Complete All Weapon Mastery Challenges": MASTERY_SUFFIX,
@@ -325,7 +339,7 @@ class DoomEternalWorld(World):
             location.name for location in self.multiworld.get_locations(self.player)
         }:
             for requirement_name, suffix in requirement_location_suffixes.items():
-                if (suffix in location_name if suffix.endswith(" - ") or suffix == " - Escalation"
+                if (suffix in location_name if suffix.endswith(" - ") or suffix.endswith(" ")
                     else location_name.endswith(suffix)):
                     public_location = self.multiworld.get_location(location_name, self.player)
                     region = public_location.parent_region
@@ -362,7 +376,13 @@ class DoomEternalWorld(World):
             goal_event.classification = ItemClassification.progression_skip_balancing
 
         for source_name, destination_name, entrance_name, condition in CAMPAIGN_CONNECTIONS:
-            if "requires_dlc_content" in condition.get("soft_capabilities", ()) and not self.options.use_dlc_content.value:
+            if (
+                not self.options.use_dlc_content.value
+                and (
+                    source_name.split(" - ", 1)[0] in DLC_MISSION_NAMES
+                    or destination_name.split(" - ", 1)[0] in DLC_MISSION_NAMES
+                )
+            ):
                 continue
             source = self.multiworld.get_region(source_name, self.player)
             destination = self.multiworld.get_region(destination_name, self.player)
@@ -386,6 +406,17 @@ class DoomEternalWorld(World):
                         req,
                     ),
                 )
+                continue
+            if destination_name == "The World Spear - Sentinel Village - Village Outskirts":
+                if self.options.dlc_logic_timing.value == DLCLogicTiming.option_late_game:
+                    req = tag2_very_late_game_readiness()
+                else:
+                    req = LocationRequirement()
+                generated_entrance_name = entrance_name or f"{source_name} -> {destination_name}"
+                entrance = Entrance(self.player, generated_entrance_name, source)
+                source.exits.append(entrance)
+                entrance.connect(destination)
+                set_rule(entrance, partial(self._campaign_entrance_access, None, req))
                 continue
             if not entrance_name and not condition:
                 boundary_event = mission_clear_events.get(source_name)

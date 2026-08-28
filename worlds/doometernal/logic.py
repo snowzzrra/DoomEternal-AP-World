@@ -38,6 +38,9 @@ MISSION_COMPLETION_WEAPON_THRESHOLDS: Mapping[str, int] = {
     "UAC Atlantica Facility": 6,
     "The Blood Swamps": 6,
     "The Holt": 7,
+    "The World Spear": 6,
+    "Reclaimed Earth": 6,
+    "Immora": 7,
 }
 DEFAULT_MISSION_COMPLETION_WEAPON_THRESHOLD = 7
 MISSION_CLEAR_EVENT_PREFIX = "Internal Mission Clear: "
@@ -198,6 +201,14 @@ def tag1_late_game_readiness(
     return LocationRequirement(
         all_of=tuple(all_of),
         normal_weapon_count=5,
+        combat_all_of=("plasma_rifle", "weak_point", "blood_punch"),
+    )
+
+
+def tag2_very_late_game_readiness() -> LocationRequirement:
+    """Soft combat readiness for entering the TAG2 route."""
+    return LocationRequirement(
+        normal_weapon_count=6,
         combat_all_of=("plasma_rifle", "weak_point", "blood_punch"),
     )
 
