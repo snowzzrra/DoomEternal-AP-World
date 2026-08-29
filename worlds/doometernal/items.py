@@ -27,7 +27,10 @@ BASE_CAMPAIGN_SENTINEL_BATTERY_SINGLES = 2
 SENTINEL_BATTERY_BUNDLE_VALUE = 2
 
 # Reserved IDs stay unavailable to current item definitions.
-RESERVED_ITEM_IDS = frozenset({7770018, 7770019, 7770057, 7770083, 7770105, 7770119, 7770120, 7770121})
+RESERVED_ITEM_IDS = frozenset({
+    7770018, 7770019, 7770030, 7770057, 7770083, 7770105,
+    7770119, 7770120, 7770121, 7770143, 7770144,
+})
 RESERVED_LOCATION_IDS = frozenset({7770055, 7770068})
 
 PROGRESSIVE_SPECIAL_WEAPON_ID = 7770901
@@ -53,6 +56,7 @@ BASE_GATE_KEY_ITEM_NAMES = (
     "Taras Nabad Slayer Gate Key",
 )
 TAG1_GATE_KEY_ITEM_NAMES = ("UAC Atlantica Slayer Gate Key", "The Holt Slayer Gate Key")
+TAG_MISSION_LOCAL_ITEM_NAMES = frozenset(TAG1_GATE_KEY_ITEM_NAMES)
 ALL_GATE_KEY_ITEM_NAMES = BASE_GATE_KEY_ITEM_NAMES + TAG1_GATE_KEY_ITEM_NAMES
 
 item_data_table: dict[str, ItemData] = {
@@ -158,7 +162,6 @@ item_data_table: dict[str, ItemData] = {
     "Fuel": ItemData(7770027, ItemClassification.filler),
     "BFG Ammo": ItemData(7770028, ItemClassification.filler),
     "Soulsphere": ItemData(7770029, ItemClassification.filler),
-    "Berserk": ItemData(7770030, ItemClassification.filler),
     "Small Health": ItemData(7770031, ItemClassification.filler),
     "Large Health": ItemData(7770032, ItemClassification.filler),
     "Small Armor": ItemData(7770033, ItemClassification.filler),
@@ -171,8 +174,9 @@ item_data_table: dict[str, ItemData] = {
     "One Extra Life": ItemData(7770040, ItemClassification.useful),
     "Armor Shard": ItemData(7770041, ItemClassification.filler),
     "Ammo Cache": ItemData(7770042, ItemClassification.filler),
-    "Overdrive": ItemData(7770143, ItemClassification.filler),
-    "Onslaught": ItemData(7770144, ItemClassification.filler),
+    "Damage Boost": ItemData(7770156, ItemClassification.filler),
+    "Damage Resistance": ItemData(7770157, ItemClassification.filler),
+    "Infinite Ammo": ItemData(7770158, ItemClassification.filler),
     # Traps
     "Imp Trap": ItemData(7770043, ItemClassification.trap),
     "Carcass Trap": ItemData(7770044, ItemClassification.trap),
@@ -188,6 +192,8 @@ item_data_table: dict[str, ItemData] = {
     "Ammo Drain Trap": ItemData(7770054, ItemClassification.trap),
     "Fuel Drain Trap": ItemData(7770055, ItemClassification.trap),
     "BFG Drain Trap": ItemData(7770056, ItemClassification.trap),
+    "Weakness Trap": ItemData(7770159, ItemClassification.trap),
+    "Vulnerability Trap": ItemData(7770160, ItemClassification.trap),
     # Locked to the runtime mission-completion check; it has no in-game command.
     "Victory": ItemData(7770096, ItemClassification.progression),
 }
@@ -209,6 +215,8 @@ SAFE_TRAP_NAMES = frozenset({
     "Ammo Drain Trap",
     "Fuel Drain Trap",
     "BFG Drain Trap",
+    "Weakness Trap",
+    "Vulnerability Trap",
 })
 
 world_pool_weapon_item_names = tuple(

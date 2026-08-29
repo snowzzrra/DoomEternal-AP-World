@@ -72,6 +72,7 @@ DLC_REGION_NAMES = frozenset({
     "Immora - The Dark Lord",
 })
 DLC_MISSION_NAMES = frozenset(DLC_REGION_NAMES)
+DLC_MISSION_LOCAL_PREFIXES = DLC_MISSION_NAMES | frozenset({"The Dark Lord"})
 VICTORY_REQUIREMENT_NAMES = frozenset({
     "Complete All Enabled Missions",
     "Complete All Slayer Gates",
@@ -104,7 +105,24 @@ FULL_SAGA_TAG_MISSIONS = (
     "Reclaimed Earth",
     "Immora",
 )
-FULL_SAGA_MISSION_COUNT = 13 + len(FULL_SAGA_TAG_MISSIONS)
+BASE_CAMPAIGN_MISSIONS = (
+    "Hell on Earth",
+    "Exultia",
+    "Cultist Base",
+    "Doom Hunter Base",
+    "Super Gore Nest",
+    "ARC Complex",
+    "Mars Core",
+    "Sentinel Prime",
+    "Taras Nabad",
+    "Nekravol",
+    "Nekravol Part II",
+    "Urdak",
+    "Final Sin",
+)
+FULL_SAGA_MISSIONS = BASE_CAMPAIGN_MISSIONS + FULL_SAGA_TAG_MISSIONS
+BASE_CAMPAIGN_MISSION_COUNT = len(BASE_CAMPAIGN_MISSIONS)
+FULL_SAGA_MISSION_COUNT = len(FULL_SAGA_MISSIONS)
 
 FORTRESS_BATTERY_CONSUMER_LOCATIONS = frozenset({
     "Fortress of Doom - Sentinel Crystal - Battery Room Lower East",
@@ -232,13 +250,16 @@ def validate_goal_endpoint(
     location_names: set[str],
     *,
     use_dlc_content: bool,
+    include_dlc_missions: bool = True,
 ) -> None:
     if goal_name not in GOAL_NAMES:
         raise ValueError(f"Unknown goal: {goal_name}")
-    if goal_name in {"Kill the Dark Lord", "Complete the Full Saga"} and not use_dlc_content:
+    if goal_name in {"Kill the Dark Lord", "Complete the Full Saga"} and (
+        not use_dlc_content or not include_dlc_missions
+    ):
         required = "Dark Lord" if goal_name == "Kill the Dark Lord" else "Dark Lord and Full Saga"
         raise ValueError(
-            f"DOOM Eternal Goal '{goal_name}' requires Use DLC Content for {required} content"
+            f"DOOM Eternal Goal '{goal_name}' requires DLC content and DLC missions for {required} content"
         )
     endpoint_location = GOAL_ENDPOINT_LOCATIONS.get(goal_name)
     if endpoint_location is not None and endpoint_location not in location_names:
@@ -267,10 +288,24 @@ def victory_requirement_location_event_name(requirement_name: str, location_name
 
 def catalog_has_dlc_content(location_names: set[str]) -> bool:
     """Return whether generated location catalog contains TAG mission content."""
-    return any(
-        location_name.split(" - ", 1)[0] in DLC_MISSION_NAMES
-        for location_name in location_names
-    )
+    return any(is_dlc_mission_local_name(location_name) for location_name in location_names)
+
+
+def is_dlc_mission_local_name(name: str) -> bool:
+    """Return whether name belongs to TAG mission-local content."""
+    return name.split(" - ", 1)[0] in DLC_MISSION_LOCAL_PREFIXES
+
+
+def active_catalog_location_names(
+    location_names: set[str],
+    *,
+    use_dlc_content: bool,
+    include_dlc_missions: bool = True,
+) -> set[str]:
+    """Filter authored locations by independent DLC content and mission toggles."""
+    if not use_dlc_content or not include_dlc_missions:
+        return {name for name in location_names if not is_dlc_mission_local_name(name)}
+    return set(location_names)
 
 
 def goal_redundant_requirements(
@@ -278,6 +313,7 @@ def goal_redundant_requirements(
     location_names: set[str],
     *,
     use_dlc_content: bool,
+    include_dlc_missions: bool = True,
 ) -> frozenset[str]:
     """Return victory requirements fully implied by the selected Goal."""
     if goal not in GOAL_NAMES:
@@ -285,31 +321,47 @@ def goal_redundant_requirements(
     redundant: set[str] = set()
     if goal in GOAL_IMPLIED_UNMAYKR:
         redundant.add("Acquire the Unmaykr")
-        if not use_dlc_content:
+        active_locations = active_catalog_location_names(
+            location_names,
+            use_dlc_content=use_dlc_content,
+            include_dlc_missions=include_dlc_missions,
+        )
+        if (
+            set(BASE_GATE_COMPLETE_NAMES) <= active_locations
+            and not any(name in active_locations for name in TAG1_GATE_COMPLETE_NAMES)
+        ):
             redundant.add("Complete All Slayer Gates")
     if goal == "Complete the Full Saga":
         redundant.add("Complete All Enabled Missions")
     return frozenset(redundant & VICTORY_REQUIREMENT_NAMES)
 
 
-def validate_full_saga_catalog(location_names: set[str]) -> None:
-    """Fail closed unless every canonical Full Saga mission completion exists."""
+def validate_full_saga_catalog(
+    location_names: set[str],
+    *,
+    include_dlc_missions: bool = True,
+) -> None:
+    """Fail closed unless exactly canonical 13/19 mission completions are active."""
     authored = {
         name.removesuffix(" - Mission Complete")
         for name in location_names
         if name.endswith(" - Mission Complete")
     }
-    missing = sorted(set(FULL_SAGA_TAG_MISSIONS) - authored)
+    expected = set(FULL_SAGA_MISSIONS if include_dlc_missions else BASE_CAMPAIGN_MISSIONS)
+    missing = sorted(expected - authored)
     if missing:
         raise ValueError(
             "DOOM Eternal Goal 'Complete the Full Saga' is unavailable: "
-            f"the DLC mission-complete catalog is incomplete ({len(authored)}/{FULL_SAGA_MISSION_COUNT} "
+            f"the mission-complete catalog is incomplete ({len(authored)}/{len(expected)} "
             f"missions authored); missing: {', '.join(missing)}"
         )
-    if len(authored) < FULL_SAGA_MISSION_COUNT:
+    unexpected = sorted(authored - expected)
+    if unexpected or len(authored) != len(expected):
         raise ValueError(
             "DOOM Eternal Goal 'Complete the Full Saga' is unavailable: "
-            f"the mission-complete catalog is incomplete ({len(authored)}/{FULL_SAGA_MISSION_COUNT} missions authored)"
+            f"the mission-complete catalog must contain exactly {len(expected)} missions; "
+            f"authored {len(authored)}"
+            + (f"; unexpected: {', '.join(unexpected)}" if unexpected else "")
         )
 
 
@@ -318,6 +370,7 @@ def effective_victory_requirements(
     location_names: set[str],
     *,
     use_dlc_content: bool,
+    include_dlc_missions: bool = True,
     goal: str | None = None,
 ) -> frozenset[str]:
     """Drop requirements with no authored content or fully implied by the Goal."""
@@ -325,14 +378,16 @@ def effective_victory_requirements(
         raise ValueError(f"Unknown victory requirement(s): {sorted(selected - VICTORY_REQUIREMENT_NAMES)}")
     if goal is not None:
         selected = selected - goal_redundant_requirements(
-            goal, location_names, use_dlc_content=use_dlc_content
+            goal,
+            location_names,
+            use_dlc_content=use_dlc_content,
+            include_dlc_missions=include_dlc_missions,
         )
-    active_locations = set(location_names)
-    if not use_dlc_content:
-        active_locations = {
-            name for name in active_locations
-            if name.split(" - ", 1)[0] not in DLC_MISSION_NAMES
-        }
+    active_locations = active_catalog_location_names(
+        location_names,
+        use_dlc_content=use_dlc_content,
+        include_dlc_missions=include_dlc_missions,
+    )
     content_present = {
         "Complete All Enabled Missions": any(name.endswith(" - Mission Complete") for name in active_locations),
         "Complete All Slayer Gates": (

@@ -24,9 +24,16 @@ class _ExactLabelChoice(Choice):
 
 
 class UseDLCContent(Toggle):
-    """Include The Ancient Gods Part One and Part Two. Disable for Base Campaign content only."""
+    """Adds supported The Ancient Gods equipment and gameplay content to the randomizer, including the Sentinel Hammer and Support Runes. DLC missions are controlled separately."""
 
     display_name = "Use DLC Content"
+    default = 1
+
+
+class IncludeDLCMissions(Toggle):
+    """Adds The Ancient Gods Part One and Part Two missions and their Archipelago locations. Disable this for the Base Campaign while keeping enabled DLC equipment and gameplay content in the randomizer."""
+
+    display_name = "Include DLC Missions"
     default = 1
 
 
@@ -102,7 +109,7 @@ class AdditionalVictoryRequirements(OptionSet):
 class SpecialWeapon(_ExactLabelChoice):
     """Choose a three-stage Crucible-to-Hammer progression, a two-stage Sentinel Hammer progression, or one standalone Crucible stage."""
 
-    display_name = "Special Weapon Behavior"
+    display_name = "Special Weapon"
     option_progressive_special_weapon = 0
     option_progressive_sentinel_hammer = 1
     option_the_crucible = 2
@@ -257,6 +264,7 @@ def resolve_praetor_suit_upgrade_count(option_value: int, rng, maximum: int = le
 @dataclass
 class DoomEternalOptions(DeathLinkMixin, PerGameCommonOptions):
     use_dlc_content: UseDLCContent
+    include_dlc_missions: IncludeDLCMissions
     dlc_logic_timing: DLCLogicTiming
     goal: Goal
     additional_victory_requirements: AdditionalVictoryRequirements

@@ -23,6 +23,7 @@ from .items import (
     SUPPORT_RUNE_ITEM_NAMES,
     BASE_GATE_KEY_ITEM_NAMES,
     TAG1_GATE_KEY_ITEM_NAMES,
+    TAG_MISSION_LOCAL_ITEM_NAMES,
     item_data_table,
     item_name_to_id,
     starting_weapon_item_names,
@@ -38,9 +39,9 @@ from .logic import (
     mission_clear_event_name,
     BASE_SLAYER_GATES,
     BASE_GATE_COMPLETE_NAMES,
-    DLC_REGION_NAMES,
-    DLC_MISSION_NAMES,
+    active_catalog_location_names,
     LocationRequirement,
+    is_dlc_mission_local_name,
     tag1_late_game_readiness,
     tag2_very_late_game_readiness,
     effective_victory_requirements,
@@ -103,15 +104,28 @@ class DoomEternalWorld(World):
         return inventory
 
     def generate_early(self) -> None:
-        catalog_location_names = set(location_data_table)
         dlc_enabled = bool(self.options.use_dlc_content.value)
+        include_dlc_missions = bool(self.options.include_dlc_missions.value)
+        if include_dlc_missions and not dlc_enabled:
+            raise ValueError(
+                "DOOM Eternal Include DLC Missions requires Use DLC Content ON"
+            )
+        catalog_location_names = active_catalog_location_names(
+            set(location_data_table),
+            use_dlc_content=dlc_enabled,
+            include_dlc_missions=include_dlc_missions,
+        )
         validate_goal_endpoint(
             self.options.goal.current_option_name,
             catalog_location_names,
             use_dlc_content=dlc_enabled,
+            include_dlc_missions=include_dlc_missions,
         )
         if self.options.goal.current_option_name == "Complete the Full Saga":
-            validate_full_saga_catalog(catalog_location_names)
+            validate_full_saga_catalog(
+                catalog_location_names,
+                include_dlc_missions=include_dlc_missions,
+            )
         effective_special_weapon = (
             "The Crucible" if not dlc_enabled else self.options.special_weapon.current_option_name
         )
@@ -124,8 +138,13 @@ class DoomEternalWorld(World):
             if data is None:
                 unsafe.append(name)
                 continue
-            if (name in SUPPORT_RUNE_ITEM_NAMES or name in TAG1_GATE_KEY_ITEM_NAMES) and not dlc_enabled:
+            if name in SUPPORT_RUNE_ITEM_NAMES and not dlc_enabled:
                 unavailable.append(f"{name} (requires Use DLC Content ON)")
+                continue
+            if name in TAG_MISSION_LOCAL_ITEM_NAMES and (not dlc_enabled or not include_dlc_missions):
+                unavailable.append(
+                    f"{name} (requires Use DLC Content ON and Include DLC Missions ON)"
+                )
                 continue
             if name not in DEVINV_START_INVENTORY_ITEM_NAMES:
                 if data.classification & ItemClassification.trap:
@@ -204,19 +223,27 @@ class DoomEternalWorld(World):
 
     def fill_slot_data(self) -> dict[str, object]:
         start_inventory = dict(self.effective_starting_inventory())
-        catalog_location_names = set(location_data_table)
         dlc_enabled = bool(self.options.use_dlc_content.value)
+        include_dlc_missions = bool(self.options.include_dlc_missions.value)
+        catalog_location_names = active_catalog_location_names(
+            set(location_data_table),
+            use_dlc_content=dlc_enabled,
+            include_dlc_missions=include_dlc_missions,
+        )
+        if not self.options.include_weapon_mastery_challenges.value:
+            catalog_location_names = {
+                name for name in catalog_location_names
+                if not name.endswith(" - Weapon Mastery Challenge")
+            }
         effective_requirements = effective_victory_requirements(
             set(self.options.additional_victory_requirements.value),
-            {
-                name for name in catalog_location_names
-                if self.options.include_weapon_mastery_challenges.value
-                or not name.endswith(" - Weapon Mastery Challenge")
-            },
+            catalog_location_names,
             use_dlc_content=dlc_enabled,
+            include_dlc_missions=include_dlc_missions,
             goal=self.options.goal.current_option_name,
         )
-        capabilities = ["room_mod_v2", "slot_data_v3", "goal_events_v1", "goal_endpoint_events_v1"]
+        capabilities = ["room_mod_v2", "slot_data_v4", "goal_events_v1", "goal_endpoint_events_v1"]
+        capabilities.append("dlc_missions_v1")
         capabilities.append("physical_options_v1")
         if start_inventory:
             capabilities.append("starting_inventory_v1")
@@ -235,6 +262,7 @@ class DoomEternalWorld(World):
             "trap_percentage": int(self.options.trap_percentage.value),
             "enabled_traps": sorted(self.options.enabled_traps.value),
             "use_dlc_content": dlc_enabled,
+            "include_dlc_missions": include_dlc_missions,
             "dlc_logic_timing": self.options.dlc_logic_timing.current_option_name,
             "goal": self.options.goal.current_option_name,
             "goal_endpoint_event": goal_endpoint_event_name(self.options.goal.current_option_name),
@@ -260,18 +288,20 @@ class DoomEternalWorld(World):
         }
 
     def create_regions(self) -> None:
+        dlc_enabled = bool(self.options.use_dlc_content.value)
+        include_dlc_missions = bool(self.options.include_dlc_missions.value)
         for region_name in CAMPAIGN_REGIONS:
             if (
-                not self.options.use_dlc_content.value
-                and region_name.split(" - ", 1)[0] in DLC_MISSION_NAMES
+                is_dlc_mission_local_name(region_name)
+                and (not dlc_enabled or not include_dlc_missions)
             ):
                 continue
             region = Region(region_name, self.player, self.multiworld)
             self.multiworld.regions.append(region)
         catalog_regions = {
             data.region for data in location_data_table.values()
-            if self.options.use_dlc_content.value
-            or data.region.split(" - ", 1)[0] not in DLC_MISSION_NAMES
+            if (dlc_enabled and include_dlc_missions)
+            or not is_dlc_mission_local_name(data.region)
         }
         for region_name in sorted(catalog_regions - set(CAMPAIGN_REGIONS)):
             region = Region(region_name, self.player, self.multiworld)
@@ -284,7 +314,10 @@ class DoomEternalWorld(World):
             "Exultia - Sentinel Battery - King Novik Return Path": self.options.randomize_first_battery.value,
         }
         for loc_name, loc_data in location_data_table.items():
-            if (loc_data.region in DLC_REGION_NAMES or loc_name.split(" - ", 1)[0] in DLC_MISSION_NAMES) and not self.options.use_dlc_content.value:
+            if (
+                is_dlc_mission_local_name(loc_data.region)
+                or is_dlc_mission_local_name(loc_name)
+            ) and (not dlc_enabled or not include_dlc_missions):
                 continue
             if loc_name in vanilla_physical_locations and not vanilla_physical_locations[loc_name]:
                 continue
@@ -377,10 +410,10 @@ class DoomEternalWorld(World):
 
         for source_name, destination_name, entrance_name, condition in CAMPAIGN_CONNECTIONS:
             if (
-                not self.options.use_dlc_content.value
+                (not self.options.use_dlc_content.value or not self.options.include_dlc_missions.value)
                 and (
-                    source_name.split(" - ", 1)[0] in DLC_MISSION_NAMES
-                    or destination_name.split(" - ", 1)[0] in DLC_MISSION_NAMES
+                    is_dlc_mission_local_name(source_name)
+                    or is_dlc_mission_local_name(destination_name)
                 )
             ):
                 continue
@@ -521,7 +554,8 @@ class DoomEternalWorld(World):
         pool_names.extend(sorted(BASE_GATE_KEY_ITEM_NAMES))
         if self.options.use_dlc_content.value:
             pool_names.extend(sorted(SUPPORT_RUNE_ITEM_NAMES))
-            pool_names.extend(sorted(TAG1_GATE_KEY_ITEM_NAMES))
+            if self.options.include_dlc_missions.value:
+                pool_names.extend(sorted(TAG1_GATE_KEY_ITEM_NAMES))
         suit_names = suit_perk_item_names
         manual_automap_count = int(bool(start_inventory[self.AUTOMAP_STARTING_ITEM]))
         automap_start_count = manual_automap_count
@@ -604,9 +638,9 @@ class DoomEternalWorld(World):
             "Full Heal": 8,
             "Full Armor": 8,
             "Soulsphere": 5,
-            "Berserk": 3,
-            "Overdrive": 3,
-            "Onslaught": 3,
+            "Damage Boost": 3,
+            "Damage Resistance": 3,
+            "Infinite Ammo": 2,
             "Small Health": 10,
             "Small Armor": 1,
             "Large Health": 10,
@@ -681,6 +715,7 @@ class DoomEternalWorld(World):
             set(self.options.additional_victory_requirements.value),
             active_location_names,
             use_dlc_content=bool(self.options.use_dlc_content.value),
+            include_dlc_missions=bool(self.options.include_dlc_missions.value),
             goal=self.options.goal.current_option_name,
         )
         mission_events = {
