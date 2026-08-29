@@ -205,9 +205,13 @@ def tag1_late_game_readiness(
     )
 
 
-def tag2_very_late_game_readiness() -> LocationRequirement:
+def tag2_very_late_game_readiness(*, randomize_dash: bool = False) -> LocationRequirement:
     """Soft combat readiness for entering the TAG2 route."""
+    all_of = ["Super Shotgun"]
+    if randomize_dash:
+        all_of.append("Dash")
     return LocationRequirement(
+        all_of=tuple(all_of),
         normal_weapon_count=6,
         combat_all_of=("plasma_rifle", "weak_point", "blood_punch"),
     )

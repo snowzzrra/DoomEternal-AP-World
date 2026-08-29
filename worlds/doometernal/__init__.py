@@ -393,7 +393,9 @@ class DoomEternalWorld(World):
                         randomize_chainsaw=bool(self.options.randomize_chainsaw.value),
                     )
                 else:
-                    req = LocationRequirement()
+                    req = LocationRequirement(
+                        all_of=("Dash",) if self.options.randomize_dash.value else ()
+                    )
                 generated_entrance_name = entrance_name or f"{source_name} -> {destination_name}"
                 entrance = Entrance(self.player, generated_entrance_name, source)
                 source.exits.append(entrance)
@@ -409,9 +411,15 @@ class DoomEternalWorld(World):
                 continue
             if destination_name == "The World Spear - Sentinel Village - Village Outskirts":
                 if self.options.dlc_logic_timing.value == DLCLogicTiming.option_late_game:
-                    req = tag2_very_late_game_readiness()
+                    req = tag2_very_late_game_readiness(
+                        randomize_dash=bool(self.options.randomize_dash.value)
+                    )
                 else:
-                    req = LocationRequirement()
+                    req = LocationRequirement(
+                        all_of=("Super Shotgun", "Dash")
+                        if self.options.randomize_dash.value
+                        else ("Super Shotgun",)
+                    )
                 generated_entrance_name = entrance_name or f"{source_name} -> {destination_name}"
                 entrance = Entrance(self.player, generated_entrance_name, source)
                 source.exits.append(entrance)
