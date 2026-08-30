@@ -1575,7 +1575,7 @@ CAMPAIGN_CONNECTIONS = (
     ("UAC Atlantica Facility - UAC Facility (Destroyed) - Burning Shipyard", "UAC Atlantica Facility - Underwater Facility", "", {}),
     ("UAC Atlantica Facility - Underwater Facility", "The Blood Swamps - Swamp Entrance", "Proceed to The Blood Swamps", {}),
     ("The Blood Swamps - Swamp Entrance", "The Blood Swamps - Underworld Crossroad", "", {}),
-    ("The Blood Swamps - Underworld Crossroad", "The Blood Swamps - Sunken Courtyard", "", {}),
+    ("The Blood Swamps - Underworld Crossroad", "The Blood Swamps - Sunken Courtyard", "", {'soft_capabilities': ('anti_spirit',)}),
     ("The Blood Swamps - Sunken Courtyard", "The Blood Swamps - Betruger Castle", "", {}),
     ("The Blood Swamps - Betruger Castle", "The Blood Swamps - Forest of the Torch", "", {}),
     ("The Blood Swamps - Forest of the Torch", "The Blood Swamps - Ishii Castle Gate", "", {}),

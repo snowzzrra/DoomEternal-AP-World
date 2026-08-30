@@ -675,8 +675,6 @@ def build_location_prerequisites(
                 all_of = ("Blood Punch",)
                 if randomize_dash:
                     all_of = (*all_of, "Dash")
-            if mission_name in {"The Blood Swamps", "The Holt"}:
-                combat_all_of = ("anti_spirit",)
             normal_weapon_count = MISSION_COMPLETION_WEAPON_THRESHOLDS.get(
                 mission_name,
                 DEFAULT_MISSION_COMPLETION_WEAPON_THRESHOLD,
