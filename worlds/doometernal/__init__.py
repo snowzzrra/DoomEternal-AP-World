@@ -738,7 +738,7 @@ class DoomEternalWorld(World):
         for requirement_name in effective_requirements - {"Complete All Enabled Missions", "Acquire the Unmaykr"}:
             suffix = {
                 "Complete All Slayer Gates": " - Slayer Gate Complete",
-                "Complete All Escalation Encounters": " - Escalation",
+                "Complete All Escalation Encounters": " - Escalation Encounter Wave ",
                 "Complete All Secret Encounters": " - Secret Encounter - ",
                 "Complete All Mission Challenges": " - All Mission Challenges Completed",
                 "Complete All Weapon Mastery Challenges": MASTERY_SUFFIX,
@@ -751,7 +751,7 @@ class DoomEternalWorld(World):
             required_events.update(
                 victory_requirement_location_event_name(requirement_name, location)
                 for location in candidate_locations
-                if (suffix in location if suffix.endswith(" - ") or suffix == " - Escalation"
+                if (suffix in location if suffix.endswith(" - ") or suffix.endswith(" ")
                     else location.endswith(suffix))
             )
 

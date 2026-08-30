@@ -395,7 +395,7 @@ def effective_victory_requirements(
             or any(" - Slayer Gate Complete" in name for name in active_locations)
             or any(name in active_locations for name in BASE_GATE_COMPLETE_NAMES)
         ),
-        "Complete All Escalation Encounters": any(" - Escalation" in name for name in active_locations),
+        "Complete All Escalation Encounters": any(" - Escalation Encounter Wave " in name for name in active_locations),
         "Complete All Secret Encounters": any(" - Secret Encounter - " in name for name in active_locations),
         "Complete All Mission Challenges": any(" - All Mission Challenges Completed" in name for name in active_locations),
         "Complete All Weapon Mastery Challenges": any(name.endswith(MASTERY_SUFFIX) for name in active_locations),

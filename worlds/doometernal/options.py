@@ -42,7 +42,7 @@ class DLCLogicTiming(_ExactLabelChoice):
 
     Late Game — UAC Atlantica becomes available once your weapons and abilities are strong enough for TAG1. The World Spear becomes available later, once your loadout is strong enough for TAG2.
 
-    From the Beginning — Hell on Earth, UAC Atlantica, and The World Spear are all available as starting paths from the beginning.
+    From the Beginning — Hell on Earth, UAC Atlantica, and The World Spear are campaign roots from the beginning. Each route still respects its traversal and capability requirements; TAG2 requires Super Shotgun / Meat Hook capability and Dash when Dash is randomized.
 
     This changes Archipelago progression only. It does not change DOOM Eternal's difficulty or hide missions from the campaign menus.
     """
