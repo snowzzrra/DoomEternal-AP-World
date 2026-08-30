@@ -44,6 +44,8 @@ from .logic import (
     is_dlc_mission_local_name,
     tag1_late_game_readiness,
     tag2_very_late_game_readiness,
+    tag1_from_the_beginning_readiness,
+    tag2_from_the_beginning_readiness,
     effective_victory_requirements,
     goal_endpoint_available,
     GOAL_ENDPOINT_LOCATIONS,
@@ -55,7 +57,7 @@ from .logic import (
     requirement_satisfied,
     validate_location_prerequisites,
 )
-from .options import DLCLogicTiming, DoomEternalOptions, resolve_praetor_suit_upgrade_count
+from .options import DLCLogicTiming, DoomEternalOptions, SpecialWeapon, resolve_praetor_suit_upgrade_count
 from .settings import DoomEternalSettings
 from .version import (
     APWORLD_REVISION,
@@ -420,14 +422,18 @@ class DoomEternalWorld(World):
             source = self.multiworld.get_region(source_name, self.player)
             destination = self.multiworld.get_region(destination_name, self.player)
             if destination_name == "UAC Atlantica Facility - UAC Facility (Intact) - Landing Pad":
+                special_weapon_name = SpecialWeapon.labels.get(
+                    self.options.special_weapon.value, "Progressive Special Weapon"
+                )
                 if self.options.dlc_logic_timing.value == DLCLogicTiming.option_late_game:
                     req = tag1_late_game_readiness(
                         randomize_dash=bool(self.options.randomize_dash.value),
                         randomize_chainsaw=bool(self.options.randomize_chainsaw.value),
+                        special_weapon=special_weapon_name,
                     )
                 else:
-                    req = LocationRequirement(
-                        all_of=("Dash",) if self.options.randomize_dash.value else ()
+                    req = tag1_from_the_beginning_readiness(
+                        randomize_dash=bool(self.options.randomize_dash.value),
                     )
                 generated_entrance_name = entrance_name or f"{source_name} -> {destination_name}"
                 entrance = Entrance(self.player, generated_entrance_name, source)
@@ -443,15 +449,20 @@ class DoomEternalWorld(World):
                 )
                 continue
             if destination_name == "The World Spear - Sentinel Village - Village Outskirts":
+                special_weapon_name = SpecialWeapon.labels.get(
+                    self.options.special_weapon.value, "Progressive Special Weapon"
+                )
                 if self.options.dlc_logic_timing.value == DLCLogicTiming.option_late_game:
                     req = tag2_very_late_game_readiness(
-                        randomize_dash=bool(self.options.randomize_dash.value)
+                        randomize_dash=bool(self.options.randomize_dash.value),
+                        randomize_chainsaw=bool(self.options.randomize_chainsaw.value),
+                        special_weapon=special_weapon_name,
                     )
                 else:
-                    req = LocationRequirement(
-                        all_of=("Super Shotgun", "Dash")
-                        if self.options.randomize_dash.value
-                        else ("Super Shotgun",)
+                    req = tag2_from_the_beginning_readiness(
+                        randomize_dash=bool(self.options.randomize_dash.value),
+                        randomize_chainsaw=bool(self.options.randomize_chainsaw.value),
+                        special_weapon=special_weapon_name,
                     )
                 generated_entrance_name = entrance_name or f"{source_name} -> {destination_name}"
                 entrance = Entrance(self.player, generated_entrance_name, source)

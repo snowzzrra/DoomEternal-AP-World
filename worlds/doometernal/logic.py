@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 
 from BaseClasses import CollectionState
@@ -60,7 +60,21 @@ TAG1_GATE_COMPLETE_NAMES = (
     "UAC Atlantica Facility - Slayer Gate Complete",
     "The Holt - Slayer Gate Complete",
 )
-ALL_GATE_COMPLETE_NAMES = BASE_GATE_COMPLETE_NAMES + TAG1_GATE_COMPLETE_NAMES
+BASE_MISSION_NAMES = frozenset({
+    "Hell on Earth",
+    "Exultia",
+    "Cultist Base",
+    "Doom Hunter Base",
+    "Super Gore Nest",
+    "ARC Complex",
+    "Mars Core",
+    "Sentinel Prime",
+    "Taras Nabad",
+    "Nekravol",
+    "Nekravol Part II",
+    "Urdak",
+    "Final Sin",
+})
 
 DLC_REGION_NAMES = frozenset({
     "UAC Atlantica Facility",
@@ -152,6 +166,7 @@ class LocationRequirement:
     reachable_any_of: tuple[tuple[str, str], ...] = ()
     battery_currency: int = 0
     normal_weapon_count: int = 0
+    custom_rule: Callable[[CollectionState, int], bool] | None = None
     all_requirements: tuple["LocationRequirement", ...] = ()
 
 
@@ -163,6 +178,7 @@ COMBAT_CAPABILITIES: Mapping[str, tuple[tuple[str, ...], ...]] = {
     "ice_bomb": (("Ice Bomb",),),
     "blood_punch": (("Blood Punch",),),
     "mod:Meat Hook": (("Super Shotgun",),),
+    "anti_spirit": (("Plasma Rifle", "Microwave Beam"),),
 }
 
 def combat_capability_alternatives(capability: str) -> tuple[tuple[str, ...], ...]:
@@ -205,33 +221,201 @@ def connection_requirement(
     )
 
 
+def dash_available(state: CollectionState, player: int, *, randomize_dash: bool) -> bool:
+    """Dash is available via AP item when randomized, or via Exultia clear when vanilla."""
+    if randomize_dash:
+        return state.has("Dash", player)
+    return state.has("Internal Mission Clear: Exultia", player)
+
+
+def chainsaw_available(state: CollectionState, player: int, *, randomize_chainsaw: bool) -> bool:
+    """Chainsaw is available via AP item when randomized, or via Hell on Earth clear when vanilla."""
+    if randomize_chainsaw:
+        return state.has("Chainsaw", player)
+    return state.has("Internal Mission Clear: Hell on Earth", player)
+
+
+def sentinel_hammer_available(state: CollectionState, player: int, *, special_weapon: str) -> bool:
+    """Sentinel Hammer is available at stage >= 2 of Progressive Special Weapon or stage >= 1 of Progressive Sentinel Hammer."""
+    if special_weapon == "Progressive Special Weapon":
+        return state.count("Progressive Special Weapon", player) >= 2
+    if special_weapon == "Progressive Sentinel Hammer":
+        return state.count("Progressive Sentinel Hammer", player) >= 1
+    return False
+
+
+def ammo_resource_producer(
+    state: CollectionState,
+    player: int,
+    *,
+    randomize_chainsaw: bool,
+    special_weapon: str,
+) -> bool:
+    """Persistent ammo-resource producer capability: Chainsaw or Sentinel Hammer."""
+    return chainsaw_available(state, player, randomize_chainsaw=randomize_chainsaw) or sentinel_hammer_available(
+        state, player, special_weapon=special_weapon
+    )
+
+
+def tag1_late_game_readiness_satisfied(
+    state: CollectionState,
+    player: int,
+    *,
+    randomize_dash: bool,
+    randomize_chainsaw: bool,
+    special_weapon: str,
+) -> bool:
+    """TAG1 Late Game readiness: 6 normal weapons, plasma rifle, weak point, blood punch, dash, ammo resource."""
+    if sum(state.count(item_name, player) for item_name in starting_weapon_item_names) < 6:
+        return False
+    if not state.has("Plasma Rifle", player):
+        return False
+    if not any(
+        all(state.has(item_name, player) for item_name in alternative)
+        for alternative in COMBAT_CAPABILITIES["weak_point"]
+    ):
+        return False
+    if not state.has("Blood Punch", player):
+        return False
+    if not dash_available(state, player, randomize_dash=randomize_dash):
+        return False
+    if not ammo_resource_producer(
+        state, player, randomize_chainsaw=randomize_chainsaw, special_weapon=special_weapon
+    ):
+        return False
+    return True
+
+
+def tag2_very_late_game_readiness_satisfied(
+    state: CollectionState,
+    player: int,
+    *,
+    randomize_dash: bool,
+    randomize_chainsaw: bool,
+    special_weapon: str,
+) -> bool:
+    """TAG2 Very Late Game readiness: TAG1 core readiness + 7 normal weapons + Super Shotgun + Meat Hook."""
+    if not tag1_late_game_readiness_satisfied(
+        state,
+        player,
+        randomize_dash=randomize_dash,
+        randomize_chainsaw=randomize_chainsaw,
+        special_weapon=special_weapon,
+    ):
+        return False
+    if sum(state.count(item_name, player) for item_name in starting_weapon_item_names) < 7:
+        return False
+    if not state.has("Super Shotgun", player):
+        return False
+    if not any(
+        all(state.has(item_name, player) for item_name in alternative)
+        for alternative in COMBAT_CAPABILITIES["mod:Meat Hook"]
+    ):
+        return False
+    return True
+
+
+def tag1_from_the_beginning_satisfied(
+    state: CollectionState,
+    player: int,
+    *,
+    randomize_dash: bool,
+) -> bool:
+    """From the Beginning TAG1 readiness: requires Dash capability (vanilla proof: Exultia clear)."""
+    return dash_available(state, player, randomize_dash=randomize_dash)
+
+
+def tag2_from_the_beginning_satisfied(
+    state: CollectionState,
+    player: int,
+    *,
+    randomize_dash: bool,
+    randomize_chainsaw: bool,
+    special_weapon: str,
+) -> bool:
+    """From the Beginning TAG2 readiness: requires Dash, Super Shotgun / Meat Hook, and ammo resource."""
+    if not dash_available(state, player, randomize_dash=randomize_dash):
+        return False
+    if not state.has("Super Shotgun", player):
+        return False
+    if not any(
+        all(state.has(item_name, player) for item_name in alternative)
+        for alternative in COMBAT_CAPABILITIES["mod:Meat Hook"]
+    ):
+        return False
+    if not ammo_resource_producer(
+        state, player, randomize_chainsaw=randomize_chainsaw, special_weapon=special_weapon
+    ):
+        return False
+    return True
+
+
 def tag1_late_game_readiness(
     *,
     randomize_dash: bool = False,
     randomize_chainsaw: bool = False,
+    special_weapon: str = "Progressive Special Weapon",
 ) -> LocationRequirement:
     """Capability-based late-game readiness for entering TAG1."""
-    all_of: list[str] = []
-    if randomize_dash:
-        all_of.append("Dash")
-    if randomize_chainsaw:
-        all_of.append("Chainsaw")
     return LocationRequirement(
-        all_of=tuple(all_of),
-        normal_weapon_count=5,
+        normal_weapon_count=6,
         combat_all_of=("plasma_rifle", "weak_point", "blood_punch"),
+        custom_rule=lambda state, player: (
+            dash_available(state, player, randomize_dash=randomize_dash)
+            and ammo_resource_producer(
+                state, player, randomize_chainsaw=randomize_chainsaw, special_weapon=special_weapon
+            )
+        ),
     )
 
 
-def tag2_very_late_game_readiness(*, randomize_dash: bool = False) -> LocationRequirement:
-    """Soft combat readiness for entering the TAG2 route."""
-    all_of = ["Super Shotgun"]
-    if randomize_dash:
-        all_of.append("Dash")
+def tag2_very_late_game_readiness(
+    *,
+    randomize_dash: bool = False,
+    randomize_chainsaw: bool = False,
+    special_weapon: str = "Progressive Special Weapon",
+) -> LocationRequirement:
+    """Capability-based very-late-game readiness for entering the TAG2 route."""
     return LocationRequirement(
-        all_of=tuple(all_of),
-        normal_weapon_count=6,
-        combat_all_of=("plasma_rifle", "weak_point", "blood_punch"),
+        all_of=("Super Shotgun",),
+        normal_weapon_count=7,
+        combat_all_of=("plasma_rifle", "weak_point", "blood_punch", "mod:Meat Hook"),
+        custom_rule=lambda state, player: tag1_late_game_readiness_satisfied(
+            state,
+            player,
+            randomize_dash=randomize_dash,
+            randomize_chainsaw=randomize_chainsaw,
+            special_weapon=special_weapon,
+        ),
+    )
+
+
+def tag1_from_the_beginning_readiness(
+    *,
+    randomize_dash: bool = False,
+) -> LocationRequirement:
+    """From the Beginning readiness for entering TAG1: requires Dash capability."""
+    return LocationRequirement(
+        custom_rule=lambda state, player: dash_available(state, player, randomize_dash=randomize_dash),
+    )
+
+
+def tag2_from_the_beginning_readiness(
+    *,
+    randomize_dash: bool = False,
+    randomize_chainsaw: bool = False,
+    special_weapon: str = "Progressive Special Weapon",
+) -> LocationRequirement:
+    """From the Beginning readiness for entering TAG2: requires Dash, SSG/Meat Hook, and ammo resource."""
+    return LocationRequirement(
+        all_of=("Super Shotgun",),
+        combat_all_of=("mod:Meat Hook",),
+        custom_rule=lambda state, player: (
+            dash_available(state, player, randomize_dash=randomize_dash)
+            and ammo_resource_producer(
+                state, player, randomize_chainsaw=randomize_chainsaw, special_weapon=special_weapon
+            )
+        ),
     )
 
 
@@ -486,16 +670,20 @@ def build_location_prerequisites(
         if location_name.endswith(" - Mission Complete"):
             mission_name = location_name.removesuffix(" - Mission Complete")
             all_of: tuple[str, ...] = ()
+            combat_all_of: tuple[str, ...] = ()
             if mission_name == "Urdak":
                 all_of = ("Blood Punch",)
                 if randomize_dash:
                     all_of = (*all_of, "Dash")
+            if mission_name in {"The Blood Swamps", "The Holt"}:
+                combat_all_of = ("anti_spirit",)
             normal_weapon_count = MISSION_COMPLETION_WEAPON_THRESHOLDS.get(
                 mission_name,
                 DEFAULT_MISSION_COMPLETION_WEAPON_THRESHOLD,
             )
             table[location_name] = LocationRequirement(
                 all_of=all_of,
+                combat_all_of=combat_all_of,
                 normal_weapon_count=normal_weapon_count,
             )
     battery_cost = fortress_battery_consumer_cost(randomize_first_battery=randomize_first_battery)
@@ -604,6 +792,8 @@ def requirement_satisfied(requirement: LocationRequirement, state: CollectionSta
         state.can_reach(name, kind, player)
         for kind, name in requirement.reachable_any_of
     ):
+        return False
+    if requirement.custom_rule is not None and not requirement.custom_rule(state, player):
         return False
     return all(requirement_satisfied(child, state, player) for child in requirement.all_requirements)
 
