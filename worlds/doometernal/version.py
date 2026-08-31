@@ -14,7 +14,12 @@ from .generated_content import (
 from .generated_content import (
     CONTENT_REVISION as GENERATED_CONTENT_REVISION,
 )
-from .generated_content import SESSION_MOD_CONTRACT_REVISION
+from .generated_content import (
+    MANIFEST_SCHEMA_VERSION,
+    SESSION_MOD_CONTRACT_REVISION,
+    SLOT_DATA_REVISION,
+    SLOT_DATA_SCHEMA_VERSION,
+)
 
 _manifest = json.loads(files(__package__).joinpath("archipelago.json").read_text(encoding="utf-8"))
 
@@ -26,6 +31,4 @@ BRIDGE_PROTOCOL = BRIDGE_PROTOCOL_VERSION
 CONTENT_SCHEMA = CONTENT_SCHEMA_VERSION
 COMPILER_REVISION = GENERATED_COMPILER_REVISION
 
-SLOT_DATA_SCHEMA_VERSION = 4
-SLOT_DATA_REVISION = "0.5-D"
 ROOM_CONTRACT_REVISION = SESSION_MOD_CONTRACT_REVISION
