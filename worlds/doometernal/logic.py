@@ -48,12 +48,12 @@ VICTORY_REQUIREMENT_EVENT_PREFIX = "Internal Victory Requirement: "
 GOAL_ENDPOINT_EVENT_PREFIX = "Internal Goal Endpoint: "
 
 BASE_SLAYER_GATES: Mapping[str, tuple[str, str]] = {
-    "Exultia - Slayer Gate Complete": ("Exultia - Hell - Ichor Expanse", "Exultia Slayer Gate Key"),
-    "Cultist Base - Slayer Gate Complete": ("Cultist Base - Promenade of Culling", "Cultist Base Slayer Gate Key"),
-    "Super Gore Nest - Slayer Gate Complete": ("Super Gore Nest - Upper Area - Vermilion Canal", "Super Gore Nest Slayer Gate Key"),
-    "ARC Complex - Slayer Gate Complete": ("ARC Complex - Convention Parking", "ARC Complex Slayer Gate Key"),
-    "Mars Core - Slayer Gate Complete": ("Mars Core - Hell - Temple of Sin", "Mars Core Slayer Gate Key"),
-    "Taras Nabad - Slayer Gate Complete": ("Taras Nabad - City Outskirts", "Taras Nabad Slayer Gate Key"),
+    "Exultia - Slayer Gate Complete": ("Exultia - Hell - Ichor Expanse", "Slayer Gate Key Exultia"),
+    "Cultist Base - Slayer Gate Complete": ("Cultist Base - Promenade of Culling", "Slayer Gate Key Cultist Base"),
+    "Super Gore Nest - Slayer Gate Complete": ("Super Gore Nest - Upper Area - Vermilion Canal", "Slayer Gate Key Super Gore Nest"),
+    "ARC Complex - Slayer Gate Complete": ("ARC Complex - Convention Parking", "Slayer Gate Key ARC Complex"),
+    "Mars Core - Slayer Gate Complete": ("Mars Core - Hell - Temple of Sin", "Slayer Gate Key Mars Core"),
+    "Taras Nabad - Slayer Gate Complete": ("Taras Nabad - City Outskirts", "Slayer Gate Key Taras Nabad"),
 }
 BASE_GATE_COMPLETE_NAMES = tuple(BASE_SLAYER_GATES)
 TAG1_GATE_COMPLETE_NAMES = (
@@ -637,14 +637,14 @@ def build_location_prerequisites(
         ),
     }
     gate_complete_keys = {
-        "Exultia - Slayer Gate Complete": "Exultia Slayer Gate Key",
-        "Cultist Base - Slayer Gate Complete": "Cultist Base Slayer Gate Key",
-        "Super Gore Nest - Slayer Gate Complete": "Super Gore Nest Slayer Gate Key",
-        "ARC Complex - Slayer Gate Complete": "ARC Complex Slayer Gate Key",
-        "Mars Core - Slayer Gate Complete": "Mars Core Slayer Gate Key",
-        "Taras Nabad - Slayer Gate Complete": "Taras Nabad Slayer Gate Key",
-        "UAC Atlantica Facility - Slayer Gate Complete": "UAC Atlantica Slayer Gate Key",
-        "The Holt - Slayer Gate Complete": "The Holt Slayer Gate Key",
+        "Exultia - Slayer Gate Complete": "Slayer Gate Key Exultia",
+        "Cultist Base - Slayer Gate Complete": "Slayer Gate Key Cultist Base",
+        "Super Gore Nest - Slayer Gate Complete": "Slayer Gate Key Super Gore Nest",
+        "ARC Complex - Slayer Gate Complete": "Slayer Gate Key ARC Complex",
+        "Mars Core - Slayer Gate Complete": "Slayer Gate Key Mars Core",
+        "Taras Nabad - Slayer Gate Complete": "Slayer Gate Key Taras Nabad",
+        "UAC Atlantica Facility - Slayer Gate Complete": "Slayer Gate Key UAC Atlantica",
+        "The Holt - Slayer Gate Complete": "Slayer Gate Key The Holt",
     }
     for loc_name, key_name in gate_complete_keys.items():
         if loc_name in location_names:

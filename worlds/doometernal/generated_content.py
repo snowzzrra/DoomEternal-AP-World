@@ -1618,7 +1618,6 @@ CAMPAIGN_CONNECTIONS = (
     ("Immora - Immora Interior - Escape Platform", "Immora - Final Plunge - Final Plunge", "", {}),
     ("Immora - Final Plunge - Final Plunge", "Immora - The Dark Lord", "The Dark Lord", {}),
 )
-CAMPAIGN_GOAL_LOCATION = "Final Sin - Mission Complete"
 MISSION_DIFFICULTY = {
 }
 RUNTIME_LOCATION_NAMES = frozenset({

@@ -48,14 +48,14 @@ SPECIAL_WEAPON_POOL_COUNTS = {
 
 SUPPORT_RUNE_ITEM_NAMES = frozenset({"Break Blast", "Desperate Punch", "Take Back"})
 BASE_GATE_KEY_ITEM_NAMES = (
-    "Exultia Slayer Gate Key",
-    "Cultist Base Slayer Gate Key",
-    "Super Gore Nest Slayer Gate Key",
-    "ARC Complex Slayer Gate Key",
-    "Mars Core Slayer Gate Key",
-    "Taras Nabad Slayer Gate Key",
+    "Slayer Gate Key Exultia",
+    "Slayer Gate Key Cultist Base",
+    "Slayer Gate Key Super Gore Nest",
+    "Slayer Gate Key ARC Complex",
+    "Slayer Gate Key Mars Core",
+    "Slayer Gate Key Taras Nabad",
 )
-TAG1_GATE_KEY_ITEM_NAMES = ("UAC Atlantica Slayer Gate Key", "The Holt Slayer Gate Key")
+TAG1_GATE_KEY_ITEM_NAMES = ("Slayer Gate Key UAC Atlantica", "Slayer Gate Key The Holt")
 TAG_MISSION_LOCAL_ITEM_NAMES = frozenset(TAG1_GATE_KEY_ITEM_NAMES)
 ALL_GATE_KEY_ITEM_NAMES = BASE_GATE_KEY_ITEM_NAMES + TAG1_GATE_KEY_ITEM_NAMES
 
@@ -85,14 +85,14 @@ item_data_table: dict[str, ItemData] = {
     "Progressive Health Upgrade": ItemData(7770017, ItemClassification.useful),
     "Progressive Armor Upgrade": ItemData(7770088, ItemClassification.useful),
     "Progressive Ammo Upgrade": ItemData(7770092, ItemClassification.useful),
-    "UAC Atlantica Slayer Gate Key": ItemData(7770148, ItemClassification.progression),
-    "The Holt Slayer Gate Key": ItemData(7770149, ItemClassification.progression),
-    "Exultia Slayer Gate Key": ItemData(7770150, ItemClassification.progression),
-    "Cultist Base Slayer Gate Key": ItemData(7770151, ItemClassification.progression),
-    "Super Gore Nest Slayer Gate Key": ItemData(7770152, ItemClassification.progression),
-    "ARC Complex Slayer Gate Key": ItemData(7770153, ItemClassification.progression),
-    "Mars Core Slayer Gate Key": ItemData(7770154, ItemClassification.progression),
-    "Taras Nabad Slayer Gate Key": ItemData(7770155, ItemClassification.progression),
+    "Slayer Gate Key UAC Atlantica": ItemData(7770148, ItemClassification.progression),
+    "Slayer Gate Key The Holt": ItemData(7770149, ItemClassification.progression),
+    "Slayer Gate Key Exultia": ItemData(7770150, ItemClassification.progression),
+    "Slayer Gate Key Cultist Base": ItemData(7770151, ItemClassification.progression),
+    "Slayer Gate Key Super Gore Nest": ItemData(7770152, ItemClassification.progression),
+    "Slayer Gate Key ARC Complex": ItemData(7770153, ItemClassification.progression),
+    "Slayer Gate Key Mars Core": ItemData(7770154, ItemClassification.progression),
+    "Slayer Gate Key Taras Nabad": ItemData(7770155, ItemClassification.progression),
     "Sticky Bombs": ItemData(7770058, ItemClassification.progression),
     "Full Auto": ItemData(7770059, ItemClassification.progression),
     "Precision Bolt": ItemData(7770060, ItemClassification.progression),
@@ -252,10 +252,10 @@ DEVINV_START_INVENTORY_ITEM_NAMES = frozenset({
     "Health from Frozen Demons", "Frozen Melee Shatter", "Sentinel Battery", "Sentinel Battery Bundle",
     "The Crucible", "Progressive Special Weapon", "Progressive Sentinel Hammer", "Ammo Refill",
     "Break Blast", "Desperate Punch", "Take Back",
-    "UAC Atlantica Slayer Gate Key", "The Holt Slayer Gate Key",
-    "Exultia Slayer Gate Key", "Cultist Base Slayer Gate Key",
-    "Super Gore Nest Slayer Gate Key", "ARC Complex Slayer Gate Key",
-    "Mars Core Slayer Gate Key", "Taras Nabad Slayer Gate Key",
+    "Slayer Gate Key UAC Atlantica", "Slayer Gate Key The Holt",
+    "Slayer Gate Key Exultia", "Slayer Gate Key Cultist Base",
+    "Slayer Gate Key Super Gore Nest", "Slayer Gate Key ARC Complex",
+    "Slayer Gate Key Mars Core", "Slayer Gate Key Taras Nabad",
 })
 
 DEVINV_NON_PERSISTENT_USEFUL_ITEM_NAMES = frozenset({
