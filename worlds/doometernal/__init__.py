@@ -37,8 +37,6 @@ from .logic import (
     connection_requirement,
     goal_endpoint_event_name,
     mission_clear_event_name,
-    BASE_SLAYER_GATES,
-    BASE_GATE_COMPLETE_NAMES,
     active_catalog_location_names,
     LocationRequirement,
     is_dlc_mission_local_name,
@@ -353,17 +351,6 @@ class DoomEternalWorld(World):
             mission_clear_events[region.name] = event_name
             mission_clear_events[mission_name] = event_name
 
-        for gate_name, (region_name, key_name) in BASE_SLAYER_GATES.items():
-            region = self.multiworld.get_region(region_name, self.player)
-            event_item = region.add_event(
-                gate_name,
-                gate_name,
-                rule=lambda state, key_name=key_name: state.has(key_name, self.player),
-                location_type=DoomEternalLocation,
-                item_type=DoomEternalItem,
-            )
-            event_item.classification = ItemClassification.progression_skip_balancing
-
         requirement_location_suffixes = {
             "Complete All Slayer Gates": " - Slayer Gate Complete",
             "Complete All Escalation Encounters": " - Escalation Encounter Wave ",
@@ -646,13 +633,10 @@ class DoomEternalWorld(World):
 
         filler_weights = {
             "Extra Life": 10,
-            "Ammo Refill": 80 if self.options.randomize_chainsaw.value else 20,
+            "Ammo Refill": 30 if self.options.randomize_chainsaw.value else 20,
             "Full Heal": 8,
             "Full Armor": 8,
             "Soulsphere": 5,
-            "Damage Boost": 3,
-            "Damage Resistance": 3,
-            "Infinite Ammo": 2,
             "Small Health": 10,
             "Small Armor": 1,
             "Large Health": 10,
@@ -702,7 +686,7 @@ class DoomEternalWorld(World):
         validate_location_prerequisites(
             prerequisite_table,
             active_location_names,
-            set(item_data_table) | set(BASE_GATE_COMPLETE_NAMES),
+            set(item_data_table),
         )
         for location_name, requirement in prerequisite_table.items():
             location = self.multiworld.get_location(location_name, self.player)
@@ -755,11 +739,7 @@ class DoomEternalWorld(World):
                 "Complete All Mission Challenges": " - All Mission Challenges Completed",
                 "Complete All Weapon Mastery Challenges": MASTERY_SUFFIX,
             }[requirement_name]
-            candidate_locations = (
-                active_location_names | set(BASE_GATE_COMPLETE_NAMES)
-                if requirement_name == "Complete All Slayer Gates"
-                else active_location_names
-            )
+            candidate_locations = active_location_names
             required_events.update(
                 victory_requirement_location_event_name(requirement_name, location)
                 for location in candidate_locations

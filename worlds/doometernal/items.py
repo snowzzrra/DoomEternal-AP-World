@@ -30,8 +30,9 @@ SENTINEL_BATTERY_BUNDLE_VALUE = 2
 RESERVED_ITEM_IDS = frozenset({
     7770018, 7770019, 7770030, 7770057, 7770083, 7770105,
     7770119, 7770120, 7770121, 7770143, 7770144,
+    7770156, 7770157, 7770158, 7770159, 7770160,
 })
-RESERVED_LOCATION_IDS = frozenset({7770055, 7770068})
+RESERVED_LOCATION_IDS = frozenset({7770055, 7770068, 7770358})
 
 PROGRESSIVE_SPECIAL_WEAPON_ID = 7770901
 PROGRESSIVE_SENTINEL_HAMMER_ID = 7770902
@@ -55,7 +56,7 @@ BASE_GATE_KEY_ITEM_NAMES = (
     "Slayer Gate Key Mars Core",
     "Slayer Gate Key Taras Nabad",
 )
-TAG1_GATE_KEY_ITEM_NAMES = ("Slayer Gate Key UAC Atlantica", "Slayer Gate Key The Holt")
+TAG1_GATE_KEY_ITEM_NAMES = ("Slayer Gate Key UAC Atlantica Facility", "Slayer Gate Key The Holt")
 TAG_MISSION_LOCAL_ITEM_NAMES = frozenset(TAG1_GATE_KEY_ITEM_NAMES)
 ALL_GATE_KEY_ITEM_NAMES = BASE_GATE_KEY_ITEM_NAMES + TAG1_GATE_KEY_ITEM_NAMES
 
@@ -85,7 +86,7 @@ item_data_table: dict[str, ItemData] = {
     "Progressive Health Upgrade": ItemData(7770017, ItemClassification.useful),
     "Progressive Armor Upgrade": ItemData(7770088, ItemClassification.useful),
     "Progressive Ammo Upgrade": ItemData(7770092, ItemClassification.useful),
-    "Slayer Gate Key UAC Atlantica": ItemData(7770148, ItemClassification.progression),
+    "Slayer Gate Key UAC Atlantica Facility": ItemData(7770148, ItemClassification.progression),
     "Slayer Gate Key The Holt": ItemData(7770149, ItemClassification.progression),
     "Slayer Gate Key Exultia": ItemData(7770150, ItemClassification.progression),
     "Slayer Gate Key Cultist Base": ItemData(7770151, ItemClassification.progression),
@@ -174,9 +175,6 @@ item_data_table: dict[str, ItemData] = {
     "One Extra Life": ItemData(7770040, ItemClassification.useful),
     "Armor Shard": ItemData(7770041, ItemClassification.filler),
     "Ammo Cache": ItemData(7770042, ItemClassification.filler),
-    "Damage Boost": ItemData(7770156, ItemClassification.filler),
-    "Damage Resistance": ItemData(7770157, ItemClassification.filler),
-    "Infinite Ammo": ItemData(7770158, ItemClassification.filler),
     # Traps
     "Imp Trap": ItemData(7770043, ItemClassification.trap),
     "Carcass Trap": ItemData(7770044, ItemClassification.trap),
@@ -192,8 +190,6 @@ item_data_table: dict[str, ItemData] = {
     "Ammo Drain Trap": ItemData(7770054, ItemClassification.trap),
     "Fuel Drain Trap": ItemData(7770055, ItemClassification.trap),
     "BFG Drain Trap": ItemData(7770056, ItemClassification.trap),
-    "Weakness Trap": ItemData(7770159, ItemClassification.trap),
-    "Vulnerability Trap": ItemData(7770160, ItemClassification.trap),
     # Locked to the runtime mission-completion check; it has no in-game command.
     "Victory": ItemData(7770096, ItemClassification.progression),
 }
@@ -215,8 +211,6 @@ SAFE_TRAP_NAMES = frozenset({
     "Ammo Drain Trap",
     "Fuel Drain Trap",
     "BFG Drain Trap",
-    "Weakness Trap",
-    "Vulnerability Trap",
 })
 
 world_pool_weapon_item_names = tuple(
@@ -252,7 +246,7 @@ DEVINV_START_INVENTORY_ITEM_NAMES = frozenset({
     "Health from Frozen Demons", "Frozen Melee Shatter", "Sentinel Battery", "Sentinel Battery Bundle",
     "The Crucible", "Progressive Special Weapon", "Progressive Sentinel Hammer", "Ammo Refill",
     "Break Blast", "Desperate Punch", "Take Back",
-    "Slayer Gate Key UAC Atlantica", "Slayer Gate Key The Holt",
+    "Slayer Gate Key UAC Atlantica Facility", "Slayer Gate Key The Holt",
     "Slayer Gate Key Exultia", "Slayer Gate Key Cultist Base",
     "Slayer Gate Key Super Gore Nest", "Slayer Gate Key ARC Complex",
     "Slayer Gate Key Mars Core", "Slayer Gate Key Taras Nabad",

@@ -577,7 +577,6 @@ def effective_victory_requirements(
         "Complete All Slayer Gates": (
             not use_dlc_content
             or any(" - Slayer Gate Complete" in name for name in active_locations)
-            or any(name in active_locations for name in BASE_GATE_COMPLETE_NAMES)
         ),
         "Complete All Escalation Encounters": any(" - Escalation Encounter Wave " in name for name in active_locations),
         "Complete All Secret Encounters": any(" - Secret Encounter - " in name for name in active_locations),
@@ -632,9 +631,6 @@ def build_location_prerequisites(
         "Mars Core - Mission Challenge - Big Ba-Da Boom": LocationRequirement(
             all_of=("BFG-9000",)
         ),
-        "Nekravol - Mission Challenge - Die by the Sword": LocationRequirement(
-            all_of=(special_weapon,)
-        ),
     }
     gate_complete_keys = {
         "Exultia - Slayer Gate Complete": "Slayer Gate Key Exultia",
@@ -643,7 +639,7 @@ def build_location_prerequisites(
         "ARC Complex - Slayer Gate Complete": "Slayer Gate Key ARC Complex",
         "Mars Core - Slayer Gate Complete": "Slayer Gate Key Mars Core",
         "Taras Nabad - Slayer Gate Complete": "Slayer Gate Key Taras Nabad",
-        "UAC Atlantica Facility - Slayer Gate Complete": "Slayer Gate Key UAC Atlantica",
+        "UAC Atlantica Facility - Slayer Gate Complete": "Slayer Gate Key UAC Atlantica Facility",
         "The Holt - Slayer Gate Complete": "Slayer Gate Key The Holt",
     }
     for loc_name, key_name in gate_complete_keys.items():
@@ -651,7 +647,9 @@ def build_location_prerequisites(
             table[loc_name] = LocationRequirement(all_of=(key_name,))
     if "Fortress of Doom - Unmaykr Acquired" in location_names:
         table["Fortress of Doom - Unmaykr Acquired"] = LocationRequirement(
-            all_of=BASE_GATE_COMPLETE_NAMES,
+            custom_rule=lambda state, player: all(
+                state.can_reach(loc, "Location", player) for loc in BASE_GATE_COMPLETE_NAMES
+            ),
         )
     for aggregate_name in sorted(
         name for name in location_names if name.endswith(" - All Mission Challenges Completed")
