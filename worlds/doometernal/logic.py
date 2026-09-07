@@ -41,6 +41,7 @@ MISSION_COMPLETION_WEAPON_THRESHOLDS: Mapping[str, int] = {
     "The World Spear": 6,
     "Reclaimed Earth": 6,
     "Immora": 7,
+    "The Dark Lord": 7,
 }
 DEFAULT_MISSION_COMPLETION_WEAPON_THRESHOLD = 7
 MISSION_CLEAR_EVENT_PREFIX = "Internal Mission Clear: "
@@ -682,6 +683,21 @@ def build_location_prerequisites(
                 combat_all_of=combat_all_of,
                 normal_weapon_count=normal_weapon_count,
             )
+    if "The Dark Lord - Defeated" in location_names:
+        dark_lord_custom_rule = None
+        if special_weapon != "The Crucible":
+            dark_lord_custom_rule = (
+                lambda state, player, sw=special_weapon: sentinel_hammer_available(
+                    state, player, special_weapon=sw
+                )
+            )
+        table["The Dark Lord - Defeated"] = LocationRequirement(
+            normal_weapon_count=MISSION_COMPLETION_WEAPON_THRESHOLDS.get(
+                "The Dark Lord",
+                DEFAULT_MISSION_COMPLETION_WEAPON_THRESHOLD,
+            ),
+            custom_rule=dark_lord_custom_rule,
+        )
     battery_cost = fortress_battery_consumer_cost(randomize_first_battery=randomize_first_battery)
     for location_name in FORTRESS_BATTERY_CONSUMER_LOCATIONS & location_names:
         table[location_name] = LocationRequirement(battery_currency=battery_cost)
