@@ -36,6 +36,13 @@ RESERVED_LOCATION_IDS = frozenset({7770055, 7770068, 7770358})
 
 PROGRESSIVE_SPECIAL_WEAPON_ID = 7770901
 PROGRESSIVE_SENTINEL_HAMMER_ID = 7770902
+WEAPON_UPGRADE_POINTS_ID = 7770903
+WEAPON_UPGRADE_POINTS_NAME = "Weapon Upgrade Points (3)"
+WEAPON_UPGRADE_POINTS_PER_ITEM = 3
+WEAPON_UPGRADE_POINTS_ITEM_COUNT = 39
+# 13 normal mod families cost 9 each (28 nodes, 117 points). Finite useful
+# currency replaces padding; no current access rule depends on weapon upgrades.
+WEAPON_UPGRADE_POINTS_TOTAL = 117
 SPECIAL_WEAPON_ITEM_NAMES = frozenset({
     "Progressive Special Weapon",
     "Progressive Sentinel Hammer",
@@ -61,6 +68,7 @@ TAG_MISSION_LOCAL_ITEM_NAMES = frozenset(TAG1_GATE_KEY_ITEM_NAMES)
 ALL_GATE_KEY_ITEM_NAMES = BASE_GATE_KEY_ITEM_NAMES + TAG1_GATE_KEY_ITEM_NAMES
 
 item_data_table: dict[str, ItemData] = {
+    "Weapon Upgrade Points (3)": ItemData(7770903, ItemClassification.useful),
     # Progression Items (Weapons & Equipment)
     "Heavy Cannon": ItemData(7770000, ItemClassification.progression, True, True),
     "Plasma Rifle": ItemData(7770001, ItemClassification.progression, True, True),

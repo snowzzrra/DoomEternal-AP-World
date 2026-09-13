@@ -1,4 +1,6 @@
 from collections import Counter
+import hashlib
+import json
 from functools import partial
 from typing import ClassVar
 
@@ -24,6 +26,8 @@ from .items import (
     BASE_GATE_KEY_ITEM_NAMES,
     TAG1_GATE_KEY_ITEM_NAMES,
     TAG_MISSION_LOCAL_ITEM_NAMES,
+    WEAPON_UPGRADE_POINTS_NAME,
+    WEAPON_UPGRADE_POINTS_ITEM_COUNT,
     item_data_table,
     item_name_to_id,
     starting_weapon_item_names,
@@ -252,7 +256,7 @@ class DoomEternalWorld(World):
         capabilities.append("special_weapon_progression_v1")
         capabilities.append("ammo_refill_v1")
         capabilities.append("cross_campaign_materialization_v1")
-        return {
+        data = {
             "death_link": bool(self.options.death_link.value),
             "praetor_suit_upgrades_in_pool": self.praetor_suit_upgrades_in_pool,
             "randomize_chainsaw": bool(self.options.randomize_chainsaw.value),
@@ -287,6 +291,16 @@ class DoomEternalWorld(World):
             "starting_inventory": start_inventory,
             "starting_weapon": self.starting_weapon_name,
         }
+        # Save identity distinguishes generated content as well as room/team/slot.
+        # Computed after fill by the generator; product/build versions are excluded.
+        identity = {"slot_data": data, "placements": sorted(
+            (location.address, location.item.code, location.item.player)
+            for location in self.multiworld.get_locations(self.player)
+            if location.address is not None and location.item is not None)}
+        data["native_generation_fingerprint"] = hashlib.sha256(
+            json.dumps(identity, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()
+        return data
 
     def create_regions(self) -> None:
         dlc_enabled = bool(self.options.use_dlc_content.value)
@@ -542,6 +556,7 @@ class DoomEternalWorld(World):
             *(["Progressive Health Upgrade"] * 4),
             *(["Progressive Armor Upgrade"] * 4),
             *(["Progressive Ammo Upgrade"] * 4),
+            *([WEAPON_UPGRADE_POINTS_NAME] * WEAPON_UPGRADE_POINTS_ITEM_COUNT),
         ]
         effective_special_weapon = (
             "The Crucible" if not self.options.use_dlc_content.value
@@ -646,6 +661,8 @@ class DoomEternalWorld(World):
 
         # Pad with filler; traps replace only this padding.
         amount_needed = locations_count - len(pool_names)
+        if amount_needed < 0:
+            raise ValueError(f"DOOM Eternal item pool requires {len(pool_names)} locations; only {locations_count} enabled")
         if amount_needed > 0:
             enabled_traps = sorted(self.options.enabled_traps.value)
             trap_count = amount_needed * self.options.trap_percentage.value // 100 if enabled_traps else 0
