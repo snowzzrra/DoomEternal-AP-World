@@ -57,6 +57,47 @@ class DLCLogicTiming(_ExactLabelChoice):
     }
 
 
+class MissionOrder(_ExactLabelChoice):
+    """Choose chronological progression, a fixed seeded sequence, or individual Access items.
+
+    Every completed stage remains replayable; travel returns through the Fortress.
+    Access and sequence availability do not guarantee immediate logical completion.
+    """
+    display_name = "Mission Order"
+    option_vanilla_order = 0
+    option_random_mission_order = 1
+    option_mission_access_as_items = 2
+    default = option_random_mission_order
+    labels = {0: "Vanilla Order", 1: "Random Mission Order", 2: "Mission Access as Items"}
+
+
+class StartingMissions(Range):
+    """Number of stages initially available in Mission Access as Items. Other modes start with one."""
+    display_name = "Starting Missions"
+    range_start = 1
+    range_end = 3
+    default = 1
+
+
+class FullSagaFinalBoss(_ExactLabelChoice):
+    """Reserve the final Full Saga encounter. Vanilla Order always ends at Davoth."""
+    display_name = "Full Saga Final Boss"
+    option_randomized = 0
+    option_icon_of_sin = 1
+    option_davoth = 2
+    default = 0
+    labels = {0: "Random", 1: "Icon of Sin", 2: "Davoth / The Dark Lord"}
+
+
+class GoalMissionAsItem(Toggle):
+    """In Access mode, place the selected boss stage's concrete Access item.
+
+    Receipt bypasses ordinary completion gating, but not selected victory objectives.
+    Has no effect for Acquire the Unmaykr, which ends in the Fortress.
+    """
+    display_name = "Goal Mission as Item"
+
+
 class Goal(_ExactLabelChoice):
     """Choose the main objective that wins your Archipelago world.
 
@@ -66,7 +107,7 @@ class Goal(_ExactLabelChoice):
 
     Kill the Dark Lord — Progress through The Ancient Gods Part Two and defeat the Dark Lord.
 
-    Complete the Full Saga — Complete all 19 Base Campaign, TAG1, and TAG2 missions, claim the Unmaykr, defeat the Icon of Sin, and defeat the Dark Lord.
+    Complete the Full Saga — Use the unified Base/TAG campaign and defeat its selected final boss. Selected additional objectives remain required. Goal Mission as Item can bypass the ordinary mission-completion gate.
     """
 
     display_name = "Goal"
@@ -198,6 +239,17 @@ _STARTING_WEAPON_OPTION_NAMES = {
 }
 
 
+class CampaignDifficulty(Choice):
+    """Gameplay difficulty fixed for this generated room, including Base, TAG1 and TAG2."""
+
+    display_name = "Campaign Difficulty"
+    option_im_too_young_to_die = 0
+    option_hurt_me_plenty = 1
+    option_ultra_violence = 2
+    option_nightmare = 3
+    default = 2
+
+
 class StartingWeapon(Choice):
     """Choose the weapon you start with. Random selects one eligible weapon when the seed is generated. That weapon belongs to your starting inventory."""
 
@@ -266,6 +318,11 @@ class DoomEternalOptions(DeathLinkMixin, PerGameCommonOptions):
     use_dlc_content: UseDLCContent
     include_dlc_missions: IncludeDLCMissions
     dlc_logic_timing: DLCLogicTiming
+    mission_order: MissionOrder
+    campaign_difficulty: CampaignDifficulty
+    starting_missions: StartingMissions
+    full_saga_final_boss: FullSagaFinalBoss
+    goal_mission_as_item: GoalMissionAsItem
     goal: Goal
     additional_victory_requirements: AdditionalVictoryRequirements
     special_weapon: SpecialWeapon

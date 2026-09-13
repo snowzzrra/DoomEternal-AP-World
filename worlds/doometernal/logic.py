@@ -110,7 +110,7 @@ GOAL_ENDPOINT_LOCATIONS = {
     "Complete the Full Saga": "The Dark Lord - Defeated",
 }
 
-GOAL_IMPLIED_UNMAYKR = frozenset({"Acquire the Unmaykr", "Complete the Full Saga"})
+GOAL_IMPLIED_UNMAYKR = frozenset({"Acquire the Unmaykr"})
 
 FULL_SAGA_TAG_MISSIONS = (
     "UAC Atlantica Facility",
@@ -223,10 +223,10 @@ def connection_requirement(
 
 
 def dash_available(state: CollectionState, player: int, *, randomize_dash: bool) -> bool:
-    """Dash is available via AP item when randomized, or via Exultia clear when vanilla."""
+    """Retain vanilla Exultia acquisition unless the seed materialized Dash at bootstrap."""
     if randomize_dash:
         return state.has("Dash", player)
-    return state.has("Internal Mission Clear: Exultia", player)
+    return state.has("Dash", player) or state.has("Internal Mission Clear: Exultia", player)
 
 
 def chainsaw_available(state: CollectionState, player: int, *, randomize_chainsaw: bool) -> bool:
@@ -516,8 +516,6 @@ def goal_redundant_requirements(
             and not any(name in active_locations for name in TAG1_GATE_COMPLETE_NAMES)
         ):
             redundant.add("Complete All Slayer Gates")
-    if goal == "Complete the Full Saga":
-        redundant.add("Complete All Enabled Missions")
     return frozenset(redundant & VICTORY_REQUIREMENT_NAMES)
 
 

@@ -14,6 +14,7 @@ from .generated_content import (
     MISSION_DIFFICULTY,
 )
 from .identity import GAME_NAME
+from .campaign import make_plan, stage_available, completion_event, STAGE_BY_ID, REGION_STAGE
 from .items import (
     BASE_CAMPAIGN_SENTINEL_BATTERY_BUNDLES,
     BASE_CAMPAIGN_SENTINEL_BATTERY_SINGLES,
@@ -134,6 +135,7 @@ class DoomEternalWorld(World):
         effective_special_weapon = (
             "The Crucible" if not dlc_enabled else self.options.special_weapon.current_option_name
         )
+        self.campaign_plan = make_plan(self.options, self.random)
         special_maximum = SPECIAL_WEAPON_POOL_COUNTS[effective_special_weapon]
         unsafe = []
         invalid_quantity = []
@@ -228,6 +230,7 @@ class DoomEternalWorld(World):
 
     def fill_slot_data(self) -> dict[str, object]:
         start_inventory = dict(self.effective_starting_inventory())
+        start_inventory.update(self.campaign_plan["bootstrap_inventory"])
         dlc_enabled = bool(self.options.use_dlc_content.value)
         include_dlc_missions = bool(self.options.include_dlc_missions.value)
         catalog_location_names = active_catalog_location_names(
@@ -247,7 +250,7 @@ class DoomEternalWorld(World):
             include_dlc_missions=include_dlc_missions,
             goal=self.options.goal.current_option_name,
         )
-        capabilities = ["room_mod_v2", "slot_data_v4", "goal_events_v1", "goal_endpoint_events_v1"]
+        capabilities = ["room_mod_v2", "slot_data_v5", "goal_events_v1", "goal_endpoint_events_v1"]
         capabilities.append("dlc_missions_v1")
         capabilities.append("physical_options_v1")
         if start_inventory:
@@ -256,7 +259,9 @@ class DoomEternalWorld(World):
         capabilities.append("special_weapon_progression_v1")
         capabilities.append("ammo_refill_v1")
         capabilities.append("cross_campaign_materialization_v1")
+        capabilities.append("unified_campaign_v1")
         data = {
+            "campaign_plan": self.campaign_plan,
             "death_link": bool(self.options.death_link.value),
             "praetor_suit_upgrades_in_pool": self.praetor_suit_upgrades_in_pool,
             "randomize_chainsaw": bool(self.options.randomize_chainsaw.value),
@@ -396,6 +401,9 @@ class DoomEternalWorld(World):
             location.name for location in self.multiworld.get_locations(self.player)
         }
         for endpoint_goal, endpoint_location_name in GOAL_ENDPOINT_LOCATIONS.items():
+            if endpoint_goal == "Complete the Full Saga" and self.options.goal.current_option_name == endpoint_goal:
+                endpoint_location_name = GOAL_ENDPOINT_LOCATIONS[
+                    "Kill the Icon of Sin" if self.campaign_plan["goal_stage"] == "e3m4_boss" else "Kill the Dark Lord"]
             if not goal_endpoint_available(endpoint_goal, active_location_names):
                 continue
             goal_location = self.multiworld.get_location(endpoint_location_name, self.player)
@@ -412,102 +420,62 @@ class DoomEternalWorld(World):
             )
             goal_event.classification = ItemClassification.progression_skip_balancing
 
+        player, multiworld = self.player, self.multiworld
+        regions = {region.name: region for region in multiworld.get_regions(player)}
+        hub = Region("Fortress of Doom", player, multiworld)
+        regions[hub.name] = hub
+        multiworld.regions.append(hub)
+        regions["Menu"].connect(hub, "Campaign: Fortress")
+        plan = self.campaign_plan
+        special_weapon = SpecialWeapon.labels[self.options.special_weapon.value]
+        readiness_args = dict(randomize_dash=bool(self.options.randomize_dash.value),
+                              randomize_chainsaw=bool(self.options.randomize_chainsaw.value),
+                              special_weapon=special_weapon)
+        late = self.options.dlc_logic_timing.value == DLCLogicTiming.option_late_game
+        readiness = {
+            "base": None,
+            "tag1": tag1_late_game_readiness(**readiness_args) if late else
+                    tag1_from_the_beginning_readiness(randomize_dash=readiness_args["randomize_dash"]),
+            "tag2": (tag2_very_late_game_readiness if late else tag2_from_the_beginning_readiness)(**readiness_args),
+        }
+        for stage_id in plan["sequence"]:
+            stage = STAGE_BY_ID[stage_id]
+            entrance = hub.connect(regions[stage["entry_region"]], "Mission Select: " + stage["name"])
+            entrance.access_rule = (
+                lambda state, key=stage_id, req=readiness[stage["source"]]:
+                stage_available(plan, key, state, player)
+                and (req is None or requirement_satisfied(req, state, player))
+            )
+
+        # Keep authored traversal inside each stage. Campaign chains cannot grant
+        # access to another stage (including Immora -> the Dark Lord).
         for source_name, destination_name, entrance_name, condition in CAMPAIGN_CONNECTIONS:
-            if (
-                (not self.options.use_dlc_content.value or not self.options.include_dlc_missions.value)
-                and (
-                    is_dlc_mission_local_name(source_name)
-                    or is_dlc_mission_local_name(destination_name)
-                )
+            if source_name not in regions or destination_name not in regions:
+                continue
+            source_stage = REGION_STAGE.get(source_name)
+            if (source_stage is None or source_stage != REGION_STAGE.get(destination_name)) and not (
+                source_name == "Menu" and destination_name == "Weapon Masteries"
             ):
                 continue
-            source = self.multiworld.get_region(source_name, self.player)
-            destination = self.multiworld.get_region(destination_name, self.player)
-            if destination_name == "UAC Atlantica Facility - UAC Facility (Intact) - Landing Pad":
-                special_weapon_name = SpecialWeapon.labels.get(
-                    self.options.special_weapon.value, "Progressive Special Weapon"
-                )
-                if self.options.dlc_logic_timing.value == DLCLogicTiming.option_late_game:
-                    req = tag1_late_game_readiness(
-                        randomize_dash=bool(self.options.randomize_dash.value),
-                        randomize_chainsaw=bool(self.options.randomize_chainsaw.value),
-                        special_weapon=special_weapon_name,
-                    )
-                else:
-                    req = tag1_from_the_beginning_readiness(
-                        randomize_dash=bool(self.options.randomize_dash.value),
-                    )
-                generated_entrance_name = entrance_name or f"{source_name} -> {destination_name}"
-                entrance = Entrance(self.player, generated_entrance_name, source)
-                source.exits.append(entrance)
-                entrance.connect(destination)
-                set_rule(
-                    entrance,
-                    partial(
-                        self._campaign_entrance_access,
-                        mission_clear_events.get(source_name),
-                        req,
-                    ),
-                )
-                continue
-            if destination_name == "The World Spear - Sentinel Village - Village Outskirts":
-                special_weapon_name = SpecialWeapon.labels.get(
-                    self.options.special_weapon.value, "Progressive Special Weapon"
-                )
-                if self.options.dlc_logic_timing.value == DLCLogicTiming.option_late_game:
-                    req = tag2_very_late_game_readiness(
-                        randomize_dash=bool(self.options.randomize_dash.value),
-                        randomize_chainsaw=bool(self.options.randomize_chainsaw.value),
-                        special_weapon=special_weapon_name,
-                    )
-                else:
-                    req = tag2_from_the_beginning_readiness(
-                        randomize_dash=bool(self.options.randomize_dash.value),
-                        randomize_chainsaw=bool(self.options.randomize_chainsaw.value),
-                        special_weapon=special_weapon_name,
-                    )
-                generated_entrance_name = entrance_name or f"{source_name} -> {destination_name}"
-                entrance = Entrance(self.player, generated_entrance_name, source)
-                source.exits.append(entrance)
-                entrance.connect(destination)
-                set_rule(entrance, partial(self._campaign_entrance_access, None, req))
-                continue
-            if not entrance_name and not condition:
-                boundary_event = mission_clear_events.get(source_name)
-                if not boundary_event:
-                    source.connect(destination)
-                    continue
-                entrance = source.create_exit(entrance_name or f"{source_name} -> {destination_name}")
-                entrance.connect(destination)
-                set_rule(
-                    entrance,
-                    partial(
-                        self._campaign_entrance_access,
-                        boundary_event,
-                        connection_requirement(
-                            condition,
-                            randomize_first_battery=bool(self.options.randomize_first_battery.value),
-                            randomize_dash=bool(self.options.randomize_dash.value),
-                        ),
-                    ),
-                )
-                continue
-            generated_entrance_name = entrance_name or f"{source_name} -> {destination_name}"
-            entrance = Entrance(self.player, generated_entrance_name, source)
-            source.exits.append(entrance)
-            entrance.connect(destination)
-            set_rule(
-                entrance,
-                partial(
-                    self._campaign_entrance_access,
-                    mission_clear_events.get(source_name),
-                    connection_requirement(
-                        condition,
-                        randomize_first_battery=bool(self.options.randomize_first_battery.value),
-                        randomize_dash=bool(self.options.randomize_dash.value),
-                    ),
-                ),
+            entrance = regions[source_name].connect(regions[destination_name], entrance_name)
+            requirement = connection_requirement(
+                condition,
+                randomize_first_battery=bool(self.options.randomize_first_battery.value),
+                randomize_dash=bool(self.options.randomize_dash.value),
             )
+            set_rule(entrance, partial(self._campaign_entrance_access, None, requirement))
+
+        # Original visit phases occur after 1,2,4,5,6,8,9 of 13 Base missions.
+        # Project those phases onto ordinary enabled stages, independently of which
+        # stages were completed. The hub itself is available before any completion.
+        ordinary = [key for key in plan["sequence"] if key != plan["goal_stage"]]
+        visits = ("First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh")
+        for visit, base_count in zip(visits, (1, 2, 4, 5, 6, 8, 9)):
+            threshold = (base_count * len(ordinary) + 12) // 13
+            entrance = hub.connect(regions[f"Fortress of Doom - {visit} Visit"], f"Fortress phase: {visit}")
+            entrance.access_rule = lambda state, count=threshold: sum(
+                state.has(completion_event(key), player) for key in ordinary
+            ) >= count
 
     def create_items(self) -> None:
         start_inventory = self.effective_starting_inventory()
@@ -612,6 +580,10 @@ class DoomEternalWorld(World):
             pool_names.extend(["Sentinel Battery"] * (randomized_battery_singles - 1))
         pool_names.extend(["Sentinel Battery Bundle"] * BASE_CAMPAIGN_SENTINEL_BATTERY_BUNDLES)
         pool_names.extend(["Ammo Refill"] * start_inventory.get("Ammo Refill", 0))
+        pool_names.extend(
+            STAGE_BY_ID[stage]["name"] + " Access"
+            for stage in self.campaign_plan["access_items"].values()
+        )
 
         available = Counter(pool_names)
         unavailable = {
@@ -639,6 +611,8 @@ class DoomEternalWorld(World):
 
         pool_names.remove(self.starting_weapon_name)
         self.multiworld.push_precollected(self.create_item(self.starting_weapon_name))
+        for name in self.campaign_plan["bootstrap_inventory"]:
+            self.multiworld.push_precollected(self.create_item(name))
         for name, quantity in start_inventory.items():
             if name != self.AUTOMAP_STARTING_ITEM:
                 for _ in range(quantity):
@@ -737,13 +711,6 @@ class DoomEternalWorld(World):
             if location.endswith(" - Mission Complete")
         }
         required_events = {goal_endpoint_event_name(self.options.goal.current_option_name)}
-        if self.options.goal.current_option_name == "Complete the Full Saga":
-            required_events.update(
-                goal_endpoint_event_name(goal)
-                for goal in GOAL_ENDPOINT_LOCATIONS
-                if goal != "Complete the Full Saga"
-            )
-            required_events.update(mission_events)
         if "Complete All Enabled Missions" in effective_requirements:
             required_events.update(mission_events)
         if "Acquire the Unmaykr" in effective_requirements:
@@ -765,6 +732,14 @@ class DoomEternalWorld(World):
             )
 
         def completion_condition(state):
+            goal_stage = self.campaign_plan["goal_stage"]
+            if goal_stage is not None:
+                ordinary_complete = all(state.has(completion_event(key), self.player)
+                                        for key in self.campaign_plan["sequence"] if key != goal_stage)
+                goal_access = self.campaign_plan["goal_as_item"] and state.has(
+                    STAGE_BY_ID[goal_stage]["name"] + " Access", self.player)
+                if not (ordinary_complete or goal_access):
+                    return False
             return all(
                 state.has(event_name, self.player) for event_name in required_events
             )

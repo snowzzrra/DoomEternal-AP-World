@@ -3,6 +3,7 @@ from typing import NamedTuple
 from BaseClasses import Item, ItemClassification
 
 from .identity import GAME_NAME
+from .generated_content import CAMPAIGN_STAGES
 
 
 class DoomEternalItem(Item):
@@ -202,6 +203,10 @@ item_data_table: dict[str, ItemData] = {
     "Victory": ItemData(7770096, ItemClassification.progression),
 }
 
+item_data_table.update({
+    stage["name"] + " Access": ItemData(stage["access_id"], ItemClassification.progression)
+    for stage in CAMPAIGN_STAGES
+})
 item_name_to_id = {name: data.code for name, data in item_data_table.items() if data.code is not None}
 
 SAFE_TRAP_NAMES = frozenset({
