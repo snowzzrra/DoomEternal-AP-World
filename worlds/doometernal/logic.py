@@ -231,10 +231,10 @@ def dash_available(state: CollectionState, player: int, *, randomize_dash: bool)
 
 
 def chainsaw_available(state: CollectionState, player: int, *, randomize_chainsaw: bool) -> bool:
-    """Chainsaw is available via AP item when randomized, or via Hell on Earth clear when vanilla."""
+    """Chainsaw is available via AP item when randomized, or via Hell on Earth clear / bootstrap when vanilla."""
     if randomize_chainsaw:
         return state.has("Chainsaw", player)
-    return state.has("Internal Mission Clear: Hell on Earth", player)
+    return state.has("Chainsaw", player) or state.has("Internal Mission Clear: Hell on Earth", player)
 
 
 def sentinel_hammer_available(state: CollectionState, player: int, *, special_weapon: str) -> bool:

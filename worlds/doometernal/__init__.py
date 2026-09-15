@@ -123,7 +123,8 @@ class DoomEternalWorld(World):
         return inventory
 
     def generate_early(self) -> None:
-        self.campaign_plan = make_plan(self.options, self.random)
+        self.campaign_plan = make_plan(self.options, self.random, world=self)
+        self.starting_weapon_name = self.campaign_plan.get("starting_weapon")
         dlc_enabled = bool(self.options.use_dlc_content.value)
         effective_special_weapon = (
             "The Crucible" if not dlc_enabled else self.options.special_weapon.current_option_name
@@ -682,18 +683,26 @@ class DoomEternalWorld(World):
             raise ValueError(f"DOOM Eternal start_inventory exceeds item pool quantities: {details}")
 
         # 14. Starting Weapon Precollected
-        self.starting_weapon_name = self.options.starting_weapon.selected_weapon_name
-        if self.starting_weapon_name is None:
-            eligible_weapons = [
-                name for name in starting_weapon_item_names
-                if available[name] and not start_inventory[name]
-            ]
-            if not eligible_weapons:
-                raise ValueError("Starting Weapon random selection has no eligible pool weapon")
-            self.starting_weapon_name = self.multiworld.random.choice(eligible_weapons)
+        if not hasattr(self, "starting_weapon_name") or self.starting_weapon_name is None:
+            self.starting_weapon_name = plan.get("starting_weapon") or self.options.starting_weapon.selected_weapon_name
+            if self.starting_weapon_name is None:
+                eligible_weapons = [
+                    name for name in starting_weapon_item_names
+                    if available[name] and not start_inventory[name]
+                ]
+                if not eligible_weapons:
+                    raise ValueError("Starting Weapon random selection has no eligible pool weapon")
+                self.starting_weapon_name = self.multiworld.random.choice(eligible_weapons)
 
         pool_names.remove(self.starting_weapon_name)
         self.multiworld.push_precollected(self.create_item(self.starting_weapon_name))
+
+        # Readiness Bootstrap Precollected Items (Phase 7.7c §6)
+        for name in plan.get("readiness_bootstrap_items", ()):
+            if name in pool_names:
+                pool_names.remove(name)
+                self.multiworld.push_precollected(self.create_item(name))
+
         for name in plan["bootstrap_inventory"]:
             self.multiworld.push_precollected(self.create_item(name))
         for name, quantity in start_inventory.items():
