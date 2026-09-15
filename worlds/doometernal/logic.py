@@ -26,6 +26,7 @@ MOD_BASE_WEAPON_REQUIREMENTS: Mapping[str, str] = {
     "Arbalest": "Ballista",
     "Mobile Turret": "Chaingun",
     "Energy Shield": "Chaingun",
+    "Meat Hook": "Super Shotgun",
 }
 
 MISSION_COMPLETION_WEAPON_THRESHOLDS: Mapping[str, int] = {
@@ -89,7 +90,7 @@ DLC_REGION_NAMES = frozenset({
 DLC_MISSION_NAMES = frozenset(DLC_REGION_NAMES)
 DLC_MISSION_LOCAL_PREFIXES = DLC_MISSION_NAMES | frozenset({"The Dark Lord"})
 VICTORY_REQUIREMENT_NAMES = frozenset({
-    "Complete All Enabled Missions",
+    "Complete All Included Missions",
     "Complete All Slayer Gates",
     "Complete All Escalation Encounters",
     "Complete All Secret Encounters",
@@ -193,8 +194,8 @@ def combat_capability_alternatives(capability: str) -> tuple[tuple[str, ...], ..
     raise ValueError(f"Unknown combat capability: {capability}")
 
 
-def fortress_battery_consumer_cost(*, randomize_first_battery: bool = False) -> int:
-    return len(FORTRESS_BATTERY_CONSUMER_LOCATIONS) * 2 + (1 if randomize_first_battery else 0)
+def fortress_battery_consumer_cost(active_spend_groups_count: int = 12, *, randomize_first_battery: bool = False) -> int:
+    return active_spend_groups_count * 2 + (1 if randomize_first_battery else 0)
 
 
 def connection_requirement(
@@ -212,7 +213,7 @@ def connection_requirement(
     combat_capabilities = tuple(
         capability
         for capability in capabilities
-        if capability not in {"requires_first_battery", "requires_dash", "requires_dlc_content"}
+        if capability not in {"requires_first_battery", "requires_dash", "requires_dlc_content", "anti_spirit"}
     )
     all_of: tuple[str, ...] = ("Dash",) if dash_gate and randomize_dash else ()
     return LocationRequirement(
@@ -572,7 +573,7 @@ def effective_victory_requirements(
         include_dlc_missions=include_dlc_missions,
     )
     content_present = {
-        "Complete All Enabled Missions": any(name.endswith(" - Mission Complete") for name in active_locations),
+        "Complete All Included Missions": any(name.endswith(" - Mission Complete") for name in active_locations),
         "Complete All Slayer Gates": (
             not use_dlc_content
             or any(" - Slayer Gate Complete" in name for name in active_locations)
@@ -606,9 +607,12 @@ def build_location_prerequisites(
     randomize_dash: bool = False,
     randomize_first_battery: bool = False,
     special_weapon: str = "The Crucible",
+    active_battery_cost: int | None = None,
+    campaign_difficulty: int = 2,
+    active_spend_groups: Sequence[Mapping[str, Any]] | None = None,
 ) -> dict[str, LocationRequirement]:
     mastery_locations = sorted(name for name in location_names if name.endswith(MASTERY_SUFFIX))
-    table: dict[str, LocationRequirement] = {
+    challenge_rules = {
         "Cultist Base - Mission Challenge - Armored Rain": LocationRequirement(
             combat_all_of=("flame_belch",)
         ),
@@ -630,6 +634,9 @@ def build_location_prerequisites(
         "Mars Core - Mission Challenge - Big Ba-Da Boom": LocationRequirement(
             all_of=("BFG-9000",)
         ),
+    }
+    table: dict[str, LocationRequirement] = {
+        loc_name: req for loc_name, req in challenge_rules.items() if loc_name in location_names
     }
     gate_complete_keys = {
         "Exultia - Slayer Gate Complete": "Slayer Gate Key Exultia",
@@ -672,33 +679,38 @@ def build_location_prerequisites(
                 all_of = ("Blood Punch",)
                 if randomize_dash:
                     all_of = (*all_of, "Dash")
-            normal_weapon_count = MISSION_COMPLETION_WEAPON_THRESHOLDS.get(
-                mission_name,
-                DEFAULT_MISSION_COMPLETION_WEAPON_THRESHOLD,
-            )
             table[location_name] = LocationRequirement(
                 all_of=all_of,
                 combat_all_of=combat_all_of,
-                normal_weapon_count=normal_weapon_count,
             )
     if "The Dark Lord - Defeated" in location_names:
-        dark_lord_custom_rule = None
-        if special_weapon != "The Crucible":
-            dark_lord_custom_rule = (
-                lambda state, player, sw=special_weapon: sentinel_hammer_available(
-                    state, player, special_weapon=sw
-                )
+        from .combat_readiness import is_dark_lord_defeated_ready
+        dark_lord_custom_rule = (
+            lambda state, player, sw=special_weapon, diff=campaign_difficulty: is_dark_lord_defeated_ready(
+                state,
+                player,
+                world=getattr(getattr(state, "multiworld", None), "worlds", {}).get(player),
+                special_weapon=sw,
+                difficulty=diff,
             )
+        )
         table["The Dark Lord - Defeated"] = LocationRequirement(
-            normal_weapon_count=MISSION_COMPLETION_WEAPON_THRESHOLDS.get(
-                "The Dark Lord",
-                DEFAULT_MISSION_COMPLETION_WEAPON_THRESHOLD,
-            ),
             custom_rule=dark_lord_custom_rule,
         )
-    battery_cost = fortress_battery_consumer_cost(randomize_first_battery=randomize_first_battery)
-    for location_name in FORTRESS_BATTERY_CONSUMER_LOCATIONS & location_names:
-        table[location_name] = LocationRequirement(battery_currency=battery_cost)
+    battery_cost = (
+        active_battery_cost
+        if active_battery_cost is not None
+        else fortress_battery_consumer_cost(randomize_first_battery=randomize_first_battery)
+    )
+    if active_spend_groups is not None:
+        for idx, sg in enumerate(active_spend_groups):
+            cost = 2 * (idx + 1)
+            for loc in sg["locations"]:
+                if loc in location_names:
+                    table[loc] = LocationRequirement(battery_currency=cost)
+    for location_name in (FORTRESS_BATTERY_CONSUMER_LOCATIONS & location_names):
+        if location_name not in table:
+            table[location_name] = LocationRequirement(battery_currency=battery_cost)
     for location_name in mastery_locations:
         mod_name = location_name.removesuffix(MASTERY_SUFFIX)
         base_weapon = MOD_BASE_WEAPON_REQUIREMENTS.get(mod_name)

@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from Options import Choice, DeathLinkMixin, NamedRange, OptionSet, PerGameCommonOptions, Range, Toggle
 
+from .generated_content import CAMPAIGN_STAGES
 from .items import SAFE_TRAP_NAMES, suit_perk_item_names
 
 
@@ -24,17 +25,71 @@ class _ExactLabelChoice(Choice):
 
 
 class UseDLCContent(Toggle):
-    """Adds supported The Ancient Gods equipment and gameplay content to the randomizer, including the Sentinel Hammer and Support Runes. DLC missions are controlled separately."""
+    """Adds supported The Ancient Gods equipment and gameplay content to the randomizer, including the Sentinel Hammer and Support Runes. Mission inclusion is controlled by Mission Pool."""
 
     display_name = "Use DLC Content"
     default = 1
 
 
-class IncludeDLCMissions(Toggle):
-    """Adds The Ancient Gods Part One and Part Two missions and their Archipelago locations. Disable this for the Base Campaign while keeping enabled DLC equipment and gameplay content in the randomizer."""
+class MissionPool(_ExactLabelChoice):
+    """Choose the set of missions available for this seed.
 
-    display_name = "Include DLC Missions"
+    Base — 13 Base Campaign missions (The Dark Lord disabled).
+    Full Saga — All 19 normal missions across Base, TAG1, and TAG2 plus The Dark Lord.
+    DLC Only — The 6 missions of The Ancient Gods Parts One and Two plus The Dark Lord.
+    Custom — Explicitly select candidate missions and whether The Dark Lord is eligible.
+    """
+
+    display_name = "Mission Pool"
+    option_base = 0
+    option_full_saga = 1
+    option_dlc_only = 2
+    option_custom = 3
+    default = option_full_saga
+    labels = {
+        option_base: "Base",
+        option_full_saga: "Full Saga",
+        option_dlc_only: "DLC Only",
+        option_custom: "Custom",
+    }
+
+
+class CustomMissions(OptionSet):
+    """Missions included when Mission Pool is set to Custom."""
+
+    display_name = "Custom Missions"
+    valid_keys = frozenset(stage["name"] for stage in CAMPAIGN_STAGES if stage["kind"] == "mission") | frozenset(
+        stage["id"] for stage in CAMPAIGN_STAGES if stage["kind"] == "mission"
+    )
+    default = frozenset(stage["name"] for stage in CAMPAIGN_STAGES if stage["kind"] == "mission")
+
+
+class CustomDarkLord(Toggle):
+    """Include The Dark Lord when Mission Pool is set to Custom."""
+
+    display_name = "Custom Dark Lord"
     default = 1
+
+
+class MissionCount(NamedRange):
+    """Number of normal missions to include in Random Mission Order or Mission Access as Items.
+
+    All [default] — Includes all candidate normal missions from the selected Mission Pool.
+    3..19 — Selects a random active subset of this size (The Dark Lord is independent).
+    Ignored in Vanilla Order (Vanilla Order always uses all candidate missions in chronological order).
+    """
+
+    display_name = "Mission Count"
+    range_start = 3
+    range_end = 19
+    special_range_names = {"all": 0}
+    default = 0
+
+    @classmethod
+    def get_option_name(cls, value: int) -> str:
+        if value == cls.special_range_names["all"]:
+            return "All"
+        return super().get_option_name(value)
 
 
 class DLCLogicTiming(_ExactLabelChoice):
@@ -125,7 +180,7 @@ class Goal(_ExactLabelChoice):
 
 
 VICTORY_REQUIREMENT_NAMES = frozenset({
-    "Complete All Enabled Missions",
+    "Complete All Included Missions",
     "Complete All Slayer Gates",
     "Complete All Escalation Encounters",
     "Complete All Secret Encounters",
@@ -141,7 +196,7 @@ class AdditionalVictoryRequirements(OptionSet):
     display_name = "Additional Victory Requirements"
     valid_keys = VICTORY_REQUIREMENT_NAMES
     default = frozenset({
-        "Complete All Enabled Missions",
+        "Complete All Included Missions",
         "Complete All Slayer Gates",
         "Complete All Escalation Encounters",
     })
@@ -316,7 +371,10 @@ def resolve_praetor_suit_upgrade_count(option_value: int, rng, maximum: int = le
 @dataclass
 class DoomEternalOptions(DeathLinkMixin, PerGameCommonOptions):
     use_dlc_content: UseDLCContent
-    include_dlc_missions: IncludeDLCMissions
+    mission_pool: MissionPool
+    custom_missions: CustomMissions
+    custom_dark_lord: CustomDarkLord
+    mission_count: MissionCount
     dlc_logic_timing: DLCLogicTiming
     mission_order: MissionOrder
     campaign_difficulty: CampaignDifficulty
