@@ -526,7 +526,10 @@ class DoomEternalWorld(World):
             "The Crucible" if not self.options.use_dlc_content.value
             else self.options.special_weapon.current_option_name
         )
-        scaled_special_count = 1 if n_normals <= 3 else SPECIAL_WEAPON_POOL_COUNTS[effective_special_weapon]
+        if self.options.use_dlc_content.value and "Progressive" in effective_special_weapon:
+            scaled_special_count = 2
+        else:
+            scaled_special_count = 1 if n_normals <= 3 else SPECIAL_WEAPON_POOL_COUNTS[effective_special_weapon]
         req_special = start_inventory.get(effective_special_weapon, 0)
         eff_special_count = max(scaled_special_count, req_special)
         pool_names.extend([effective_special_weapon] * eff_special_count)
@@ -768,6 +771,7 @@ class DoomEternalWorld(World):
 
         prerequisite_table = build_location_prerequisites(
             active_location_names,
+            active_region_names={region.name for region in self.multiworld.get_regions(self.player)},
             randomize_chainsaw=bool(self.options.randomize_chainsaw.value),
             randomize_dash=bool(self.options.randomize_dash.value),
             randomize_first_battery=bool(self.options.randomize_first_battery.value),
@@ -814,8 +818,6 @@ class DoomEternalWorld(World):
         required_events = {goal_endpoint_event_name(self.options.goal.current_option_name)}
         if "Complete All Included Missions" in effective_requirements:
             required_events.update(mission_events)
-            if self.campaign_plan["dark_lord_active"]:
-                required_events.add(goal_endpoint_event_name("Kill the Dark Lord"))
         if "Acquire the Unmaykr" in effective_requirements:
             required_events.add(goal_endpoint_event_name("Acquire the Unmaykr"))
         for requirement_name in effective_requirements - {"Complete All Included Missions", "Acquire the Unmaykr"}:

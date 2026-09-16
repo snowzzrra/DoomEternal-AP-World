@@ -603,6 +603,7 @@ def _requirement_item_names(requirement: LocationRequirement) -> frozenset[str]:
 def build_location_prerequisites(
     location_names: set[str],
     *,
+    active_region_names: set[str] | None = None,
     randomize_chainsaw: bool = False,
     randomize_dash: bool = False,
     randomize_first_battery: bool = False,
@@ -651,10 +652,15 @@ def build_location_prerequisites(
     for loc_name, key_name in gate_complete_keys.items():
         if loc_name in location_names:
             table[loc_name] = LocationRequirement(all_of=(key_name,))
+    active_base_gates = tuple(loc for loc in BASE_GATE_COMPLETE_NAMES if loc in location_names)
     if "Fortress of Doom - Unmaykr Acquired" in location_names:
         table["Fortress of Doom - Unmaykr Acquired"] = LocationRequirement(
-            custom_rule=lambda state, player: all(
-                state.can_reach(loc, "Location", player) for loc in BASE_GATE_COMPLETE_NAMES
+            custom_rule=(
+                (lambda state, player, gates=active_base_gates: all(
+                    state.can_reach(loc, "Location", player) for loc in gates
+                ))
+                if active_base_gates
+                else None
             ),
         )
     for aggregate_name in sorted(
@@ -716,14 +722,31 @@ def build_location_prerequisites(
         base_weapon = MOD_BASE_WEAPON_REQUIREMENTS.get(mod_name)
         if base_weapon is None:
             continue
-        reachable_any_of: tuple[tuple[str, str], ...] = ()
+        candidates: tuple[tuple[str, str], ...] = ()
         if mod_name == "Full Auto":
-            reachable_any_of = (("Region", "Doom Hunter Base - Station of Redemption"),)
+            candidates = (("Region", "Doom Hunter Base - Station of Redemption"),)
         elif mod_name == "Lock-on Burst":
-            reachable_any_of = (
+            candidates = (
                 ("Location", "Cultist Base - Slayer Key - Giant Yellow Wall Route"),
                 ("Region", "Doom Hunter Base - Station of Redemption"),
             )
+        reachable_any_of = tuple(
+            (kind, name)
+            for kind, name in candidates
+            if (
+                (kind == "Location" and name in location_names)
+                or (
+                    kind == "Region"
+                    and (
+                        (active_region_names is not None and name in active_region_names)
+                        or (
+                            active_region_names is None
+                            and any(loc.startswith(name.split(" - ")[0] + " - ") for loc in location_names)
+                        )
+                    )
+                )
+            )
+        )
         table[location_name] = LocationRequirement(
             combat_all_of=(f"mod:{mod_name}",),
             reachable_any_of=reachable_any_of,
@@ -810,11 +833,23 @@ def requirement_satisfied(requirement: LocationRequirement, state: CollectionSta
         for capability in requirement.combat_any_of
     ):
         return False
-    if requirement.reachable_any_of and not any(
-        state.can_reach(name, kind, player)
-        for kind, name in requirement.reachable_any_of
-    ):
-        return False
+    if requirement.reachable_any_of:
+        def _safe_can_reach(kind: str, name: str) -> bool:
+            mw = getattr(state, "multiworld", None)
+            if mw is not None and hasattr(mw, "regions"):
+                if kind == "Region":
+                    if name not in mw.regions.region_cache.get(player, ()):
+                        return False
+                elif kind == "Location":
+                    if name not in mw.regions.location_cache.get(player, ()):
+                        return False
+            try:
+                return state.can_reach(name, kind, player)
+            except KeyError:
+                return False
+
+        if not any(_safe_can_reach(kind, name) for kind, name in requirement.reachable_any_of):
+            return False
     if requirement.custom_rule is not None and not requirement.custom_rule(state, player):
         return False
     return all(requirement_satisfied(child, state, player) for child in requirement.all_requirements)

@@ -111,6 +111,13 @@ ITEM_DEPENDENCIES: dict[str, tuple[str, ...]] = {
     "Meat Hook Mastery": ("Super Shotgun",),
     "Faster Dash Recharge": ("Dash",),
     "Microwave Beam": ("Plasma Rifle",),
+    "Micro Missiles": ("Heavy Cannon",),
+    "Heat Blast": ("Plasma Rifle",),
+    "Remote Detonate": ("Rocket Launcher",),
+    "Arbalest": ("Ballista",),
+    "Destroyer Blade": ("Ballista",),
+    "Energy Shield": ("Chaingun",),
+    "Mobile Turret": ("Chaingun",),
 }
 
 
@@ -134,6 +141,13 @@ def get_required_readiness_targets(world: DoomEternalWorld) -> list[ReadinessTar
     goal_name = goal_opt.current_option_name if hasattr(goal_opt, "current_option_name") else ""
     is_dark_lord_goal = (goal_name == "kill_the_dark_lord" or plan.get("goal_stage") == DARK_LORD_STAGE_ID)
 
+    dlc_timing = getattr(getattr(world, "options", None), "dlc_logic_timing", None)
+    is_from_the_beginning = (dlc_timing is not None and getattr(dlc_timing, "value", 0) == 1)
+    dlc_stages = {
+        "e4m1_rig", "e4m2_swamp", "e4m3_mcity",
+        "e5m1_spear", "e5m2_earth", "e5m3_hell", "e5m4_boss",
+    }
+
     if order_val == "mission_access_as_items":
         # MAI: active normal missions + goal mission
         active_ids = list(plan.get("active_normal_mission_ids", []))
@@ -142,7 +156,8 @@ def get_required_readiness_targets(world: DoomEternalWorld) -> list[ReadinessTar
             active_ids.append(goal_stage)
         for s_id in active_ids:
             s_name = STAGE_BY_ID[s_id]["name"]
-            add_target(s_id, "base", f"Mission: {s_name}")
+            if not (is_from_the_beginning and s_id in dlc_stages):
+                add_target(s_id, "base", f"Mission: {s_name}")
             if s_id in spirit_stage_ids:
                 add_target(s_id, "spirit_breakpoint", f"Spirit Breakpoint: {s_name}")
     else:
@@ -150,7 +165,8 @@ def get_required_readiness_targets(world: DoomEternalWorld) -> list[ReadinessTar
         sequence = plan.get("sequence", [])
         for s_id in sequence:
             s_name = STAGE_BY_ID[s_id]["name"]
-            add_target(s_id, "base", f"Mission: {s_name}")
+            if not (is_from_the_beginning and s_id in dlc_stages):
+                add_target(s_id, "base", f"Mission: {s_name}")
             if s_id in spirit_stage_ids:
                 add_target(s_id, "spirit_breakpoint", f"Spirit Breakpoint: {s_name}")
 

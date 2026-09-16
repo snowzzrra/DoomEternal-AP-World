@@ -313,7 +313,7 @@ def solve_stage_bootstrap(
         if combat_pool.get(m, 0) > 0
     ]
     all_equip = [
-        e for e in ["Ice Bomb", "Flame Belch", "Frag Grenade", "Blood Punch"]
+        e for e in ["Dash", "Chainsaw", "Ice Bomb", "Flame Belch", "Frag Grenade", "Blood Punch"]
         if combat_pool.get(e, 0) > 0
     ]
 
@@ -394,10 +394,12 @@ def solve_stage_bootstrap(
 
                 ranked_placed = [
                     c for c in [
-                        "Super Shotgun", "Ballista", "Chaingun", "Progressive Special Weapon",
+                        "Dash", "Super Shotgun", "Ballista", "Chaingun", "Progressive Special Weapon",
+                        "The Crucible", "Sentinel Hammer",
                         "Energy Shield", "Flame Belch", "Ice Bomb", "Blood Punch", "Destroyer Blade",
                         "Arbalest", "Lock-on Burst", "Rocket Launcher", "Plasma Rifle", "Microwave Beam",
-                        "Precision Bolt", "Sticky Bombs", "Mobile Turret", "Heat Blast", "Remote Detonate"
+                        "Precision Bolt", "Sticky Bombs", "Mobile Turret", "Heat Blast", "Remote Detonate",
+                        "Chainsaw",
                     ] if rem_pool[c] > 0
                 ]
                 placed_sample = tuple(ranked_placed[:placed_capacity])
@@ -783,7 +785,7 @@ def stage_available(plan, stage_id, state, player):
         return True
     if str(STAGE_BY_ID[stage_id]["access_id"]) in plan["access_items"]:
         return state.has(STAGE_BY_ID[stage_id]["name"] + " Access", player)
-    if stage_id == plan["goal_stage"]:
+    if stage_id == plan["goal_stage"] and plan["mode"] == "mission_access_as_items":
         predecessors = [stage for stage in plan["sequence"] if stage != stage_id]
     else:
         predecessors = plan["sequence"][:plan["sequence"].index(stage_id)]
