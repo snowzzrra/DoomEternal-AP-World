@@ -4,7 +4,7 @@ import json
 from functools import partial
 from typing import ClassVar
 
-from BaseClasses import Entrance, ItemClassification, Region, Tutorial
+from BaseClasses import Entrance, Item, ItemClassification, Location, Region, Tutorial
 from worlds.AutoWorld import WebWorld, World
 from worlds.generic.Rules import add_rule, forbid_item, set_rule
 
@@ -612,31 +612,8 @@ class DoomEternalWorld(World):
                     )
                 pool_names.remove(name)
 
-        # B=0/B>0 readiness bootstrap witness: the solver proved these exact
-        # copies are sufficient inside the free pre-Mission Fortress checks.
-        # Materialize them there deterministically so sphere-zero readiness is
-        # a placement guarantee instead of fill-order luck (never precollected).
-        witness = list(plan.get("bootstrap_placed_items", ()))
-        if witness:
-            bootstrap_locations = sorted(FORTRESS_NON_CONSUMER_LOCATIONS)
-            if len(witness) > len(bootstrap_locations):
-                raise ValueError(
-                    f"DOOM Eternal bootstrap placement witness has {len(witness)} items; "
-                    f"only {len(bootstrap_locations)} free Fortress locations exist"
-                )
-            for name, location_name in zip(witness, bootstrap_locations):
-                if name not in pool_names:
-                    raise ValueError(
-                        f"DOOM Eternal bootstrap placement witness '{name}' is missing from the planned semantic pool"
-                    )
-                location = self.multiworld.get_location(location_name, self.player)
-                if location.item is not None:
-                    raise ValueError(f"DOOM Eternal bootstrap location '{location_name}' is already filled")
-                pool_names.remove(name)
-                location.place_locked_item(self.create_item(name))
-            locations_count = len(self.multiworld.get_unfilled_locations(self.player))
-
         # Pad with filler and traps to match unfilled locations exactly
+        locations_count = len(self.multiworld.get_unfilled_locations(self.player))
         amount_needed = locations_count - len(pool_names)
         if amount_needed < 0:
             raise ValueError(
@@ -770,3 +747,23 @@ class DoomEternalWorld(World):
             )
 
         self.multiworld.completion_condition[self.player] = completion_condition
+
+    def fill_hook(
+        self,
+        progitempool: list[Item],
+        usefulitempool: list[Item],
+        filleritempool: list[Item],
+        fill_locations: list[Location],
+    ) -> None:
+        plan = getattr(self, "campaign_plan", {})
+        bootstrap_placed = set(plan.get("bootstrap_placed_items", ()))
+
+        def sort_key(item: Item) -> int:
+            if item.player == self.player:
+                if item.name in bootstrap_placed:
+                    return 0
+                if "Battery" in item.name:
+                    return 2
+            return 1
+
+        progitempool.sort(key=sort_key)
