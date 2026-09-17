@@ -30,7 +30,14 @@ from .combat_readiness import (
     evaluate_mission_readiness,
 )
 from .items import DoomEternalItem, item_data_table
-from .logic import MASTERY_SUFFIX, effective_victory_requirements
+from .logic import (
+    MASTERY_SUFFIX,
+    build_location_prerequisites,
+    connection_requirement,
+    effective_victory_requirements,
+    required_item_names,
+)
+from .generated_content import CAMPAIGN_CONNECTIONS
 
 if TYPE_CHECKING:
     from . import DoomEternalWorld
@@ -120,6 +127,10 @@ ITEM_DEPENDENCIES: dict[str, tuple[str, ...]] = {
     "Mobile Turret": ("Chaingun",),
 }
 
+# Extra CR required beyond the exact readiness threshold so restrictive fill
+# cannot close a gate by momentarily excluding the item being placed.
+READINESS_PLACEMENT_SLACK: float = 6.0
+
 
 def get_required_readiness_targets(world: DoomEternalWorld) -> list[ReadinessTarget]:
     """Derive required readiness targets from the actual generated campaign plan."""
@@ -170,8 +181,14 @@ def get_required_readiness_targets(world: DoomEternalWorld) -> list[ReadinessTar
             if s_id in spirit_stage_ids:
                 add_target(s_id, "spirit_breakpoint", f"Spirit Breakpoint: {s_name}")
 
-    # Boss / Dark Lord readiness
-    if is_dark_lord_goal or DARK_LORD_STAGE_ID in plan.get("active_normal_mission_ids", ()):
+    # Boss / Dark Lord readiness: mandatory whenever the Dark Lord stage is
+    # part of the active campaign, because its completion gates later missions.
+    if (
+        is_dark_lord_goal
+        or DARK_LORD_STAGE_ID in plan.get("active_normal_mission_ids", ())
+        or DARK_LORD_STAGE_ID in plan.get("stage_ids", ())
+        or DARK_LORD_STAGE_ID in plan.get("sequence", ())
+    ):
         add_target(DARK_LORD_STAGE_ID, "dark_lord_defeated", "Boss: The Dark Lord Defeated")
 
     return targets
@@ -208,6 +225,42 @@ def apply_dynamic_progression_classification(world: DoomEternalWorld) -> Classif
     # 1. Targets
     targets = get_required_readiness_targets(world)
     ledger.targets_count = len(targets)
+
+    active_locations = {loc.name for loc in mw.get_locations(player) if loc.address is not None}
+    active_regions = {region.name for region in mw.get_regions(player)}
+    requirements = build_location_prerequisites(
+        active_locations,
+        active_region_names=active_regions,
+        randomize_chainsaw=bool(world.options.randomize_chainsaw.value),
+        randomize_dash=bool(world.options.randomize_dash.value),
+        randomize_first_battery=bool(world.options.randomize_first_battery.value),
+        special_weapon=world.options.special_weapon.current_option_name,
+        campaign_difficulty=world.options.campaign_difficulty.value,
+        active_spend_groups=getattr(world, "active_spend_groups", None),
+    )
+    hard_items = set().union(*(required_item_names(req) for req in requirements.values()))
+    for source, destination, _, condition in CAMPAIGN_CONNECTIONS:
+        if source in active_regions and destination in active_regions:
+            hard_items.update(required_item_names(connection_requirement(
+                condition,
+                randomize_dash=bool(world.options.randomize_dash.value),
+                randomize_first_battery=bool(world.options.randomize_first_battery.value),
+            )))
+    combat_baselines = {
+        "Combat Shotgun", "Heavy Cannon", "Plasma Rifle", "Rocket Launcher", "Ballista", "Chaingun",
+        "Sticky Bombs", "Full Auto", "Precision Bolt", "Micro Missiles", "Heat Blast", "Microwave Beam",
+        "Remote Detonate", "Lock-on Burst", "Arbalest", "Destroyer Blade", "Energy Shield", "Mobile Turret",
+    }
+    for item in mw.itempool:
+        if item.player == player and item.name in combat_baselines and item.name not in hard_items:
+            item.classification = ItemClassification.useful
+        if item.player == player and item.name in hard_items and not item.advancement:
+            original = item.classification
+            item.classification = ItemClassification.progression
+            ledger.promotions.append(PromotionRecord(
+                item.name, 1, original, ItemClassification.progression,
+                "active_hard_requirement", 0.0, "Active location or traversal prerequisite", (),
+            ))
 
     # 2. Baseline progression-only state
     state = build_progression_only_state(world)
@@ -271,8 +324,8 @@ def apply_dynamic_progression_classification(world: DoomEternalWorld) -> Classif
     current_max_deficit, worst_t = evaluate_all_targets(state)
     current_player_cr = evaluate_player_loadout_cr(state, player, world).total
 
-    # 5. Deterministic promotion loop (§11)
-    while current_max_deficit > 0:
+    # 5. Deterministic promotion loop 
+    while current_max_deficit > -READINESS_PLACEMENT_SLACK:
         best_candidate: str | None = None
         best_package: tuple[str, ...] = ()
         best_delta_deficit: float = 0.0

@@ -701,10 +701,15 @@ class DoomEternalWorld(World):
         self.multiworld.push_precollected(self.create_item(self.starting_weapon_name))
 
         # Readiness Bootstrap Precollected Items (Phase 7.7c §6)
+        # Bootstrap materialization must be logically active: a precollected
+        # readiness item only contributes to Combat Rating / readiness rules when
+        # it is traceable as progression in CollectionState.
         for name in plan.get("readiness_bootstrap_items", ()):
             if name in pool_names:
                 pool_names.remove(name)
-                self.multiworld.push_precollected(self.create_item(name))
+                item = self.create_item(name)
+                item.classification = ItemClassification.progression
+                self.multiworld.push_precollected(item)
 
         for name in plan["bootstrap_inventory"]:
             self.multiworld.push_precollected(self.create_item(name))

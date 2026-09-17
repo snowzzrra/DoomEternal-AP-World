@@ -1,5 +1,6 @@
 """Seed-time unified campaign decisions, active content filtering, and structural CollectionState rules."""
 from collections import Counter
+from dataclasses import replace
 import itertools
 from .generated_content import CAMPAIGN_STAGES
 from .logic import goal_endpoint_event_name, mission_clear_event_name
@@ -12,7 +13,12 @@ from .combat_rating import (
     SUPPORT_RUNE_NAMES,
     evaluate_player_loadout_cr,
 )
-from .combat_readiness import evaluate_mission_readiness, MISSION_BASE_CR, SPIRIT_BREAKPOINTS
+from .combat_readiness import (
+    evaluate_mission_readiness,
+    is_mission_ready,
+    MISSION_BASE_CR,
+    SPIRIT_BREAKPOINTS,
+)
 
 STAGE_BY_ID = {stage["id"]: stage for stage in CAMPAIGN_STAGES}
 STAGE_BY_NAME = {stage["name"]: stage for stage in CAMPAIGN_STAGES}
@@ -259,6 +265,41 @@ def resolve_dependencies(package, base_state, player, pool_counts):
     return True, tuple(full)
 
 
+SPIRIT_STAGE_IDS = frozenset(SPIRIT_BREAKPOINTS.values())
+
+DLC_STAGE_IDS = frozenset({
+    "e4m1_rig", "e4m2_swamp", "e4m3_mcity",
+    "e5m1_spear", "e5m2_earth", "e5m3_hell", "e5m4_boss",
+})
+
+
+def _start_stage_readiness(state, player, stage_id, world_context):
+    """Readiness required to choose stage_id as a starting mission.
+
+    A starting-stage bootstrap must cover every mandatory gate the player has to
+    pass to complete the start mission and reach progression, not only the
+    mission-root entrance:
+    - mission-root readiness (base CR, or Dark Lord readiness),
+    - the mandatory Spirit breakpoint when the stage has one,
+    - from_the_beginning traversal requirements (Dash and, for TAG2 stages,
+      Super Shotgun + ammo-resource producer).
+    """
+    context = "dark_lord_defeated" if stage_id == "e5m4_boss" else "base"
+    result = evaluate_mission_readiness(state, player, stage_id, world_context, context=context)
+    if stage_id in SPIRIT_STAGE_IDS:
+        breakpoint = evaluate_mission_readiness(
+            state, player, stage_id, world_context, context="spirit_breakpoint"
+        )
+        if breakpoint.deficit > result.deficit:
+            result = breakpoint
+    if context == "base" and stage_id in DLC_STAGE_IDS:
+        timing = getattr(getattr(world_context, "options", None), "dlc_logic_timing", None)
+        if timing is not None and getattr(timing, "value", 0) == 1:
+            if not is_mission_ready(state, player, stage_id, world_context, context="base"):
+                result = replace(result, ready=False)
+    return result
+
+
 def solve_stage_bootstrap(
     stage_id: str,
     world_context,
@@ -268,8 +309,7 @@ def solve_stage_bootstrap(
 ):
     """Compute minimal readiness bootstrap cost and items for stage_id."""
     player = base_state.player
-    stage_ctx = "dark_lord_defeated" if stage_id == "e5m4_boss" else "base"
-    res_0 = evaluate_mission_readiness(base_state, player, stage_id, world_context, context=stage_ctx)
+    res_0 = _start_stage_readiness(base_state, player, stage_id, world_context)
     if res_0.ready:
         return {
             "stage_id": stage_id,
@@ -323,7 +363,7 @@ def solve_stage_bootstrap(
         st = base_state.copy()
         for it in pkg:
             st.collect(it)
-        r = evaluate_mission_readiness(st, player, stage_id, world_context, context=stage_ctx)
+        r = _start_stage_readiness(st, player, stage_id, world_context)
         cr = evaluate_player_loadout_cr(st, player, world_context).total
         return r, cr
 

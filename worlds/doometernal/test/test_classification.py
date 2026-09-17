@@ -99,13 +99,13 @@ class TestDynamicProgressionClassification(unittest.TestCase):
         """Case D: An orphan mod/mastery without host weapon cannot provide CR gain."""
         state = CollectionState(self.mw)
         cr_base = evaluate_player_loadout_cr(state, self.player, self.world)
-        # Collect Energy Shield without Chaingun
-        state.collect(self.mw.create_item("Energy Shield", self.player))
+        # Collect Energy Shield (promoted to progression) without Chaingun
+        state.collect(self._create_prog_item("Energy Shield"))
         cr = evaluate_player_loadout_cr(state, self.player, self.world)
         self.assertEqual(cr.categories["Defense"], cr_base.categories["Defense"])
 
         # Once Chaingun is collected, Energy Shield activates
-        state.collect(self.mw.create_item("Chaingun", self.player))
+        state.collect(self._create_prog_item("Chaingun"))
         cr_with_chaingun = evaluate_player_loadout_cr(state, self.player, self.world)
         self.assertGreater(cr_with_chaingun.categories["Defense"], cr_base.categories["Defense"])
 
@@ -221,7 +221,7 @@ class TestDynamicProgressionClassification(unittest.TestCase):
     def test_case_l_hammer_not_automatically_progression_if_cr_satisfied(self) -> None:
         """Case L: Sentinel Hammer is not needed if player loadout CR already satisfies target with penalty."""
         state = CollectionState(self.mw)
-        # Give complete progression equipment and weapons to reach 90+ CR
+        # Give complete promoted equipment and weapons to reach 90+ CR
         for item_name in [
             "Combat Shotgun", "Super Shotgun", "Heavy Cannon", "Plasma Rifle",
             "Rocket Launcher", "Ballista", "Chaingun", "BFG-9000",
@@ -231,7 +231,7 @@ class TestDynamicProgressionClassification(unittest.TestCase):
             "Blood Punch", "Flame Belch", "Frag Grenade", "Ice Bomb", "Dash",
             "The Crucible",
         ]:
-            state.collect(self.mw.create_item(item_name, self.player))
+            state.collect(self._create_prog_item(item_name))
 
         cr = evaluate_player_loadout_cr(state, self.player, self.world)
         self.assertGreaterEqual(cr.total, 80.0)
@@ -414,7 +414,12 @@ class TestMinimalReadinessBootstrap(unittest.TestCase):
         self.assertEqual(len(plan["readiness_bootstrap_items"]), 0)
 
     def test_single_item_shortage_or_forced_bootstrap(self) -> None:
-        """A stage requiring bootstrap receives minimal items from world pool."""
+        """A stage requiring bootstrap receives minimal items from world pool.
+
+        Uses a non-Spirit stage: Spirit stages additionally require their mandatory
+        in-mission breakpoint readiness (see ``_start_stage_readiness``), which is
+        intentionally stricter than the bounded single-shortage case below.
+        """
         class MockOptions:
             campaign_difficulty = type("Opts", (), {"value": 0})()
             use_dlc_content = type("Opts", (), {"value": 1})()
@@ -425,13 +430,13 @@ class TestMinimalReadinessBootstrap(unittest.TestCase):
 
         opts = MockOptions()
         base_st = FastState(["Combat Shotgun", "Chainsaw", "Dash"], player=1)
-        pool_counts = build_pool_candidate_counts(opts, ["e4m3_mcity"], "Combat Shotgun", (), 0)
+        pool_counts = build_pool_candidate_counts(opts, ["e3m4_boss"], "Combat Shotgun", (), 0)
 
         class MockWorld:
             options = opts
             player = 1
 
-        res = solve_stage_bootstrap("e4m3_mcity", MockWorld(), base_st, pool_counts, active_sg_count=0)
+        res = solve_stage_bootstrap("e3m4_boss", MockWorld(), base_st, pool_counts, active_sg_count=0)
         self.assertGreater(res["bootstrap_cost"], 0)
         self.assertEqual(len(res["bootstrap_items"]), res["bootstrap_cost"])
 
