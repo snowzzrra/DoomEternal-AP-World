@@ -19,6 +19,15 @@ from .combat_readiness import (
     MISSION_BASE_CR,
     SPIRIT_BREAKPOINTS,
 )
+from .planner import (
+    FastState,
+    ITEM_DEPENDENCIES,
+    ORDERED_MASTERY_CHALLENGES,
+    STAGE_SLAYER_GATE_KEYS,
+    build_semantic_counts,
+    derive_readiness_targets,
+    is_compact_campaign,
+)
 
 STAGE_BY_ID = {stage["id"]: stage for stage in CAMPAIGN_STAGES}
 STAGE_BY_NAME = {stage["name"]: stage for stage in CAMPAIGN_STAGES}
@@ -32,17 +41,6 @@ BASE_GATE_STAGE_IDS = (
     "e2m3_core",
     "e3m1_slayer",
 )
-
-STAGE_SLAYER_GATE_KEYS = {
-    "e1m2_war": "Slayer Gate Key Exultia",
-    "e1m3_cult": "Slayer Gate Key Cultist Base",
-    "e2m1_nest": "Slayer Gate Key Super Gore Nest",
-    "e2m2_base": "Slayer Gate Key ARC Complex",
-    "e2m3_core": "Slayer Gate Key Mars Core",
-    "e3m1_slayer": "Slayer Gate Key Taras Nabad",
-    "e4m1_rig": "Slayer Gate Key UAC Atlantica Facility",
-    "e4m3_mcity": "Slayer Gate Key The Holt",
-}
 
 FORTRESS_NON_CONSUMER_LOCATIONS = frozenset({
     "Fortress of Doom - Fortress of Doom Codex Entry",
@@ -121,23 +119,6 @@ FORTRESS_SPEND_GROUPS = (
 )
 SPEND_GROUP_BY_ID = {sg["id"]: sg for sg in FORTRESS_SPEND_GROUPS}
 
-ORDERED_MASTERY_CHALLENGES = (
-    ("Sticky Bombs", "Sticky Bombs - Weapon Mastery Challenge"),
-    ("Precision Bolt", "Precision Bolt - Weapon Mastery Challenge"),
-    ("Heat Blast", "Heat Blast - Weapon Mastery Challenge"),
-    ("Remote Detonate", "Remote Detonate - Weapon Mastery Challenge"),
-    ("Arbalest", "Arbalest - Weapon Mastery Challenge"),
-    ("Energy Shield", "Energy Shield - Weapon Mastery Challenge"),
-    ("Full Auto", "Full Auto - Weapon Mastery Challenge"),
-    ("Micro Missiles", "Micro Missiles - Weapon Mastery Challenge"),
-    ("Microwave Beam", "Microwave Beam - Weapon Mastery Challenge"),
-    ("Lock-on Burst", "Lock-on Burst - Weapon Mastery Challenge"),
-    ("Meat Hook", "Meat Hook - Weapon Mastery Challenge"),
-    ("Destroyer Blade", "Destroyer Blade - Weapon Mastery Challenge"),
-    ("Mobile Turret", "Mobile Turret - Weapon Mastery Challenge"),
-)
-
-
 def completion_event(stage_id):
     stage = STAGE_BY_ID[stage_id]
     return (goal_endpoint_event_name("Kill the Dark Lord") if stage["kind"] == "boss"
@@ -201,44 +182,7 @@ def select_active_normal_missions(candidate_ids, requested_count, forced_ids, rn
     return sorted(selected)
 
 
-ITEM_DEPS = {
-    "Sticky Bombs": ("Combat Shotgun",),
-    "Full Auto": ("Combat Shotgun",),
-    "Precision Bolt": ("Heavy Cannon",),
-    "Micro Missiles": ("Heavy Cannon",),
-    "Heat Blast": ("Plasma Rifle",),
-    "Microwave Beam": ("Plasma Rifle",),
-    "Remote Detonate": ("Rocket Launcher",),
-    "Lock-on Burst": ("Rocket Launcher",),
-    "Arbalest": ("Ballista",),
-    "Destroyer Blade": ("Ballista",),
-    "Mobile Turret": ("Chaingun",),
-    "Energy Shield": ("Chaingun",),
-    "Meat Hook": ("Super Shotgun",),
-    "Faster Dash Recharge": ("Dash",),
-}
-
-
-class FastState:
-    __slots__ = ('prog_items', 'player')
-
-    def __init__(self, items=None, player=1):
-        self.prog_items = Counter(items or ())
-        self.player = player
-
-    def count(self, item_name, player):
-        return self.prog_items[item_name]
-
-    def has(self, item_name, player):
-        return self.prog_items[item_name] > 0
-
-    def copy(self):
-        st = FastState(player=self.player)
-        st.prog_items = Counter(self.prog_items)
-        return st
-
-    def collect(self, item_name):
-        self.prog_items[item_name] += 1
+ITEM_DEPS = ITEM_DEPENDENCIES
 
 
 def resolve_dependencies(package, base_state, player, pool_counts):
@@ -359,13 +303,30 @@ def solve_stage_bootstrap(
 
     primary_candidates = all_weapons + all_mods + all_equip
 
+    eval_cache: dict[tuple, tuple] = {}
+    dep_cache: dict[tuple, tuple] = {}
+
     def eval_pkg(pkg):
+        key = tuple(sorted(pkg))
+        cached = eval_cache.get(key)
+        if cached is not None:
+            return cached
         st = base_state.copy()
         for it in pkg:
             st.collect(it)
         r = _start_stage_readiness(st, player, stage_id, world_context)
         cr = evaluate_player_loadout_cr(st, player, world_context).total
-        return r, cr
+        result = (r, cr)
+        eval_cache[key] = result
+        return result
+
+    def resolve_cached(package, count_pool):
+        key = (tuple(package), tuple(sorted(count_pool.items())))
+        cached = dep_cache.get(key)
+        if cached is None:
+            cached = resolve_dependencies(package, base_state, player, count_pool)
+            dep_cache[key] = cached
+        return cached
 
     def iter_placed_combos(k, candidates, max_capacity):
         other_cands = [c for c in candidates if c not in all_weapons]
@@ -378,13 +339,19 @@ def solve_stage_bootstrap(
                     for other_combo in itertools.combinations(other_cands, rem_k):
                         yield w_combo + other_combo
 
-    # 1. Search for B = 0 (up to 6 placed items in free Fortress checks)
+    # 1. Search for B = 0 (up to 6 placed items in free Fortress checks).
+    #    The feasibility gate is an input-valid monotone upper bound: CR of the
+    #    baseline plus every candidate item, which no 6-item subset can exceed.
     best_zero = None
     target_cr = res_0.effective_cr - res_0.allowance
-    if target_cr <= 77.5:
+    upper_state = base_state.copy()
+    for candidate in set(primary_candidates):
+        upper_state.collect(candidate)
+    max_total_cr = evaluate_player_loadout_cr(upper_state, player, world_context).total
+    if target_cr <= max_total_cr:
         for k in range(1, 7):
             for combo in iter_placed_combos(k, primary_candidates, 6):
-                valid, full = resolve_dependencies(combo, base_state, player, combat_pool)
+                valid, full = resolve_cached(combo, combat_pool)
                 if not valid or len(full) > 6:
                     continue
                 r, cr = eval_pkg(full)
@@ -422,7 +389,7 @@ def solve_stage_bootstrap(
 
             for c_boot in boot_combos:
                 boot_pkg = bat_pkg + c_boot
-                valid_b, full_boot = resolve_dependencies(boot_pkg, base_state, player, pool_counts)
+                valid_b, full_boot = resolve_cached(boot_pkg, pool_counts)
                 if not valid_b or len(full_boot) != B:
                     continue
 
@@ -478,69 +445,44 @@ def solve_stage_bootstrap(
     }
 
 
-def build_pool_candidate_counts(options, active_normal_ids, starting_weapon, active_sg, active_masteries_count):
-    n_normals = len(active_normal_ids)
-    start_inv = options.start_inventory.value
-    counts = Counter()
+def build_pool_candidate_counts(
+    options,
+    active_normal_ids,
+    starting_weapon,
+    active_sg,
+    active_masteries_count,
+    *,
+    battery_surplus: int = 1,
+    targets=None,
+    player: int = 1,
+    world_context=None,
+):
+    """Placement-view candidate pool consumed by the bootstrap solver.
 
-    world_pool_weapons = [
-        "Combat Shotgun", "Heavy Cannon", "Plasma Rifle",
-        "Rocket Launcher", "Super Shotgun", "Ballista", "Chaingun"
-    ]
-    for w in world_pool_weapons:
-        if w != starting_weapon:
-            counts[w] = 1 - min(1, start_inv.get(w, 0))
+    Single source of truth shared with ``create_items`` (via
+    ``plan['semantic_counts']``); no separate approximate pool exists.
+    """
+    from .planner import build_pool_candidate_counts as _canonical_build
 
-    for eq in ("Frag Grenade", "Blood Punch", "Flame Belch", "Ice Bomb"):
-        counts[eq] = 1 - min(1, start_inv.get(eq, 0))
-
-    if options.randomize_chainsaw.value:
-        counts["Chainsaw"] = 1 - min(1, start_inv.get("Chainsaw", 0))
-    if options.randomize_dash.value:
-        counts["Dash"] = 1 - min(1, start_inv.get("Dash", 0))
-
-    dlc_enabled = bool(options.use_dlc_content.value)
-    spec_name = "The Crucible" if not dlc_enabled else options.special_weapon.current_option_name
-    spec_count = 2 if dlc_enabled and "Progressive" in spec_name else 1
-    counts[spec_name] = max(1, spec_count - min(spec_count, start_inv.get(spec_name, 0)))
-
-    PRIMARY_BASE_MODS = [
-        "Sticky Bombs", "Precision Bolt", "Microwave Beam",
-        "Remote Detonate", "Arbalest", "Energy Shield",
-    ]
-    SECONDARY_MODS = [
-        "Full Auto", "Micro Missiles", "Heat Blast",
-        "Lock-on Burst", "Destroyer Blade", "Mobile Turret",
-    ]
-    ALL_MODS = PRIMARY_BASE_MODS + SECONDARY_MODS
-    mod_quota = 6 if n_normals <= 3 else (8 if n_normals <= 5 else (10 if n_normals <= 8 else 12))
-    for m in ALL_MODS[:mod_quota]:
-        counts[m] = 1 - min(1, start_inv.get(m, 0))
-
-    sg_count = len(active_sg)
-    if sg_count > 0:
-        counts["Sentinel Battery Bundle"] = max(1, sg_count)
-
-    NORMAL_RUNES = [
-        "Savagery", "Seek and Destroy", "Blood Fueled",
-        "Air Control", "Dazed and Confused", "Saving Throw",
-        "Chrono Strike", "Equipment Fiend", "Punch and Reave",
-    ]
-    rune_quota = 3 if n_normals <= 3 else (5 if n_normals <= 5 else (7 if n_normals <= 8 else 9))
-    for r in NORMAL_RUNES[:rune_quota]:
-        counts[r] = 1 - min(1, start_inv.get(r, 0))
-
-    if dlc_enabled:
-        SUPPORT_RUNES = ["Desperate Punch", "Take Back", "Break Through"]
-        sup_quota = 1 if n_normals <= 3 else (2 if n_normals <= 8 else 3)
-        for s in SUPPORT_RUNES[:sup_quota]:
-            counts[s] = 1 - min(1, start_inv.get(s, 0))
-
-    cap_count = 1 if n_normals <= 3 else (2 if n_normals <= 5 else (3 if n_normals <= 8 else 4))
-    for stat in ("Health", "Armor", "Ammo"):
-        counts[f"Progressive {stat} Upgrade"] = max(1, cap_count - start_inv.get(f"Progressive {stat} Upgrade", 0))
-
-    return counts
+    if targets is None and is_compact_campaign(active_normal_ids):
+        provisional_plan = {
+            "sequence": [*active_normal_ids],
+            "active_normal_mission_ids": list(active_normal_ids),
+            "goal_stage": None,
+            "stage_ids": list(active_normal_ids),
+        }
+        targets = derive_readiness_targets(options, provisional_plan)
+    return _canonical_build(
+        options,
+        active_normal_ids,
+        starting_weapon,
+        active_sg,
+        active_masteries_count,
+        battery_surplus=battery_surplus,
+        targets=targets,
+        player=player,
+        world_context=world_context,
+    )
 
 
 def make_plan(options, rng, world=None):
@@ -570,12 +512,7 @@ def make_plan(options, rng, world=None):
     else:
         raise ValueError(f"Unknown Mission Pool: {pool_name}")
 
-    # 2. Auto-promote Use DLC Content if DLC missions or Dark Lord are present
-    has_dlc = any(STAGE_BY_ID[s]["source"] in ("tag1", "tag2") for s in candidate_normal_ids) or dark_lord_candidate
-    if has_dlc and not options.use_dlc_content.value:
-        options.use_dlc_content.value = 1
-
-    # 3. Goal normalization
+    # 2. Goal normalization (must run before deriving effective DLC flags)
     goal_forced_active = False
     forced_normal_ids = set()
     goal_stage = None
@@ -610,6 +547,13 @@ def make_plan(options, rng, world=None):
         elif final == 0:
             final = rng.choice((1, 2))
         goal_stage = "e3m4_boss" if final == 1 else "e5m4_boss"
+
+    # 3. Auto-promote Use DLC Content after goal normalization, so Base +
+    #    DLC OFF + a goal that forces the Dark Lord or the Full Saga also
+    #    normalizes the effective DLC flags.
+    has_dlc = any(STAGE_BY_ID[s]["source"] in ("tag1", "tag2") for s in candidate_normal_ids) or dark_lord_candidate
+    if has_dlc and not options.use_dlc_content.value:
+        options.use_dlc_content.value = 1
 
     # 4. Mission Count & Active Normal Missions selection
     raw_count = options.mission_count.value
@@ -696,10 +640,7 @@ def make_plan(options, rng, world=None):
             candidate_items.append("Chainsaw")
         return FastState(candidate_items, player=player)
 
-    pool_counts = build_pool_candidate_counts(
-        options, active_normal_ids, starting_weapon, active_sg, active_masteries_count
-    )
-
+    # 5. Canonical semantic pool (single source of truth) & readiness targets
     class MinimalWorldContext:
         def __init__(self, opts, plyr):
             self.options = opts
@@ -707,67 +648,90 @@ def make_plan(options, rng, world=None):
 
     world_context = world if world is not None else MinimalWorldContext(options, player)
 
-    # 5. Order sequencing & starts (Readiness-Aware, Phase 7.7c §4 & §5)
     ordinary = [s for s in active_normal_ids if s != goal_stage]
     if dark_lord_active and "e5m4_boss" != goal_stage and "e5m4_boss" not in ordinary:
         ordinary.append("e5m4_boss")
 
-    # Evaluate bootstrap for candidate starts
-    candidate_results = {}
-    for s_id in ordinary:
-        candidate_results[s_id] = solve_stage_bootstrap(
+    provisional_sequence = list(active_normal_ids)
+    if dark_lord_active and "e5m4_boss" not in provisional_sequence:
+        provisional_sequence.append("e5m4_boss")
+    provisional_plan = {
+        "sequence": provisional_sequence,
+        "active_normal_mission_ids": list(active_normal_ids),
+        "goal_stage": goal_stage,
+        "stage_ids": list(active_stage_ids),
+    }
+    readiness_targets = derive_readiness_targets(options, provisional_plan)
+    semantic_pool = build_semantic_counts(
+        options,
+        active_normal_ids=active_normal_ids,
+        starting_weapon=starting_weapon,
+        active_sg=active_sg,
+        active_masteries_count=active_masteries_count,
+        battery_surplus=battery_surplus,
+        targets=readiness_targets,
+        player=player,
+        world_context=world_context,
+    )
+    pool_counts = Counter(semantic_pool.placement_counts)
+
+    # 6. Order sequencing & starts (Readiness-Aware, Phase 7.7c §4 & §5)
+    def evaluate_start_stage(s_id: str):
+        return solve_stage_bootstrap(
             s_id, world_context, get_candidate_base_state(s_id), pool_counts, len(active_sg)
         )
 
     if order_mode == 0:
-        # Vanilla Order
-        sequence = list(active_normal_ids)
-        if dark_lord_active and "e5m4_boss" not in sequence:
-            sequence.append("e5m4_boss")
+        # Vanilla Order: the start is fixed, so only that start is solved.
+        sequence = provisional_sequence
         starts = [sequence[0]]
         chosen_start = sequence[0]
-        chosen_result = candidate_results.get(
-            chosen_start,
-            solve_stage_bootstrap(chosen_start, world_context, get_candidate_base_state(chosen_start), pool_counts, len(active_sg))
+        chosen_result = evaluate_start_stage(chosen_start)
+        access = []
+        goal_as_item = False
+    else:
+        candidate_results = {s_id: evaluate_start_stage(s_id) for s_id in ordinary}
+        min_cost = min(candidate_results[s]["bootstrap_cost"] for s in ordinary)
+        if min_cost >= 999:
+            unresolved = sorted(s for s in ordinary if candidate_results[s]["bootstrap_cost"] >= 999)
+            raise ValueError(
+                "DOOM Eternal cannot solve a readiness bootstrap for any starting stage: "
+                + ", ".join(unresolved)
+            )
+        tied_candidates = [s for s in ordinary if candidate_results[s]["bootstrap_cost"] == min_cost]
+        min_effective_cr = min(candidate_results[s]["effective_cr"] for s in tied_candidates)
+        headroom_candidates = sorted(s for s in tied_candidates if candidate_results[s]["effective_cr"] == min_effective_cr)
+        chosen_start = rng.choice(headroom_candidates)
+        chosen_result = candidate_results[chosen_start]
+
+        if order_mode == 1:
+            # Random Mission Order (§4)
+            rem_ordinary = [s for s in ordinary if s != chosen_start]
+            rng.shuffle(rem_ordinary)
+            sequence = [chosen_start] + rem_ordinary + ([goal_stage] if goal_stage else [])
+            starts = [chosen_start]
+            access = []
+            goal_as_item = False
+        else:
+            # Mission Access as Items (§5)
+            eff_starts = min(options.starting_missions.value, len(ordinary))
+            eff_starts = max(1, eff_starts)
+            rem_ordinary = [s for s in ordinary if s != chosen_start]
+            rng.shuffle(rem_ordinary)
+
+            starts = [chosen_start] + rem_ordinary[:eff_starts - 1]
+            other_stages = rem_ordinary[eff_starts - 1:]
+            access = list(other_stages)
+            goal_as_item = bool(goal_stage and options.goal_mission_as_item.value)
+            if goal_as_item and goal_stage:
+                access.append(goal_stage)
+            sequence = starts + other_stages + ([goal_stage] if goal_stage else [])
+
+    if chosen_result["bootstrap_cost"] >= 999:
+        raise ValueError(
+            f"DOOM Eternal cannot plan a readiness bootstrap for starting stage "
+            f"'{chosen_start}'; refusing a sentinel bootstrap plan."
         )
-        access = []
-        goal_as_item = False
-    elif order_mode == 1:
-        # Random Mission Order (§4)
-        min_cost = min(candidate_results[s]["bootstrap_cost"] for s in ordinary)
-        tied_candidates = [s for s in ordinary if candidate_results[s]["bootstrap_cost"] == min_cost]
-        min_effective_cr = min(candidate_results[s]["effective_cr"] for s in tied_candidates)
-        headroom_candidates = sorted(s for s in tied_candidates if candidate_results[s]["effective_cr"] == min_effective_cr)
-        chosen_start = rng.choice(headroom_candidates)
-        chosen_result = candidate_results[chosen_start]
-
-        rem_ordinary = [s for s in ordinary if s != chosen_start]
-        rng.shuffle(rem_ordinary)
-        sequence = [chosen_start] + rem_ordinary + ([goal_stage] if goal_stage else [])
-        starts = [chosen_start]
-        access = []
-        goal_as_item = False
-    elif order_mode == 2:
-        # Mission Access as Items (§5)
-        min_cost = min(candidate_results[s]["bootstrap_cost"] for s in ordinary)
-        tied_candidates = [s for s in ordinary if candidate_results[s]["bootstrap_cost"] == min_cost]
-        min_effective_cr = min(candidate_results[s]["effective_cr"] for s in tied_candidates)
-        headroom_candidates = sorted(s for s in tied_candidates if candidate_results[s]["effective_cr"] == min_effective_cr)
-        chosen_start = rng.choice(headroom_candidates)
-        chosen_result = candidate_results[chosen_start]
-
-        eff_starts = min(options.starting_missions.value, len(ordinary))
-        eff_starts = max(1, eff_starts)
-        rem_ordinary = [s for s in ordinary if s != chosen_start]
-        rng.shuffle(rem_ordinary)
-
-        starts = [chosen_start] + rem_ordinary[:eff_starts - 1]
-        other_stages = rem_ordinary[eff_starts - 1:]
-        access = list(other_stages)
-        goal_as_item = bool(goal_stage and options.goal_mission_as_item.value)
-        if goal_as_item and goal_stage:
-            access.append(goal_stage)
-        sequence = starts + other_stages + ([goal_stage] if goal_stage else [])
 
     # 6. Bootstrap inventory
     bootstrap_inventory = {}
@@ -780,6 +744,15 @@ def make_plan(options, rng, world=None):
     readiness_bootstrap_items = list(chosen_result["bootstrap_items"])
     battery_bootstrap_items = [it for it in readiness_bootstrap_items if it == "Sentinel Battery Bundle"]
     combat_bootstrap_items = [it for it in readiness_bootstrap_items if it != "Sentinel Battery Bundle"]
+
+    # Mission Access items are structural, chosen with the start stage; fold
+    # them into the same concrete semantic multiset.
+    semantic_counts = dict(semantic_pool.counts_view())
+    semantic_placement_counts = dict(semantic_pool.placement_view())
+    for stage in access:
+        access_name = STAGE_BY_ID[stage]["name"] + " Access"
+        semantic_counts[access_name] = semantic_counts.get(access_name, 0) + 1
+        semantic_placement_counts[access_name] = semantic_placement_counts.get(access_name, 0) + 1
 
     return {
         "schema": 1,
@@ -814,6 +787,12 @@ def make_plan(options, rng, world=None):
         "effective_mission_count": effective_count,
         "mission_pool": pool_name,
         "goal_forced_active": goal_forced_active,
+        "compact_short_world": semantic_pool.compact,
+        "semantic_counts": semantic_counts,
+        "semantic_placement_counts": semantic_placement_counts,
+        "readiness_selection": {name: qty for name, qty in sorted(semantic_pool.optional_selected.items())},
+        "readiness_initial_deficit": round(semantic_pool.readiness_initial_deficit, 2),
+        "readiness_final_deficit": round(semantic_pool.readiness_final_deficit, 2),
         "hub": {"id": "hub", "map": "game/hub/hub"},
     }
 

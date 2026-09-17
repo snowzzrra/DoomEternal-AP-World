@@ -159,8 +159,13 @@ def evaluate_mission_readiness(
     difficulty: int | None = None,
     special_weapon: str | None = None,
     context: str = "base",
+    player_cr: float | None = None,
 ) -> ReadinessResult:
-    """Evaluate readiness of a player for a given mission and context."""
+    """Evaluate readiness of a player for a given mission and context.
+
+    ``player_cr`` may be supplied when the caller already evaluated the same
+    state; it must be the exact ``evaluate_player_loadout_cr`` total.
+    """
     diff, sw = _resolve_readiness_options(world, difficulty, special_weapon)
     allowance = get_skill_allowance(diff)
     dlc_timing = getattr(getattr(world, "options", None), "dlc_logic_timing", None)
@@ -174,8 +179,11 @@ def evaluate_mission_readiness(
         base_cr = 0
     else:
         base_cr = get_mission_base_cr(stage_id)
-    cr_result = evaluate_player_loadout_cr(state, player, world)
-    player_cr = float(cr_result.total)
+    if player_cr is None:
+        cr_result = evaluate_player_loadout_cr(state, player, world)
+        player_cr = float(cr_result.total)
+    else:
+        player_cr = float(player_cr)
 
     soft_penalty = 0
     reason = ""

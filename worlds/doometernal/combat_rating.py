@@ -219,6 +219,20 @@ def _normal_arsenal(weapons: tuple[str, ...]) -> float:
     return total
 
 
+def _special_variants(mode: str, stage: int) -> tuple[tuple[str, int], ...]:
+    """Mutually exclusive equipped Special Weapon alternatives.
+
+    Progressive Special Weapon keeps the Crucible selectable at stage >= 2,
+    so both the retained Crucible and the Hammer are valid equipped choices;
+    only the best alternative may be counted, never their sum.
+    """
+    if mode == "none" or stage <= 0:
+        return (("none", 0),)
+    if mode == "progressive_special" and stage >= 2:
+        return (("progressive_special", stage), ("crucible", 1))
+    return ((mode, stage),)
+
+
 def _apply_special(mode: str, stage: int, raw: dict[str, float]) -> None:
     """Add special-weapon contributions to raw category totals."""
     if mode == "none":
@@ -331,18 +345,15 @@ def _evaluate_with_rune_selection(
     if "Super Shotgun" in weapons:
         raw["Mobility"] += 2
 
-    # 2. Special weapons
-    _apply_special(special_mode, special_stage, raw)
-
-    # 3. Progressive capacities
+    # 2. Progressive capacities
     raw["Defense"] += health_stages * HEALTH_CR_PER_STAGE
     raw["Defense"] += armor_stages * ARMOR_CR_PER_STAGE
     raw["Sustain"] += ammo_stages * AMMO_CR_PER_STAGE
 
-    # 4. WUP
+    # 3. WUP
     raw["Enhancements"] += min(WUP_ENHANCEMENT_CAP, max(0, wup_count) * WUP_ENHANCEMENT_PER_COPY)
 
-    # 5. Non-rune item contributions (equipment, mods, masteries, suit perks)
+    # 4. Non-rune item contributions (equipment, mods, masteries, suit perks)
     for name in owned:
         if name in NORMAL_RUNE_NAMES or name in SUPPORT_RUNE_NAMES:
             continue
@@ -350,35 +361,44 @@ def _evaluate_with_rune_selection(
             if all(dep in owned for dep in deps):
                 raw[cat] += val
 
-    # 6. Selected normal runes
+    # 5. Selected normal runes
     for name in selected_runes:
         for cat, val, deps in NORMAL_RUNE_CONTRIBS[name]:
             if all(dep in owned for dep in deps):
                 raw[cat] += val
 
-    # 7. Selected support rune
+    # 6. Selected support rune
     if selected_support is not None:
         for cat, val, deps in SUPPORT_RUNE_CONTRIBS[selected_support]:
             if all(dep in owned for dep in deps):
                 raw[cat] += val
 
-    # 8. Faster Weapon Swap: +15% of normal Arsenal (capped normal) → Enhancement
+    # 7. Faster Weapon Swap: +15% of normal Arsenal (capped normal) → Enhancement
     if "Faster Weapon Swap" in owned and weapons:
         effective_arsenal = min(normal_arsenal, CATEGORY_CAPS["Arsenal"])
         bonus = min(FASTER_WEAPON_SWAP_CAP, FASTER_WEAPON_SWAP_RATIO * effective_arsenal)
         raw["Enhancements"] += bonus
 
-    # Cap each category
-    capped = {cat: min(val, CATEGORY_CAPS[cat]) for cat, val in raw.items()}
-    final = round(sum(capped.values()), 2)
+    # 8. Special weapon: evaluate the best OWNED equipped alternative after
+    #    every category cap. Alternatives are never summed.
+    best: dict[str, object] | None = None
+    for variant_mode, variant_stage in _special_variants(special_mode, special_stage):
+        raw_variant = dict(raw)
+        _apply_special(variant_mode, variant_stage, raw_variant)
+        capped_variant = {cat: min(val, CATEGORY_CAPS[cat]) for cat, val in raw_variant.items()}
+        final_variant = round(sum(capped_variant.values()), 2)
+        candidate = {
+            "raw": raw_variant,
+            "capped": capped_variant,
+            "final": final_variant,
+            "selected_runes": selected_runes,
+            "selected_support": selected_support,
+        }
+        if best is None or final_variant > best["final"]:
+            best = candidate
 
-    return {
-        "raw": dict(raw),
-        "capped": dict(capped),
-        "final": final,
-        "selected_runes": selected_runes,
-        "selected_support": selected_support,
-    }
+    assert best is not None
+    return best
 
 
 def rate_items(

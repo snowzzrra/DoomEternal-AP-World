@@ -38,17 +38,16 @@ from .logic import (
     required_item_names,
 )
 from .generated_content import CAMPAIGN_CONNECTIONS
+from .planner import (
+    ITEM_DEPENDENCIES,
+    READINESS_PLACEMENT_SLACK,
+    ReadinessTarget,
+    derive_readiness_targets,
+    select_readiness_items,
+)
 
 if TYPE_CHECKING:
     from . import DoomEternalWorld
-
-
-@dataclass(frozen=True)
-class ReadinessTarget:
-    """Represents a logically required readiness target in the active campaign."""
-    stage_id: str
-    context: str = "base"  # "base", "spirit_breakpoint", "dark_lord_defeated"
-    description: str = ""
 
 
 @dataclass
@@ -101,108 +100,21 @@ class ClassificationLedger:
         return summary
 
 
-# Dependency lookup for items
-ITEM_DEPENDENCIES: dict[str, tuple[str, ...]] = {
-    "Sticky Bombs Mastery": ("Combat Shotgun", "Sticky Bombs"),
-    "Full Auto Mastery": ("Combat Shotgun", "Full Auto"),
-    "Precision Bolt Mastery": ("Heavy Cannon", "Precision Bolt"),
-    "Micro Missiles Mastery": ("Heavy Cannon", "Micro Missiles"),
-    "Heat Blast Mastery": ("Plasma Rifle", "Heat Blast"),
-    "Microwave Beam Mastery": ("Plasma Rifle", "Microwave Beam"),
-    "Lock-on Burst Mastery": ("Rocket Launcher", "Lock-on Burst"),
-    "Remote Detonate Mastery": ("Rocket Launcher", "Remote Detonate"),
-    "Destroyer Blade Mastery": ("Ballista", "Destroyer Blade"),
-    "Arbalest Mastery": ("Ballista", "Arbalest"),
-    "Mobile Turret Mastery": ("Chaingun", "Mobile Turret"),
-    "Energy Shield Mastery": ("Chaingun", "Energy Shield"),
-    "Meat Hook Mastery": ("Super Shotgun",),
-    "Faster Dash Recharge": ("Dash",),
-    "Microwave Beam": ("Plasma Rifle",),
-    "Micro Missiles": ("Heavy Cannon",),
-    "Heat Blast": ("Plasma Rifle",),
-    "Remote Detonate": ("Rocket Launcher",),
-    "Arbalest": ("Ballista",),
-    "Destroyer Blade": ("Ballista",),
-    "Energy Shield": ("Chaingun",),
-    "Mobile Turret": ("Chaingun",),
-}
-
-# Extra CR required beyond the exact readiness threshold so restrictive fill
-# cannot close a gate by momentarily excluding the item being placed.
-READINESS_PLACEMENT_SLACK: float = 6.0
-
-
 def get_required_readiness_targets(world: DoomEternalWorld) -> list[ReadinessTarget]:
     """Derive required readiness targets from the actual generated campaign plan."""
-    targets: list[ReadinessTarget] = []
-    seen: set[tuple[str, str]] = set()
-
-    def add_target(stage_id: str, context: str = "base", desc: str = "") -> None:
-        key = (stage_id, context)
-        if key not in seen:
-            seen.add(key)
-            targets.append(ReadinessTarget(stage_id, context, desc))
-
-    plan = world.campaign_plan
-    order = getattr(world.options, "mission_order", None)
-    order_val = order.current_option_name if hasattr(order, "current_option_name") else "vanilla"
-
-    spirit_stage_ids = set(SPIRIT_BREAKPOINTS.values())
-    goal_opt = getattr(world.options, "goal", None)
-    goal_name = goal_opt.current_option_name if hasattr(goal_opt, "current_option_name") else ""
-    is_dark_lord_goal = (goal_name == "kill_the_dark_lord" or plan.get("goal_stage") == DARK_LORD_STAGE_ID)
-
-    dlc_timing = getattr(getattr(world, "options", None), "dlc_logic_timing", None)
-    is_from_the_beginning = (dlc_timing is not None and getattr(dlc_timing, "value", 0) == 1)
-    dlc_stages = {
-        "e4m1_rig", "e4m2_swamp", "e4m3_mcity",
-        "e5m1_spear", "e5m2_earth", "e5m3_hell", "e5m4_boss",
-    }
-
-    if order_val == "mission_access_as_items":
-        # MAI: active normal missions + goal mission
-        active_ids = list(plan.get("active_normal_mission_ids", []))
-        goal_stage = plan.get("goal_stage")
-        if goal_stage and goal_stage not in active_ids and goal_stage in STAGE_BY_ID:
-            active_ids.append(goal_stage)
-        for s_id in active_ids:
-            s_name = STAGE_BY_ID[s_id]["name"]
-            if not (is_from_the_beginning and s_id in dlc_stages):
-                add_target(s_id, "base", f"Mission: {s_name}")
-            if s_id in spirit_stage_ids:
-                add_target(s_id, "spirit_breakpoint", f"Spirit Breakpoint: {s_name}")
-    else:
-        # RMO or Vanilla: sequence of stages
-        sequence = plan.get("sequence", [])
-        for s_id in sequence:
-            s_name = STAGE_BY_ID[s_id]["name"]
-            if not (is_from_the_beginning and s_id in dlc_stages):
-                add_target(s_id, "base", f"Mission: {s_name}")
-            if s_id in spirit_stage_ids:
-                add_target(s_id, "spirit_breakpoint", f"Spirit Breakpoint: {s_name}")
-
-    # Boss / Dark Lord readiness: mandatory whenever the Dark Lord stage is
-    # part of the active campaign, because its completion gates later missions.
-    if (
-        is_dark_lord_goal
-        or DARK_LORD_STAGE_ID in plan.get("active_normal_mission_ids", ())
-        or DARK_LORD_STAGE_ID in plan.get("stage_ids", ())
-        or DARK_LORD_STAGE_ID in plan.get("sequence", ())
-    ):
-        add_target(DARK_LORD_STAGE_ID, "dark_lord_defeated", "Boss: The Dark Lord Defeated")
-
-    return targets
+    return derive_readiness_targets(world.options, world.campaign_plan)
 
 
 def build_progression_only_state(world: DoomEternalWorld) -> CollectionState:
-    """Build a deterministic CollectionState with precollected and existing progression items."""
+    """Build a deterministic CollectionState with precollected and existing progression items.
+
+    ``CollectionState(mw)`` already ingests every precollected item (including
+    physical initial-inventory items), so precollected items must not be
+    collected a second time here.
+    """
     mw = world.multiworld
     player = world.player
     state = CollectionState(mw)
-
-    # Precollected items
-    for item in mw.precollected_items.get(player, []):
-        state.collect(item)
 
     # Generated items in pool that are progression
     for item in mw.itempool:
@@ -308,133 +220,51 @@ def apply_dynamic_progression_classification(world: DoomEternalWorld) -> Classif
         if not wup_list:
             del useful_items[wup_name]
 
-    # 4. Evaluate current readiness across all targets
-    def evaluate_all_targets(eval_state: CollectionState) -> tuple[float, ReadinessTarget | None]:
-        max_def = -999.0
-        worst_target = None
-        for t in targets:
-            res = evaluate_mission_readiness(eval_state, player, t.stage_id, world, context=t.context)
-            # deficit = effective_cr - player_cr - allowance
-            defic = res.effective_cr - res.player_cr - res.allowance
-            if defic > max_def:
-                max_def = defic
-                worst_target = t
-        return max_def, worst_target
+    # 4. Deterministic dependency-aware promotion loop (canonical planner selector)
+    base_items = dict(state.prog_items[player])
+    additional = {name: len(items) for name, items in useful_items.items() if items}
+    selection = select_readiness_items(
+        base_items=base_items,
+        targets=targets,
+        additional=additional,
+        world_context=world,
+        player=player,
+        slack=READINESS_PLACEMENT_SLACK,
+    )
+    for step in selection.steps:
+        item_list = useful_items.get(step.item_name)
+        if not item_list:
+            # Budget mismatch between planner and classifier would silently
+            # drop a required copy; fail closed instead.
+            raise ValueError(
+                f"DOOM Eternal classification budget mismatch for '{step.item_name}'"
+            )
+        promoted_item = item_list.pop(0)
+        if not item_list:
+            del useful_items[step.item_name]
+        promoted_item.classification = ItemClassification.progression
+        state.collect(promoted_item)
 
-    current_max_deficit, worst_t = evaluate_all_targets(state)
-    current_player_cr = evaluate_player_loadout_cr(state, player, world).total
-
-    # 5. Deterministic promotion loop 
-    while current_max_deficit > -READINESS_PLACEMENT_SLACK:
-        best_candidate: str | None = None
-        best_package: tuple[str, ...] = ()
-        best_delta_deficit: float = 0.0
-        best_delta_cr: float = 0.0
-        best_target_desc: str = ""
-        best_reason: str = "cr_readiness"
-
-        for cand_name in sorted(useful_items.keys()):
-            # Check dependencies
-            deps = ITEM_DEPENDENCIES.get(cand_name, ())
-            missing_deps = [d for d in deps if not state.has(d, player)]
-
-            # Can we satisfy missing deps from useful candidates?
-            possible = True
-            package_items = []
-            for d in missing_deps:
-                if d in useful_items and useful_items[d]:
-                    package_items.append(d)
-                else:
-                    possible = False
-                    break
-            if not possible:
-                continue
-
-            full_package = tuple(package_items + [cand_name])
-
-            # Simulate collecting full package in temp state
-            temp_state = state.copy()
-            for pkg_item_name in full_package:
-                temp_item = DoomEternalItem(
-                    pkg_item_name,
-                    ItemClassification.progression,
-                    item_data_table[pkg_item_name].code,
-                    player,
-                )
-                temp_state.collect(temp_item)
-
-            new_max_def, new_worst = evaluate_all_targets(temp_state)
-            delta_def = current_max_deficit - new_max_def
-            new_cr = evaluate_player_loadout_cr(temp_state, player, world).total
-            delta_cr = new_cr - current_player_cr
-
-            if delta_def <= 1e-6:
-                # No progress toward bottleneck deficit
-                continue
-
-            # Check if this candidate is better
-            is_better = False
-            if best_candidate is None:
-                is_better = True
-            elif delta_def > best_delta_deficit + 1e-6:
-                is_better = True
-            elif abs(delta_def - best_delta_deficit) <= 1e-6:
-                if len(full_package) < len(best_package):
-                    is_better = True
-                elif len(full_package) == len(best_package):
-                    if delta_cr > best_delta_cr + 1e-6:
-                        is_better = True
-                    elif abs(delta_cr - best_delta_cr) <= 1e-6:
-                        if cand_name < best_candidate:
-                            is_better = True
-
-            if is_better:
-                best_candidate = cand_name
-                best_package = full_package
-                best_delta_deficit = delta_def
-                best_delta_cr = delta_cr
-                if worst_t is not None:
-                    best_target_desc = worst_t.description
-                    if worst_t.context == "spirit_breakpoint":
-                        best_reason = "spirit_breakpoint"
-                    elif worst_t.context == "dark_lord_defeated":
-                        best_reason = "dark_lord_breakpoint"
-                    else:
-                        best_reason = "cr_readiness"
-
-        if best_candidate is None:
-            # No available candidate can reduce deficit further
-            break
-
-        # Apply promotion for all items in best_package
-        for pkg_name in best_package:
-            item_list = useful_items[pkg_name]
-            promoted_item = item_list.pop(0)
-            if not item_list:
-                del useful_items[pkg_name]
-            promoted_item.classification = ItemClassification.progression
-            state.collect(promoted_item)
-
-            copy_idx = sum(1 for p in ledger.promotions if p.item_name == pkg_name) + 1
-            ledger.promotions.append(PromotionRecord(
-                item_name=pkg_name,
-                copy_index=copy_idx,
-                original_classification=ItemClassification.useful,
-                final_classification=ItemClassification.progression,
-                reason=best_reason if pkg_name == best_candidate else f"dependency_for_{best_candidate}",
-                marginal_cr=best_delta_cr if len(best_package) == 1 else 0.0,
-                target_description=best_target_desc,
-                dependency_closure=ITEM_DEPENDENCIES.get(pkg_name, ()),
-            ))
-
-        current_player_cr = evaluate_player_loadout_cr(state, player, world).total
-        current_max_deficit, worst_t = evaluate_all_targets(state)
+        copy_idx = sum(1 for p in ledger.promotions if p.item_name == step.item_name) + 1
+        reason = step.reason if not step.is_dependency else f"dependency_for_{step.package_lead}"
+        ledger.promotions.append(PromotionRecord(
+            item_name=step.item_name,
+            copy_index=copy_idx,
+            original_classification=ItemClassification.useful,
+            final_classification=ItemClassification.progression,
+            reason=reason,
+            marginal_cr=step.delta_cr if step.package_size == 1 else 0.0,
+            target_description=step.target_description,
+            dependency_closure=step.dependency_closure,
+        ))
 
     # Final state accounting
+    current_max_deficit = selection.final_deficit
     cr_final = evaluate_player_loadout_cr(state, player, world)
     ledger.final_player_cr = cr_final.total
     ledger.max_remaining_deficit = round(current_max_deficit, 2)
     ledger.all_targets_satisfied = (current_max_deficit <= 0.0)
+
 
     # 6. Record unpromoted useful CR-positive candidates
     for name, remaining_items in sorted(useful_items.items()):

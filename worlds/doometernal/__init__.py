@@ -125,6 +125,17 @@ class DoomEternalWorld(World):
     def generate_early(self) -> None:
         self.campaign_plan = make_plan(self.options, self.random, world=self)
         self.starting_weapon_name = self.campaign_plan.get("starting_weapon")
+        # Physical-ownership policy: every item materialized before normal AP
+        # receipt delivery is logically owned even when its pool classification
+        # is useful (R03). Computed before any push_precollected call.
+        initial_logical_items = set(self.options.start_inventory.value)
+        if self.starting_weapon_name:
+            initial_logical_items.add(self.starting_weapon_name)
+        initial_logical_items.update(self.campaign_plan.get("bootstrap_inventory", ()))
+        initial_logical_items.update(self.campaign_plan.get("readiness_bootstrap_items", ()))
+        if self.options.reveal_ap_locations_on_automap.value:
+            initial_logical_items.add(self.AUTOMAP_STARTING_ITEM)
+        self.initial_logical_items = frozenset(initial_logical_items)
         dlc_enabled = bool(self.options.use_dlc_content.value)
         effective_special_weapon = (
             "The Crucible" if not dlc_enabled else self.options.special_weapon.current_option_name
@@ -211,6 +222,22 @@ class DoomEternalWorld(World):
         item_data = item_data_table[name]
         return DoomEternalItem(name, item_data.classification, item_data.code, self.player)
 
+    def collect_item(self, state, item, remove: bool = False):
+        """Logical ownership policy for physically granted initial inventory.
+
+        Items the player owns before normal receipt delivery (explicit
+        ``start_inventory``, the chosen Starting Weapon, generated bootstrap
+        inventory and readiness bootstrap items) are logically active even when
+        their pool classification is useful. Hypothetical or placed useful
+        copies keep the default AP collect semantics and are never promoted
+        globally by this override.
+        """
+        if item.advancement:
+            return item.name
+        if item.name in getattr(self, "initial_logical_items", ()):
+            return item.name
+        return None
+
     def fill_slot_data(self) -> dict[str, object]:
         start_inventory = dict(self.effective_starting_inventory())
         start_inventory.update(self.campaign_plan["bootstrap_inventory"])
@@ -249,8 +276,8 @@ class DoomEternalWorld(World):
             "enabled_traps": sorted(self.options.enabled_traps.value),
             "use_dlc_content": dlc_enabled,
             "include_dlc_missions": bool(dlc_enabled and any(
-                s in {"e4m1_rig", "e4m2_swamp", "e4m3_holt", "e5m1_spear", "e5m2_earth", "e5m3_hell", "e5m4_boss"}
-                for s in self.campaign_plan["stage_ids"]
+                STAGE_BY_ID[stage_id]["source"] in ("tag1", "tag2")
+                for stage_id in self.campaign_plan["stage_ids"]
             )),
             "mission_pool": self.options.mission_pool.current_option_name.lower().replace(" ", "_"),
             "dark_lord_enabled": self.campaign_plan["dark_lord_active"],
@@ -497,110 +524,20 @@ class DoomEternalWorld(World):
             ) >= count
 
     def create_items(self) -> None:
+        """Instantiate the canonical semantic multiset exactly once."""
         start_inventory = self.effective_starting_inventory()
         plan = self.campaign_plan
-        active_normal_ids = plan["active_normal_mission_ids"]
-        n_normals = len(active_normal_ids)
+        semantic_counts = plan.get("semantic_counts") or {}
+        if not semantic_counts:
+            raise ValueError("DOOM Eternal semantic item pool was not planned")
+        pool_names: list[str] = []
+        for name, quantity in sorted(semantic_counts.items()):
+            pool_names.extend([name] * quantity)
+
         locations_count = len(self.multiworld.get_unfilled_locations(self.player))
-        active_masteries_count = getattr(self, "active_masteries_count", 13)
-        active_sg = getattr(self, "active_spend_groups", FORTRESS_SPEND_GROUPS)
 
-        # 1. Normal Weapons (6 pool weapons)
-        pool_weapons = [*world_pool_weapon_item_names]
-        if n_normals <= 3 and "BFG-9000" in pool_weapons and "e2m3_core" not in active_normal_ids:
-            if not start_inventory.get("BFG-9000"):
-                pool_weapons.remove("BFG-9000")
-        pool_names = list(pool_weapons)
-
-        # 2. Core Equipment (4)
-        pool_names.extend(["Frag Grenade", "Blood Punch", "Flame Belch", "Ice Bomb"])
-
-        # 3. Chainsaw & Dash
-        if self.options.randomize_chainsaw.value or start_inventory.get("Chainsaw"):
-            pool_names.append("Chainsaw")
-        if self.options.randomize_dash.value or start_inventory.get("Dash"):
-            pool_names.append("Dash")
-
-        # 4. Special Weapon
-        effective_special_weapon = (
-            "The Crucible" if not self.options.use_dlc_content.value
-            else self.options.special_weapon.current_option_name
-        )
-        if self.options.use_dlc_content.value and "Progressive" in effective_special_weapon:
-            scaled_special_count = 2
-        else:
-            scaled_special_count = 1 if n_normals <= 3 else SPECIAL_WEAPON_POOL_COUNTS[effective_special_weapon]
-        req_special = start_inventory.get(effective_special_weapon, 0)
-        eff_special_count = max(scaled_special_count, req_special)
-        pool_names.extend([effective_special_weapon] * eff_special_count)
-
-        # 5. Slayer Gate Keys (only for active stages with gates)
-        for stage_id, key_name in STAGE_SLAYER_GATE_KEYS.items():
-            if stage_id in active_normal_ids:
-                if stage_id in ("e4m1_rig", "e4m3_mcity") and not self.options.use_dlc_content.value:
-                    continue
-                pool_names.append(key_name)
-
-        # 6. Weapon Mods
-        PRIMARY_BASE_MODS = [
-            "Sticky Bombs", "Precision Bolt", "Microwave Beam",
-            "Remote Detonate", "Arbalest", "Energy Shield",
-        ]
-        SECONDARY_MODS = [
-            "Full Auto", "Micro Missiles", "Heat Blast",
-            "Lock-on Burst", "Destroyer Blade", "Mobile Turret",
-        ]
-        ALL_MODS = PRIMARY_BASE_MODS + SECONDARY_MODS
-        mod_quota = 6 if n_normals <= 3 else (8 if n_normals <= 5 else (10 if n_normals <= 8 else 12))
-        requested_mods = [m for m in ALL_MODS if start_inventory[m]]
-        selected_mods = list(requested_mods)
-        for m in PRIMARY_BASE_MODS:
-            if len(selected_mods) >= max(mod_quota, len(requested_mods)):
-                break
-            if m not in selected_mods:
-                selected_mods.append(m)
-        for m in SECONDARY_MODS:
-            if len(selected_mods) >= max(mod_quota, len(requested_mods)):
-                break
-            if m not in selected_mods:
-                selected_mods.append(m)
-        pool_names.extend(selected_mods)
-
-        # 7. Weapon Masteries
-        ALL_MASTERIES = [
-            mod_name + " Mastery" if mod_name != "Meat Hook" else "Meat Hook Mastery"
-            for mod_name, _ in ORDERED_MASTERY_CHALLENGES
-        ]
-        requested_masteries = [m for m in ALL_MASTERIES if start_inventory[m]]
-        selected_masteries = list(requested_masteries)
-        for m in ALL_MASTERIES[:active_masteries_count]:
-            if m not in selected_masteries:
-                selected_masteries.append(m)
-        pool_names.extend(selected_masteries)
-
-        # 8. WUP Bundles
-        eff_masteries = max(active_masteries_count, len(requested_masteries))
-        if eff_masteries == 0:
-            wup_bundles = 0
-        else:
-            proportional_wup = round(39 * locations_count / 439)
-            exact_mastery_wup = 3 * eff_masteries
-            wup_bundles = min(39, max(exact_mastery_wup, proportional_wup))
-        pool_names.extend([WEAPON_UPGRADE_POINTS_NAME] * wup_bundles)
-
-        # 9. Sentinel Batteries (bundles & singles - proven production representation)
-        sg_count = len(active_sg)
-        first_bat_rand = bool(
-            self.options.randomize_first_battery.value and "e1m2_war" in active_normal_ids
-        )
-        num_bundles = (sg_count + getattr(self, "battery_surplus", 1)) if sg_count > 0 else 0
-        req_bundles = start_inventory.get("Sentinel Battery Bundle", 0)
-        pool_names.extend(["Sentinel Battery Bundle"] * max(num_bundles, req_bundles))
-        req_singles = start_inventory.get("Sentinel Battery", 0)
-        eff_singles = max(1 if first_bat_rand else 0, req_singles)
-        pool_names.extend(["Sentinel Battery"] * eff_singles)
-
-        # 10. Praetor Suit Perks
+        # Praetor Suit upgrades: explicit bounded option, sampled here to keep
+        # the established world RNG stream.
         suit_names = suit_perk_item_names
         manual_automap_count = int(bool(start_inventory[self.AUTOMAP_STARTING_ITEM]))
         automap_start_count = manual_automap_count
@@ -627,99 +564,79 @@ class DoomEternalWorld(World):
         sample_k = max(0, target_suit_count - automap_start_count - requested_real_suit_count)
         pool_names.extend(self.multiworld.random.sample(suit_candidates, sample_k))
 
-        # 11. Runes & Support Runes
-        NORMAL_RUNES = [
-            "Savagery", "Seek and Destroy", "Blood Fueled",
-            "Air Control", "Dazed and Confused", "Saving Throw",
-            "Chrono Strike", "Equipment Fiend", "Punch and Reave",
-        ]
-        rune_quota = 3 if n_normals <= 3 else (5 if n_normals <= 5 else (7 if n_normals <= 8 else 9))
-        requested_runes = [r for r in NORMAL_RUNES if start_inventory[r]]
-        selected_runes = list(requested_runes)
-        for r in NORMAL_RUNES:
-            if len(selected_runes) >= max(rune_quota, len(requested_runes)):
-                break
-            if r not in selected_runes:
-                selected_runes.append(r)
-        pool_names.extend(selected_runes)
-
-        if self.options.use_dlc_content.value:
-            ALL_SUPPORT = sorted(SUPPORT_RUNE_ITEM_NAMES)
-            sup_quota = 1 if n_normals <= 3 else (2 if n_normals <= 8 else 3)
-            requested_sup = [s for s in ALL_SUPPORT if start_inventory[s]]
-            selected_sup = list(requested_sup)
-            for s in ALL_SUPPORT:
-                if len(selected_sup) >= max(sup_quota, len(requested_sup)):
-                    break
-                if s not in selected_sup:
-                    selected_sup.append(s)
-            pool_names.extend(selected_sup)
-
-        # 12. Capacity Upgrades
-        cap_count = 1 if n_normals <= 3 else (2 if n_normals <= 5 else (3 if n_normals <= 8 else 4))
-        for stat in ("Health", "Armor", "Ammo"):
-            stat_name = f"Progressive {stat} Upgrade"
-            req_stat = start_inventory.get(stat_name, 0)
-            pool_names.extend([stat_name] * max(cap_count, req_stat))
-
-        # 13. Mission Access Items (MAI mode only)
-        pool_names.extend(
-            STAGE_BY_ID[stage]["name"] + " Access"
-            for stage in plan["access_items"].values()
-        )
-
         pool_names.extend(["Ammo Refill"] * start_inventory.get("Ammo Refill", 0))
 
-        # Check availability against start_inventory
-        available = Counter(pool_names)
-        unavailable = {
-            name: quantity
-            for name, quantity in start_inventory.items()
-            if name != self.AUTOMAP_STARTING_ITEM
-            if available[name] < quantity
-        }
-        if unavailable:
-            details = ", ".join(
-                f"{name} requested {quantity}, available {available[name]}"
-                for name, quantity in sorted(unavailable.items())
-            )
-            raise ValueError(f"DOOM Eternal start_inventory exceeds item pool quantities: {details}")
-
-        # 14. Starting Weapon Precollected
+        # Starting Weapon: physical ownership path. The planner already
+        # excluded it from the semantic multiset.
         if not hasattr(self, "starting_weapon_name") or self.starting_weapon_name is None:
             self.starting_weapon_name = plan.get("starting_weapon") or self.options.starting_weapon.selected_weapon_name
             if self.starting_weapon_name is None:
                 eligible_weapons = [
                     name for name in starting_weapon_item_names
-                    if available[name] and not start_inventory[name]
+                    if name not in pool_names and not start_inventory[name]
                 ]
                 if not eligible_weapons:
                     raise ValueError("Starting Weapon random selection has no eligible pool weapon")
                 self.starting_weapon_name = self.multiworld.random.choice(eligible_weapons)
-
-        pool_names.remove(self.starting_weapon_name)
+        if self.starting_weapon_name in pool_names:
+            pool_names.remove(self.starting_weapon_name)
         self.multiworld.push_precollected(self.create_item(self.starting_weapon_name))
 
         # Readiness Bootstrap Precollected Items (Phase 7.7c §6)
         # Bootstrap materialization must be logically active: a precollected
         # readiness item only contributes to Combat Rating / readiness rules when
-        # it is traceable as progression in CollectionState.
+        # it is traceable as progression in CollectionState. Never silently skip
+        # a planned bootstrap witness.
         for name in plan.get("readiness_bootstrap_items", ()):
-            if name in pool_names:
-                pool_names.remove(name)
-                item = self.create_item(name)
-                item.classification = ItemClassification.progression
-                self.multiworld.push_precollected(item)
+            if name not in pool_names:
+                raise ValueError(
+                    f"DOOM Eternal readiness bootstrap item '{name}' is missing from the planned semantic pool"
+                )
+            pool_names.remove(name)
+            item = self.create_item(name)
+            item.classification = ItemClassification.progression
+            self.multiworld.push_precollected(item)
 
         for name in plan["bootstrap_inventory"]:
             self.multiworld.push_precollected(self.create_item(name))
-        for name, quantity in start_inventory.items():
-            if name != self.AUTOMAP_STARTING_ITEM:
-                for _ in range(quantity):
-                    pool_names.remove(name)
 
-        # 15. Pad with filler and traps to match unfilled locations exactly
-        locations_count = len(self.multiworld.get_unfilled_locations(self.player))
+        # Explicit start_inventory removes exactly its planned copies; a missing
+        # copy is a conservation failure, not a silent skip.
+        for name, quantity in start_inventory.items():
+            if name == self.AUTOMAP_STARTING_ITEM:
+                continue
+            for _ in range(quantity):
+                if name not in pool_names:
+                    raise ValueError(
+                        f"DOOM Eternal start_inventory '{name}' exceeds planned item pool quantities"
+                    )
+                pool_names.remove(name)
+
+        # B=0/B>0 readiness bootstrap witness: the solver proved these exact
+        # copies are sufficient inside the free pre-Mission Fortress checks.
+        # Materialize them there deterministically so sphere-zero readiness is
+        # a placement guarantee instead of fill-order luck (never precollected).
+        witness = list(plan.get("bootstrap_placed_items", ()))
+        if witness:
+            bootstrap_locations = sorted(FORTRESS_NON_CONSUMER_LOCATIONS)
+            if len(witness) > len(bootstrap_locations):
+                raise ValueError(
+                    f"DOOM Eternal bootstrap placement witness has {len(witness)} items; "
+                    f"only {len(bootstrap_locations)} free Fortress locations exist"
+                )
+            for name, location_name in zip(witness, bootstrap_locations):
+                if name not in pool_names:
+                    raise ValueError(
+                        f"DOOM Eternal bootstrap placement witness '{name}' is missing from the planned semantic pool"
+                    )
+                location = self.multiworld.get_location(location_name, self.player)
+                if location.item is not None:
+                    raise ValueError(f"DOOM Eternal bootstrap location '{location_name}' is already filled")
+                pool_names.remove(name)
+                location.place_locked_item(self.create_item(name))
+            locations_count = len(self.multiworld.get_unfilled_locations(self.player))
+
+        # Pad with filler and traps to match unfilled locations exactly
         amount_needed = locations_count - len(pool_names)
         if amount_needed < 0:
             raise ValueError(
@@ -751,7 +668,7 @@ class DoomEternalWorld(World):
         pool = [self.create_item(name) for name in pool_names]
         self.multiworld.itempool += pool
 
-        # 16. Dynamic Progression Classification (Phase 7.7)
+        # Dynamic Progression Classification (Phase 7.7 / 7.8B)
         from .classification import apply_dynamic_progression_classification
         apply_dynamic_progression_classification(self)
 
@@ -816,9 +733,7 @@ class DoomEternalWorld(World):
             goal=self.options.goal.current_option_name,
         )
         mission_events = {
-            mission_clear_event_name(s["name"])
-            for s in self.campaign_plan["stages"]
-            if s["kind"] == "mission"
+            completion_event(s["id"]) for s in self.campaign_plan["stages"]
         }
         required_events = {goal_endpoint_event_name(self.options.goal.current_option_name)}
         if "Complete All Included Missions" in effective_requirements:
