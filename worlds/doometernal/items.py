@@ -29,7 +29,7 @@ SENTINEL_BATTERY_BUNDLE_VALUE = 2
 
 # Reserved IDs stay unavailable to current item definitions.
 RESERVED_ITEM_IDS = frozenset({
-    7770018, 7770019, 7770030, 7770057, 7770083, 7770105,
+    7770018, 7770019, 7770030, 7770057, 7770105,
     7770119, 7770120, 7770121, 7770143, 7770144,
     7770156, 7770157, 7770158, 7770159, 7770160,
 })
@@ -127,6 +127,7 @@ item_data_table: dict[str, ItemData] = {
     "Energy Shield Mastery": ItemData(7770080, ItemClassification.useful),
     "Mobile Turret": ItemData(7770081, ItemClassification.useful),
     "Mobile Turret Mastery": ItemData(7770082, ItemClassification.useful),
+    "Meat Hook": ItemData(7770083, ItemClassification.useful),
     "Meat Hook Mastery": ItemData(7770084, ItemClassification.useful),
     "Savagery": ItemData(7770085, ItemClassification.useful),
     "Seek and Destroy": ItemData(7770086, ItemClassification.useful),
@@ -249,7 +250,7 @@ DEVINV_START_INVENTORY_ITEM_NAMES = frozenset({
     "Chrono Strike", "Equipment Fiend", "Punch and Reave", "Sticky Bombs Mastery", "Full Auto Mastery",
     "Micro Missiles Mastery", "Heat Blast Mastery", "Microwave Beam Mastery", "Lock-on Burst Mastery",
     "Arbalest Mastery", "Energy Shield Mastery", "Mobile Turret Mastery", "Precision Bolt Mastery",
-    "Remote Detonate Mastery", "Destroyer Blade Mastery", "Meat Hook Mastery",
+    "Remote Detonate Mastery", "Destroyer Blade Mastery", "Meat Hook", "Meat Hook Mastery",
     "Progressive Health Upgrade", "Progressive Armor Upgrade", "Progressive Ammo Upgrade",
     "Faster Ledge Grab", "Faster Weapon Swap", "Faster Dash Recharge", "Dash Refill on Glory Kill",
     "Reveal Automap Stations", "Reveal Automap Progression Items", "Larger Automap Reveal",

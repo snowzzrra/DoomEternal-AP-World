@@ -66,7 +66,7 @@ MASTERY_HOST: dict[str, tuple[str, ...]] = {
     "Destroyer Blade Mastery":  ("Ballista", "Destroyer Blade"),
     "Energy Shield Mastery":    ("Chaingun", "Energy Shield"),
     "Mobile Turret Mastery":    ("Chaingun", "Mobile Turret"),
-    "Meat Hook Mastery":        ("Super Shotgun",),
+    "Meat Hook Mastery":        ("Super Shotgun", "Meat Hook"),
 }
 ALL_MASTERY_NAMES = frozenset(MASTERY_HOST)
 
@@ -153,9 +153,10 @@ ITEM_CONTRIBUTIONS: dict[str, list[_Contrib]] = {
     "Destroyer Blade Mastery":  _mastery_contribs(("Ballista", "Destroyer Blade"), enhancement=2),
     "Energy Shield Mastery":    _mastery_contribs(("Chaingun", "Energy Shield"), defense=1),
     "Mobile Turret Mastery":    _mastery_contribs(("Chaingun", "Mobile Turret"), enhancement=1),
-    "Meat Hook Mastery":        _mastery_contribs(("Super Shotgun",), sustain=7),
+    "Meat Hook Mastery":        _mastery_contribs(("Super Shotgun", "Meat Hook"), sustain=7),
 
     # Zero-CR items (cataloged but no contribution)
+    "Meat Hook":                [],
     "Savagery":                 [],
     "Chrono Strike":            [],
 }
@@ -341,8 +342,8 @@ def _evaluate_with_rune_selection(
     # Ballista soft Mobility
     if "Ballista" in weapons:
         raw["Mobility"] += 1.5
-    # SSG implicit Meat Hook Mobility
-    if "Super Shotgun" in weapons:
+    # SSG explicit Meat Hook Mobility
+    if "Super Shotgun" in weapons and "Meat Hook" in owned:
         raw["Mobility"] += 2
 
     # 2. Progressive capacities

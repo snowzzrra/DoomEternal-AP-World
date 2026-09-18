@@ -110,7 +110,20 @@ class TestP71ParityMatrix:
         assert r["final"] == pytest.approx(28, abs=EPSILON)
 
     def test_m_ssg_meat_hook_mastery(self):
-        r = rate_items({"Super Shotgun", "Meat Hook Mastery"})
+        # SSG alone has no Meat Hook mobility
+        r_ssg = rate_items({"Super Shotgun"})
+        assert r_ssg["capped"]["Mobility"] == pytest.approx(0, abs=EPSILON)
+
+        # SSG + Meat Hook gains +2 mobility
+        r_hook = rate_items({"Super Shotgun", "Meat Hook"})
+        assert r_hook["capped"]["Mobility"] == pytest.approx(2, abs=EPSILON)
+
+        # Meat Hook alone gives 0 CR
+        r_hook_alone = rate_items({"Meat Hook"})
+        assert r_hook_alone["final"] == 0
+
+        # SSG + Hook + Mastery gives sustain 7 and mobility 2
+        r = rate_items({"Super Shotgun", "Meat Hook", "Meat Hook Mastery"})
         assert r["final"] == pytest.approx(19, abs=EPSILON)
         assert r["capped"]["Sustain"] == pytest.approx(7, abs=EPSILON)
         assert r["capped"]["Mobility"] == pytest.approx(2, abs=EPSILON)

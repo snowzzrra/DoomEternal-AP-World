@@ -179,7 +179,7 @@ COMBAT_CAPABILITIES: Mapping[str, tuple[tuple[str, ...], ...]] = {
     "plasma_rifle": (("Plasma Rifle",),),
     "ice_bomb": (("Ice Bomb",),),
     "blood_punch": (("Blood Punch",),),
-    "mod:Meat Hook": (("Super Shotgun",),),
+    "mod:Meat Hook": (("Super Shotgun", "Meat Hook"),),
     "anti_spirit": (("Plasma Rifle", "Microwave Beam"),),
 }
 

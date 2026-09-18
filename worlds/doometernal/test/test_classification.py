@@ -309,7 +309,7 @@ class TestDynamicProgressionClassification(unittest.TestCase):
         self.assertTrue(runes_loc.can_reach(state))
 
     def test_case_q_meathook_mastery_requires_ssg(self) -> None:
-        """Case Q: Meat Hook mastery challenge is unreachable without Super Shotgun."""
+        """Case Q: Meat Hook mastery challenge requires both Super Shotgun and Meat Hook."""
         mw = setup_multiworld(
             DoomEternalWorld,
             seed=42,
@@ -320,7 +320,16 @@ class TestDynamicProgressionClassification(unittest.TestCase):
         meathook_loc = mw.get_location("Meat Hook - Weapon Mastery Challenge", player)
         self.assertFalse(meathook_loc.can_reach(state))
 
-        state.collect(mw.create_item("Super Shotgun", player))
+        ssg_item = mw.create_item("Super Shotgun", player)
+        hook_item = mw.create_item("Meat Hook", player)
+        hook_item.classification = ItemClassification.progression
+
+        # Hook alone is not enough
+        state.collect(hook_item)
+        self.assertFalse(meathook_loc.can_reach(state))
+
+        # Hook + SSG satisfies requirement
+        state.collect(ssg_item)
         self.assertTrue(meathook_loc.can_reach(state))
 
 

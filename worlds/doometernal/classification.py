@@ -162,6 +162,7 @@ def apply_dynamic_progression_classification(world: DoomEternalWorld) -> Classif
         "Combat Shotgun", "Heavy Cannon", "Plasma Rifle", "Rocket Launcher", "Ballista", "Chaingun",
         "Sticky Bombs", "Full Auto", "Precision Bolt", "Micro Missiles", "Heat Blast", "Microwave Beam",
         "Remote Detonate", "Lock-on Burst", "Arbalest", "Destroyer Blade", "Energy Shield", "Mobile Turret",
+        "Meat Hook",
     }
     for item in mw.itempool:
         if item.player == player and item.name in combat_baselines and item.name not in hard_items:
