@@ -511,6 +511,10 @@ def build_semantic_counts(
     for equipment in CORE_EQUIPMENT:
         base_pool[equipment] = max(0, 1 - start_inv.get(equipment, 0))
 
+    # Independent attachment: TAG2 readiness requires it even with masteries off.
+    base_pool["Meat Hook"] = max(0, 1 - start_inv.get("Meat Hook", 0))
+    mandatory_mods.add("Meat Hook")
+
     # --- Randomized capabilities -----------------------------------------
     if _option_value(options, "randomize_chainsaw") or start_inv.get("Chainsaw"):
         base_pool["Chainsaw"] = max(0, 1 - start_inv.get("Chainsaw", 0))
@@ -591,21 +595,7 @@ def build_semantic_counts(
         wup_policy = WEAPON_UPGRADE_POINTS_ITEM_COUNT
     base_pool[WEAPON_UPGRADE_POINTS_NAME] = max(0, wup_policy - start_inv.get(WEAPON_UPGRADE_POINTS_NAME, 0))
 
-    if compact:
-        # Requested optional families are mandatory; the rest is selection-driven.
-        for rune in NORMAL_RUNES_ORDERED:
-            if start_inv.get(rune):
-                base_pool[rune] = max(base_pool[rune], 1)
-        if use_dlc:
-            for support in SUPPORT_RUNES_ORDERED:
-                if start_inv.get(support):
-                    base_pool[support] = max(base_pool[support], 1)
-        for stat in _CAPACITY_STATS:
-            stat_name = f"Progressive {stat} Upgrade"
-            requested = start_inv.get(stat_name, 0)
-            if requested:
-                base_pool[stat_name] = max(base_pool[stat_name], requested)
-    else:
+    if not compact:
         # Full-length: preserve the frozen legacy optional families.
         mod_quota = 12
         selected_mods = set(mandatory_mods)

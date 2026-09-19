@@ -151,6 +151,11 @@ def apply_dynamic_progression_classification(world: DoomEternalWorld) -> Classif
         active_spend_groups=getattr(world, "active_spend_groups", None),
     )
     hard_items = set().union(*(required_item_names(req) for req in requirements.values()))
+    # TAG2 traversal still needs Hook when From the Beginning removes its CR
+    # target. Keep that hard requirement in progression, independent of mastery.
+    if any(STAGE_BY_ID[stage_id]["source"] == "tag2"
+           for stage_id in world.campaign_plan.get("active_normal_mission_ids", ())):
+        hard_items.add("Meat Hook")
     for source, destination, _, condition in CAMPAIGN_CONNECTIONS:
         if source in active_regions and destination in active_regions:
             hard_items.update(required_item_names(connection_requirement(
