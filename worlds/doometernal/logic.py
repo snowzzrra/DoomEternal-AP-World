@@ -600,6 +600,13 @@ def _requirement_item_names(requirement: LocationRequirement) -> frozenset[str]:
     return frozenset(names)
 
 
+CRUCIBLE_CHALLENGE = "Nekravol - Mission Challenge - Die by the Sword"
+
+
+def crucible_challenge_enabled(special_weapon: str) -> bool:
+    return special_weapon in {"The Crucible", "Progressive Special Weapon"}
+
+
 def build_location_prerequisites(
     location_names: set[str],
     *,
@@ -614,6 +621,9 @@ def build_location_prerequisites(
 ) -> dict[str, LocationRequirement]:
     mastery_locations = sorted(name for name in location_names if name.endswith(MASTERY_SUFFIX))
     challenge_rules = {
+        CRUCIBLE_CHALLENGE: LocationRequirement(
+            all_of=("Progressive Special Weapon",) if special_weapon == "Progressive Special Weapon" else ("The Crucible",),
+        ),
         "Cultist Base - Mission Challenge - Armored Rain": LocationRequirement(
             combat_all_of=("flame_belch",)
         ),

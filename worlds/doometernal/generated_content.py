@@ -641,6 +641,7 @@ LOCATION_ROWS = (
     ("Taras Nabad - Mission Challenge - Painkiller", 7770335, "Taras Nabad - Challenges - Mission Challenges"),
     ("Taras Nabad - All Mission Challenges Completed", 7770336, "Taras Nabad - Challenges - Mission Challenges"),
     ("Taras Nabad - Mission Complete", 7770337, "Taras Nabad - Central Power Core"),
+    ("Nekravol - Mission Challenge - Die by the Sword", 7770358, "Nekravol - Challenges - Mission Challenges"),
     ("Nekravol - Mission Challenge - Tricks and Traps", 7770359, "Nekravol - Challenges - Mission Challenges"),
     ("Nekravol - Mission Challenge - Doom Hunt", 7770360, "Nekravol - Challenges - Mission Challenges"),
     ("Nekravol - All Mission Challenges Completed", 7770361, "Nekravol - Challenges - Mission Challenges"),
@@ -994,6 +995,7 @@ LOCATION_NAMES_BY_REGION = {
         "Mars Core - Carcass Toy",
     ),
     "Nekravol - Challenges - Mission Challenges": (
+        "Nekravol - Mission Challenge - Die by the Sword",
         "Nekravol - Mission Challenge - Tricks and Traps",
         "Nekravol - Mission Challenge - Doom Hunt",
         "Nekravol - All Mission Challenges Completed",
@@ -1685,6 +1687,7 @@ RUNTIME_LOCATION_NAMES = frozenset({
     "Taras Nabad - Mission Challenge - Painkiller",
     "Taras Nabad - All Mission Challenges Completed",
     "Taras Nabad - Mission Complete",
+    "Nekravol - Mission Challenge - Die by the Sword",
     "Nekravol - Mission Challenge - Tricks and Traps",
     "Nekravol - Mission Challenge - Doom Hunt",
     "Nekravol - All Mission Challenges Completed",

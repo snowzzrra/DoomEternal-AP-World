@@ -56,6 +56,7 @@ from .locations import DoomEternalLocation, location_data_table, location_name_t
 from .logic import (
     FORTRESS_BATTERY_CONSUMER_LOCATIONS,
     build_location_prerequisites,
+    CRUCIBLE_CHALLENGE, crucible_challenge_enabled,
     connection_requirement,
     goal_endpoint_event_name,
     mission_clear_event_name,
@@ -329,6 +330,11 @@ class DoomEternalWorld(World):
 
     def create_regions(self) -> None:
         dlc_enabled = bool(self.options.use_dlc_content.value)
+        special_weapon = self.options.special_weapon.current_option_name if dlc_enabled else "The Crucible"
+        catalog_locations = {
+            name: data for name, data in location_data_table.items()
+            if name != CRUCIBLE_CHALLENGE or crucible_challenge_enabled(special_weapon)
+        }
         plan = self.campaign_plan
         active_normal_ids = plan["active_normal_mission_ids"]
         active_stage_ids = set(plan["stage_ids"])
@@ -340,7 +346,7 @@ class DoomEternalWorld(World):
             "Exultia - Sentinel Battery - King Novik Return Path": self.options.randomize_first_battery.value,
         }
         mission_loc_count = 0
-        for loc_name, loc_data in location_data_table.items():
+        for loc_name, loc_data in catalog_locations.items():
             stage_id = REGION_STAGE.get(loc_data.region)
             if stage_id in active_stage_ids:
                 if loc_name in vanilla_physical_locations and not vanilla_physical_locations[loc_name]:
@@ -395,7 +401,7 @@ class DoomEternalWorld(World):
                 multiworld.regions.append(Region(reg_name, player, multiworld))
 
         # 4. Instantiate active locations into regions
-        for loc_name, loc_data in location_data_table.items():
+        for loc_name, loc_data in catalog_locations.items():
             reg_name = loc_data.region
             if "Fortress of Doom" in reg_name:
                 if loc_name not in active_hub_locations:
