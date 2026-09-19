@@ -73,7 +73,7 @@ from .logic import (
     requirement_satisfied,
     validate_location_prerequisites,
 )
-from .options import DLCLogicTiming, DoomEternalOptions, SpecialWeapon, resolve_praetor_suit_upgrade_count
+from .options import DLCLogicTiming, DeathLinkMode, DoomEternalOptions, SpecialWeapon, resolve_praetor_suit_upgrade_count
 from .settings import DoomEternalSettings
 from .version import (
     APWORLD_REVISION,
@@ -258,7 +258,7 @@ class DoomEternalWorld(World):
             capabilities.append("starting_inventory_v1")
         capabilities.extend([
             "starting_weapon_v1", "special_weapon_progression_v1", "ammo_refill_v1",
-            "cross_campaign_materialization_v1", "unified_campaign_v1",
+            "cross_campaign_materialization_v1", "unified_campaign_v1", "deathlink_mode_v1",
         ])
 
         active_sg = getattr(self, "active_spend_groups", FORTRESS_SPEND_GROUPS)
@@ -266,6 +266,9 @@ class DoomEternalWorld(World):
         data = {
             "campaign_plan": self.campaign_plan,
             "death_link": bool(self.options.death_link.value),
+            "death_link_mode": (
+                "hardcore" if self.options.death_link_mode.value == DeathLinkMode.option_hardcore else "soft"
+            ),
             "praetor_suit_upgrades_in_pool": self.praetor_suit_upgrades_in_pool,
             "randomize_chainsaw": bool(self.options.randomize_chainsaw.value),
             "randomize_dash": bool(self.options.randomize_dash.value),

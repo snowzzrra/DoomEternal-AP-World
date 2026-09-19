@@ -217,6 +217,19 @@ class SpecialWeapon(_ExactLabelChoice):
     }
 
 
+class DeathLinkMode(_ExactLabelChoice):
+    """Choose how a received DeathLink is fulfilled. Soft applies one death to you, but can be mitigated by Extra Lives or Saving Throw. Hardcore applies one death and cannot be mitigated."""
+
+    display_name = "DeathLink Mode"
+    option_soft = 0
+    option_hardcore = 1
+    default = option_soft
+    labels = {
+        option_soft: "Soft",
+        option_hardcore: "Hardcore",
+    }
+
+
 class EnhancedMeleeDamage(Toggle):
     """Increase the damage of normal punches, making melee a more useful close-range fallback."""
 
@@ -384,6 +397,7 @@ class DoomEternalOptions(DeathLinkMixin, PerGameCommonOptions):
     goal: Goal
     additional_victory_requirements: AdditionalVictoryRequirements
     special_weapon: SpecialWeapon
+    death_link_mode: DeathLinkMode
     enhanced_melee_damage: EnhancedMeleeDamage
     randomize_chainsaw: RandomizeChainsaw
     randomize_dash: RandomizeDash
