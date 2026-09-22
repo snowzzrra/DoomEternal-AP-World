@@ -541,6 +541,8 @@ class DoomEternalWorld(World):
             raise ValueError("DOOM Eternal semantic item pool was not planned")
         pool_names: list[str] = []
         for name, quantity in sorted(semantic_counts.items()):
+            if name == "Rune":
+                continue
             pool_names.extend([name] * quantity)
 
         locations_count = len(self.multiworld.get_unfilled_locations(self.player))
