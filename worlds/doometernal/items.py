@@ -159,7 +159,6 @@ item_data_table: dict[str, ItemData] = {
     "Extended Ice Bomb Duration": ItemData(7770116, ItemClassification.useful),
     "Health from Frozen Demons": ItemData(7770117, ItemClassification.useful),
     "Frozen Melee Shatter": ItemData(7770118, ItemClassification.useful),
-    "Rune": ItemData(7770020, ItemClassification.useful),
     "Break Blast": ItemData(7770145, ItemClassification.useful),
     "Desperate Punch": ItemData(7770146, ItemClassification.useful),
     "Take Back": ItemData(7770147, ItemClassification.useful),
