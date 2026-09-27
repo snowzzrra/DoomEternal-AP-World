@@ -4,15 +4,18 @@ import json
 from functools import partial
 from typing import ClassVar
 
-from BaseClasses import Entrance, Item, ItemClassification, Location, Region, Tutorial
+from BaseClasses import CollectionState, Entrance, Item, ItemClassification, Location, Region, Tutorial
 from worlds.AutoWorld import WebWorld, World
 from worlds.generic.Rules import add_rule, forbid_item, set_rule
 
 from .combat_readiness import (
+    get_mission_base_cr,
+    get_skill_allowance,
     SPIRIT_BREAKPOINTS,
     is_mission_ready,
     is_spirit_breakpoint_ready,
 )
+from .combat_rating import evaluate_player_loadout_cr
 
 from .generated_content import (
     CAMPAIGN_CONNECTIONS,
@@ -239,6 +242,41 @@ class DoomEternalWorld(World):
             return item.name
         return None
 
+    def _mission_presentation(self) -> dict[str, dict[str, int | float]]:
+        stages = self.campaign_plan["sequence"]
+        presentation = {}
+        for stage_id in stages:
+            base_cr = get_mission_base_cr(stage_id)
+            presentation[stage_id] = {
+                "base_cr": base_cr,
+                "skull_tier": 1 if base_cr <= 35 else 2 if base_cr <= 60 else 3 if base_cr <= 80 else 4,
+                "skill_allowance": get_skill_allowance(self.options.campaign_difficulty.value),
+            }
+
+        # Mirror AP's filled-location spheres only to sample the frozen CR
+        # evaluator at first logical access; no readiness or placement changes.
+        state = CollectionState(self.multiworld)
+        remaining = set(stages)
+        for sphere in self.multiworld.get_spheres():
+            if not sphere:
+                break
+            for stage_id in tuple(remaining):
+                region = self.multiworld.get_region(STAGE_BY_ID[stage_id]["regions"][0], self.player)
+                if state.can_reach(region):
+                    presentation[stage_id]["expected_player_cr"] = evaluate_player_loadout_cr(
+                        state, self.player, self).total
+                    remaining.remove(stage_id)
+            if not remaining:
+                break
+            for location in sphere:
+                state.collect(location.item, True, location)
+        for stage_id in remaining:
+            region = self.multiworld.get_region(STAGE_BY_ID[stage_id]["regions"][0], self.player)
+            if state.can_reach(region):
+                presentation[stage_id]["expected_player_cr"] = evaluate_player_loadout_cr(
+                    state, self.player, self).total
+        return presentation
+
     def fill_slot_data(self) -> dict[str, object]:
         start_inventory = dict(self.effective_starting_inventory())
         start_inventory.update(self.campaign_plan["bootstrap_inventory"])
@@ -306,6 +344,7 @@ class DoomEternalWorld(World):
             "mission_difficulty": {
                 mission: dict(metadata) for mission, metadata in MISSION_DIFFICULTY.items()
             },
+            "mission_presentation_v1": self._mission_presentation(),
             "special_weapon": "The Crucible" if not dlc_enabled else self.options.special_weapon.current_option_name,
             "enhanced_melee_damage": bool(self.options.enhanced_melee_damage.value),
             "apworld_revision": APWORLD_REVISION,
