@@ -249,7 +249,6 @@ class DoomEternalWorld(World):
             base_cr = get_mission_base_cr(stage_id)
             presentation[stage_id] = {
                 "base_cr": base_cr,
-                "skull_tier": 1 if base_cr <= 35 else 2 if base_cr <= 60 else 3 if base_cr <= 80 else 4,
                 "skill_allowance": get_skill_allowance(self.options.campaign_difficulty.value),
             }
 
@@ -275,6 +274,12 @@ class DoomEternalWorld(World):
             if state.can_reach(region):
                 presentation[stage_id]["expected_player_cr"] = evaluate_player_loadout_cr(
                     state, self.player, self).total
+        for facts in presentation.values():
+            if "expected_player_cr" in facts:
+                # Visual bins of the frozen CR deficit, independent of access/readiness.
+                deficit = round((facts["base_cr"] - facts["expected_player_cr"]
+                                 - facts["skill_allowance"]) * 100)
+                facts["skull_tier"] = 1 + sum(deficit > cut for cut in (-1000, 0, 1000))
         return presentation
 
     def fill_slot_data(self) -> dict[str, object]:
