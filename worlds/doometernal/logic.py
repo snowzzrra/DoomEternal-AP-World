@@ -150,7 +150,6 @@ FORTRESS_BATTERY_CONSUMER_LOCATIONS = frozenset({
     "Fortress of Doom - Praetor Suit Token - Elevator Room West",
     "Fortress of Doom - Praetor Suit Token - Elevator Room East",
     "Fortress of Doom - All Runes Cheat Code",
-    "Fortress of Doom - Fully Upgraded Suit Cheat Code",
     "Fortress of Doom - Praetor Suit",
     "Fortress of Doom - Sentinel Armor",
     "Fortress of Doom - Classic Marine Suit",
@@ -194,8 +193,8 @@ def combat_capability_alternatives(capability: str) -> tuple[tuple[str, ...], ..
     raise ValueError(f"Unknown combat capability: {capability}")
 
 
-def fortress_battery_consumer_cost(active_spend_groups_count: int = 12, *, randomize_first_battery: bool = False) -> int:
-    return active_spend_groups_count * 2 + (1 if randomize_first_battery else 0)
+def fortress_battery_consumer_cost(active_spend_groups_count: int = 11, *, randomize_first_battery: bool = False) -> int:
+    return active_spend_groups_count * 2
 
 
 def connection_requirement(
@@ -719,8 +718,8 @@ def build_location_prerequisites(
         else fortress_battery_consumer_cost(randomize_first_battery=randomize_first_battery)
     )
     if active_spend_groups is not None:
-        for idx, sg in enumerate(active_spend_groups):
-            cost = 2 * (idx + 1)
+        cost = sum(group["cost"] for group in active_spend_groups)
+        for sg in active_spend_groups:
             for loc in sg["locations"]:
                 if loc in location_names:
                     table[loc] = LocationRequirement(battery_currency=cost)

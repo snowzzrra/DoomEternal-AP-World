@@ -2,7 +2,7 @@
 from collections import Counter
 from dataclasses import replace
 import itertools
-from .generated_content import CAMPAIGN_STAGES
+from .generated_content import CAMPAIGN_STAGES, FORTRESS_SPEND_GROUPS, FORTRESS_POLICY
 from .logic import goal_endpoint_event_name, mission_clear_event_name
 from .locations import location_data_table
 from .combat_rating import (
@@ -49,74 +49,13 @@ FORTRESS_NON_CONSUMER_LOCATIONS = frozenset({
     "Fortress of Doom - Sentinel Crystal - Bridge Story Pickup",
     "Fortress of Doom - Praetor Suit Token - Story Suit Tutorial",
     "Fortress of Doom - Ballista",
+    "Fortress of Doom - Fully Upgraded Suit Cheat Code",
 })
-FORTRESS_BOOTSTRAP_LOCATIONS = FORTRESS_NON_CONSUMER_LOCATIONS
+FORTRESS_BOOTSTRAP_LOCATIONS = FORTRESS_NON_CONSUMER_LOCATIONS - {
+    "Fortress of Doom - Fully Upgraded Suit Cheat Code",
+}
 
-FORTRESS_SPEND_GROUPS = (
-    {
-        "id": "SG_LOWER_EAST",
-        "cost": 2,
-        "locations": ("Fortress of Doom - Sentinel Crystal - Battery Room Lower East",),
-    },
-    {
-        "id": "SG_LOWER_WEST",
-        "cost": 2,
-        "locations": ("Fortress of Doom - Sentinel Crystal - Battery Room Lower West",),
-    },
-    {
-        "id": "SG_UPPER_EAST_MODBOT",
-        "cost": 2,
-        "locations": ("Fortress of Doom - Modbot - Battery Room Upper East",),
-    },
-    {
-        "id": "SG_UPPER_WEST_MODBOT",
-        "cost": 2,
-        "locations": ("Fortress of Doom - Modbot - Battery Room Upper West",),
-    },
-    {
-        "id": "SG_UPPER_EAST_PRAETOR",
-        "cost": 2,
-        "locations": ("Fortress of Doom - Praetor Suit Token - Battery Room Upper East",),
-    },
-    {
-        "id": "SG_UPPER_WEST_PRAETOR",
-        "cost": 2,
-        "locations": ("Fortress of Doom - Praetor Suit Token - Battery Room Upper West",),
-    },
-    {
-        "id": "SG_ELEVATOR_EAST",
-        "cost": 2,
-        "locations": ("Fortress of Doom - Praetor Suit Token - Elevator Room East",),
-    },
-    {
-        "id": "SG_ELEVATOR_WEST",
-        "cost": 2,
-        "locations": ("Fortress of Doom - Praetor Suit Token - Elevator Room West",),
-    },
-    {
-        "id": "SG_UPPER_SPIRE_CHEAT",
-        "cost": 2,
-        "locations": ("Fortress of Doom - Fully Upgraded Suit Cheat Code",),
-    },
-    {
-        "id": "SG_SENTINEL_ARMOR",
-        "cost": 2,
-        "locations": ("Fortress of Doom - Sentinel Armor",),
-    },
-    {
-        "id": "SG_CLASSIC_MARINE",
-        "cost": 2,
-        "locations": ("Fortress of Doom - Classic Marine Suit",),
-    },
-    {
-        "id": "SG_PRAETOR_AND_RUNES",
-        "cost": 2,
-        "locations": (
-            "Fortress of Doom - Praetor Suit",
-            "Fortress of Doom - All Runes Cheat Code",
-        ),
-    },
-)
+
 SPEND_GROUP_BY_ID = {sg["id"]: sg for sg in FORTRESS_SPEND_GROUPS}
 
 def completion_event(stage_id):
@@ -136,36 +75,31 @@ def get_short_world_scaling(
         if mission_location_count <= 28:
             active_sg = FORTRESS_SPEND_GROUPS[:1]
             active_masteries = 0
-            battery_surplus = 0 if mode.startswith("MAI") or mode == "Mission Access as Items" else 1
         elif mission_location_count <= 36:
             active_sg = FORTRESS_SPEND_GROUPS[:2]
             active_masteries = 1
-            battery_surplus = 0 if mode.startswith("MAI") or mode == "Mission Access as Items" else 1
         elif mission_location_count <= 50:
             active_sg = FORTRESS_SPEND_GROUPS[:3]
             active_masteries = 2
-            battery_surplus = 0 if mode.startswith("MAI") or mode == "Mission Access as Items" else 1
         else:
             active_sg = FORTRESS_SPEND_GROUPS[:4]
             active_masteries = 2
-            battery_surplus = 0 if mode.startswith("MAI") or mode == "Mission Access as Items" else 1
     elif n <= 5:
         active_sg = FORTRESS_SPEND_GROUPS[:4]
         active_masteries = 3
-        battery_surplus = 1
     elif n <= 8:
         active_sg = FORTRESS_SPEND_GROUPS[:8]
         active_masteries = 5
-        battery_surplus = 1
     else:
-        active_sg = FORTRESS_SPEND_GROUPS  # all 12
+        active_sg = FORTRESS_SPEND_GROUPS
         active_masteries = 13
-        battery_surplus = 1
 
     if not include_weapon_masteries:
         active_masteries = 0
 
-    return active_sg, active_masteries, battery_surplus
+    cost = sum(group["cost"] for group in active_sg)
+    surplus = (cost * FORTRESS_POLICY["battery_surplus_percent"] + 99) // 100
+    return active_sg, active_masteries, surplus
 
 
 def select_active_normal_missions(candidate_ids, requested_count, forced_ids, rng):
@@ -278,7 +212,7 @@ def solve_stage_bootstrap(
             or name in {"The Crucible", "Sentinel Hammer", "Progressive Special Weapon"}
         )
     }
-    battery_pool_count = pool_counts.get("Sentinel Battery Bundle", 0)
+    battery_pool_count = pool_counts.get("Sentinel Battery", 0)
 
     # Categories
     all_weapons = []
@@ -297,7 +231,7 @@ def solve_stage_bootstrap(
         if combat_pool.get(m, 0) > 0
     ]
     all_equip = [
-        e for e in ["Dash", "Chainsaw", "Ice Bomb", "Flame Belch", "Frag Grenade", "Blood Punch"]
+        e for e in ["Dash", "Chainsaw", "Ice Bomb", "Flame Belch", "Frag Grenade", "Progressive Blood Punch"]
         if combat_pool.get(e, 0) > 0
     ]
 
@@ -378,10 +312,11 @@ def solve_stage_bootstrap(
     # 2. Search for B > 0 (minimal bootstrap)
     for B in range(1, 6):
         best_b = None
-        for b_bat in range(min(B, battery_pool_count, active_sg_count) + 1):
+        for b_bat in range(min(B, battery_pool_count, 2 * active_sg_count) + 1):
             b_combat = B - b_bat
-            bat_pkg = ("Sentinel Battery Bundle",) * b_bat
-            extra_capacity = min(b_bat, active_sg_count)
+            bat_pkg = ("Sentinel Battery",) * b_bat
+            owned_batteries = base_state.count("Sentinel Battery", player) + b_bat
+            extra_capacity = active_sg_count if owned_batteries >= 2 * active_sg_count else 0
             placed_capacity = 6 + extra_capacity
 
             combat_boot_pool = all_weapons + all_mods + all_equip
@@ -403,7 +338,7 @@ def solve_stage_bootstrap(
                     c for c in [
                         "Dash", "Super Shotgun", "Ballista", "Chaingun", "Progressive Special Weapon",
                         "The Crucible", "Sentinel Hammer",
-                        "Energy Shield", "Flame Belch", "Ice Bomb", "Blood Punch", "Destroyer Blade",
+                        "Energy Shield", "Flame Belch", "Ice Bomb", "Progressive Blood Punch", "Destroyer Blade",
                         "Arbalest", "Lock-on Burst", "Rocket Launcher", "Plasma Rifle", "Microwave Beam",
                         "Precision Bolt", "Sticky Bombs", "Mobile Turret", "Heat Blast", "Remote Detonate",
                         "Chainsaw",
@@ -742,8 +677,8 @@ def make_plan(options, rng, world=None):
 
     bootstrap_cost = chosen_result["bootstrap_cost"]
     readiness_bootstrap_items = list(chosen_result["bootstrap_items"])
-    battery_bootstrap_items = [it for it in readiness_bootstrap_items if it == "Sentinel Battery Bundle"]
-    combat_bootstrap_items = [it for it in readiness_bootstrap_items if it != "Sentinel Battery Bundle"]
+    battery_bootstrap_items = [it for it in readiness_bootstrap_items if it == "Sentinel Battery"]
+    combat_bootstrap_items = [it for it in readiness_bootstrap_items if it != "Sentinel Battery"]
 
     # Mission Access items are structural, chosen with the start stage; fold
     # them into the same concrete semantic multiset.
@@ -777,6 +712,21 @@ def make_plan(options, rng, world=None):
         "active_spend_groups": active_sg,
         "active_masteries_count": active_masteries_count,
         "battery_surplus": battery_surplus,
+        "battery_economy": {
+            "cost": sum(group["cost"] for group in active_sg),
+            "surplus": battery_surplus,
+            "total": sum(group["cost"] for group in active_sg) + battery_surplus,
+            "surplus_percent": FORTRESS_POLICY["battery_surplus_percent"],
+            "native_first_battery": int(
+                not options.randomize_first_battery.value and "e1m2_war" in active_normal_ids
+            ),
+        },
+        "fortress_phase_thresholds": [
+            (count * len([key for key in sequence if key != goal_stage])
+             + FORTRESS_POLICY["phase_completion_denominator"] - 1)
+            // FORTRESS_POLICY["phase_completion_denominator"]
+            for count in FORTRESS_POLICY["phase_completion_weights"]
+        ],
         "access_items": {str(STAGE_BY_ID[stage]["access_id"]): stage for stage in access},
         "stages": [dict(STAGE_BY_ID[stage]) for stage in active_stage_ids],
         "stage_ids": active_stage_ids,

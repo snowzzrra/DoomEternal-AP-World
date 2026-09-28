@@ -50,7 +50,7 @@ DLC_STAGE_IDS = frozenset({
     "e5m1_spear", "e5m2_earth", "e5m3_hell", "e5m4_boss",
 })
 
-CORE_EQUIPMENT = ("Frag Grenade", "Blood Punch", "Flame Belch", "Ice Bomb")
+CORE_EQUIPMENT = ("Frag Grenade", "Progressive Blood Punch", "Flame Belch", "Ice Bomb")
 
 NORMAL_RUNES_ORDERED = (
     "Savagery", "Seek and Destroy", "Blood Fueled",
@@ -159,10 +159,10 @@ class FastState:
         return state
 
     def count(self, item_name, player):
-        return self.prog_items[item_name]
+        return self.prog_items[item_name] + (self.prog_items["Progressive Blood Punch"] if item_name == "Blood Punch" else 0)
 
     def has(self, item_name, player):
-        return self.prog_items[item_name] > 0
+        return self.count(item_name, player) > 0
 
     def copy(self):
         st = FastState(player=self.player)
@@ -509,7 +509,8 @@ def build_semantic_counts(
 
     # --- Core equipment ---------------------------------------------------
     for equipment in CORE_EQUIPMENT:
-        base_pool[equipment] = max(0, 1 - start_inv.get(equipment, 0))
+        quantity = 4 if equipment == "Progressive Blood Punch" else 1
+        base_pool[equipment] = max(0, quantity - start_inv.get(equipment, 0))
 
     # Independent attachment: TAG2 readiness requires it even with masteries off.
     base_pool["Meat Hook"] = max(0, 1 - start_inv.get("Meat Hook", 0))
@@ -538,15 +539,18 @@ def build_semantic_counts(
         base_pool[key_name] = max(0, 1 - start_inv.get(key_name, 0))
 
     # --- Battery economy ---------------------------------------------------
-    sg_count = len(active_sg)
-    if sg_count > 0:
-        num_bundles = sg_count + battery_surplus
-        base_pool["Sentinel Battery Bundle"] = max(0, num_bundles - start_inv.get("Sentinel Battery Bundle", 0))
-    first_battery_random = bool(
-        _option_value(options, "randomize_first_battery") and "e1m2_war" in active_normal_ids
+    battery_cost = sum(group["cost"] for group in active_sg)
+    battery_total = battery_cost + battery_surplus
+    native_first_battery = int(
+        not _option_value(options, "randomize_first_battery") and "e1m2_war" in active_normal_ids
     )
-    single_policy = 1 if first_battery_random else 0
-    base_pool["Sentinel Battery"] = max(0, single_policy - start_inv.get("Sentinel Battery", 0))
+    if start_inv.get("Sentinel Battery Bundle"):
+        raise ValueError("Sentinel Battery Bundle belongs to legacy rooms; use individual Sentinel Battery items")
+    if start_inv.get("Sentinel Battery", 0) > battery_total:
+        raise ValueError(f"Sentinel Battery starting inventory exceeds the {battery_total}-unit economy")
+    base_pool["Sentinel Battery"] = max(
+        0, battery_total - native_first_battery - start_inv.get("Sentinel Battery", 0)
+    )
 
     # --- Weapon Masteries (content scaling) & prerequisite mods ------------
     family_masteries: list[str] = []

@@ -180,6 +180,25 @@ def apply_dynamic_progression_classification(world: DoomEternalWorld) -> Classif
                 "active_hard_requirement", 0.0, "Active location or traversal prerequisite", (),
             ))
 
+    needs_blood_punch = "Blood Punch" in hard_items and not any(
+        item.name == "Progressive Blood Punch" for item in mw.precollected_items[player]
+    )
+    for item in mw.itempool:
+        if item.player == player and item.name == "Progressive Blood Punch":
+            item.classification = ItemClassification.progression if needs_blood_punch else ItemClassification.useful
+            needs_blood_punch = False
+
+    battery_required = sum(group["cost"] for group in world.active_spend_groups)
+    battery_required -= sum(
+        item.name == "Sentinel Battery" for item in mw.precollected_items[player]
+    )
+    battery_required -= world.campaign_plan["battery_economy"]["native_first_battery"]
+    for item in mw.itempool:
+        if item.player == player and item.name == "Sentinel Battery":
+            item.classification = (ItemClassification.progression if battery_required > 0
+                                   else ItemClassification.useful)
+            battery_required -= 1
+
     # 2. Baseline progression-only state
     state = build_progression_only_state(world)
     cr_initial = evaluate_player_loadout_cr(state, player, world)

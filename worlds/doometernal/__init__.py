@@ -127,6 +127,8 @@ class DoomEternalWorld(World):
         return inventory
 
     def generate_early(self) -> None:
+        if self.options.start_inventory.value.get("Blood Punch"):
+            raise ValueError("Blood Punch belongs to legacy rooms; new seeds require Progressive Blood Punch (0..4)")
         self.campaign_plan = make_plan(self.options, self.random, world=self)
         self.starting_weapon_name = self.campaign_plan.get("starting_weapon")
         # Physical-ownership policy: every item materialized before normal AP
@@ -236,10 +238,8 @@ class DoomEternalWorld(World):
         copies keep the default AP collect semantics and are never promoted
         globally by this override.
         """
-        if item.advancement:
-            return item.name
-        if item.name in getattr(self, "initial_logical_items", ()):
-            return item.name
+        if item.advancement or item.name in getattr(self, "initial_logical_items", ()):
+            return "Blood Punch" if item.name == "Progressive Blood Punch" else item.name
         return None
 
     def _mission_presentation(self) -> dict[str, dict[str, int | float]]:
@@ -303,6 +303,7 @@ class DoomEternalWorld(World):
         capabilities.extend([
             "starting_weapon_v1", "special_weapon_progression_v1", "ammo_refill_v1",
             "cross_campaign_materialization_v1", "unified_campaign_v1", "deathlink_mode_v1",
+            "fortress_economy_v1", "progressive_blood_punch_v1",
         ])
 
         active_sg = getattr(self, "active_spend_groups", FORTRESS_SPEND_GROUPS)
@@ -383,31 +384,18 @@ class DoomEternalWorld(World):
         active_normal_ids = plan["active_normal_mission_ids"]
         active_stage_ids = set(plan["stage_ids"])
 
-        # 1. Count mission locations to feed scaling
         vanilla_physical_locations = {
             "Hell on Earth - Chainsaw": self.options.randomize_chainsaw.value,
             "Exultia - Dash": self.options.randomize_dash.value,
             "Exultia - Sentinel Battery - King Novik Return Path": self.options.randomize_first_battery.value,
         }
-        mission_loc_count = 0
-        for loc_name, loc_data in catalog_locations.items():
-            stage_id = REGION_STAGE.get(loc_data.region)
-            if stage_id in active_stage_ids:
-                if loc_name in vanilla_physical_locations and not vanilla_physical_locations[loc_name]:
-                    continue
-                mission_loc_count += 1
-
-        # 2. Get short-world scaling parameters
-        active_sg, active_masteries_count, battery_surplus = get_short_world_scaling(
-            active_normal_ids,
-            mission_loc_count,
-            plan["mode"],
-            bool(self.options.include_weapon_mastery_challenges.value),
-        )
+        # Regions and the item pool consume the same pre-economy scaling decision.
+        active_sg = plan["active_spend_groups"]
+        active_masteries_count = plan["active_masteries_count"]
+        battery_surplus = plan["battery_surplus"]
         self.active_spend_groups = active_sg
         self.active_masteries_count = active_masteries_count
         self.battery_surplus = battery_surplus
-        plan["active_spend_groups"] = active_sg
 
         # Active Fortress locations
         has_unmaykr_check = set(BASE_GATE_STAGE_IDS).issubset(set(active_normal_ids))
@@ -467,6 +455,12 @@ class DoomEternalWorld(World):
             region = multiworld.get_region(reg_name, player)
             location = DoomEternalLocation(player, loc_name, loc_data.code, region)
             region.locations.append(location)
+
+        if plan["battery_economy"]["native_first_battery"]:
+            native_name = "Exultia - Sentinel Battery - King Novik Return Path"
+            region = multiworld.get_region(catalog_locations[native_name].region, player)
+            region.add_event(native_name, "Sentinel Battery", location_type=DoomEternalLocation,
+                             item_type=DoomEternalItem)
 
         # 5. Create Mission Clear events
         for s in plan["stages"]:
@@ -569,8 +563,8 @@ class DoomEternalWorld(World):
 
         ordinary = [key for key in plan["sequence"] if key != plan["goal_stage"]]
         visits = ("First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh")
-        for visit, base_count in zip(visits, (1, 2, 4, 5, 6, 8, 9)):
-            threshold = (base_count * len(ordinary) + 12) // 13 if ordinary else 0
+        for index, visit in enumerate(visits):
+            threshold = 0 if index == 0 else plan["fortress_phase_thresholds"][index]
             entrance = hub.connect(regions[f"Fortress of Doom - {visit} Visit"], f"Fortress phase: {visit}")
             entrance.access_rule = lambda state, count=threshold: sum(
                 state.has(completion_event(key), player) for key in ordinary
@@ -714,12 +708,7 @@ class DoomEternalWorld(World):
             for location in self.multiworld.get_locations(self.player)
             if location.address is not None
         }
-        sg_count = len(getattr(self, "active_spend_groups", ())) or 12
-        first_bat_rand = bool(
-            self.options.randomize_first_battery.value
-            and "e1m2_war" in self.campaign_plan["active_normal_mission_ids"]
-        )
-        active_battery_cost = 2 * sg_count + (1 if first_bat_rand else 0)
+        active_battery_cost = sum(group["cost"] for group in self.active_spend_groups)
 
         prerequisite_table = build_location_prerequisites(
             active_location_names,

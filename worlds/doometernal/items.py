@@ -89,6 +89,7 @@ item_data_table: dict[str, ItemData] = {
     "Flame Belch": ItemData(7770012, ItemClassification.useful),
     "Ice Bomb": ItemData(7770013, ItemClassification.useful),
     "Blood Punch": ItemData(7770014, ItemClassification.useful),
+    "Progressive Blood Punch": ItemData(7770904, ItemClassification.useful),
     "Dash": ItemData(7770015, ItemClassification.progression),
     "Sentinel Battery": ItemData(7770016, ItemClassification.progression),
     "Sentinel Battery Bundle": ItemData(7770142, ItemClassification.progression),
@@ -242,7 +243,7 @@ suit_perk_item_names = [
 
 DEVINV_START_INVENTORY_ITEM_NAMES = frozenset({
     "Heavy Cannon", "Plasma Rifle", "Rocket Launcher", "Super Shotgun", "Ballista", "Chaingun", "Combat Shotgun",
-    "Chainsaw", "Frag Grenade", "Blood Punch", "Flame Belch", "Ice Bomb", "Dash",
+    "Chainsaw", "Frag Grenade", "Blood Punch", "Progressive Blood Punch", "Flame Belch", "Ice Bomb", "Dash",
     "Sticky Bombs", "Full Auto", "Precision Bolt", "Micro Missiles", "Heat Blast", "Microwave Beam",
     "Remote Detonate", "Lock-on Burst", "Arbalest", "Destroyer Blade", "Energy Shield", "Mobile Turret",
     "Savagery", "Seek and Destroy", "Blood Fueled", "Air Control", "Dazed and Confused", "Saving Throw",
