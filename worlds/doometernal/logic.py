@@ -710,6 +710,7 @@ def build_location_prerequisites(
             )
         )
         table["The Dark Lord - Defeated"] = LocationRequirement(
+            all_of=("Blood Punch",),
             custom_rule=dark_lord_custom_rule,
         )
     battery_cost = (
