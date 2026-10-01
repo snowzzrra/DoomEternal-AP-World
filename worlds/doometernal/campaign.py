@@ -609,8 +609,6 @@ def make_plan(options, rng, world=None):
         world_context=world_context,
     )
     pool_counts = Counter(semantic_pool.placement_counts)
-
-    # 6. Order sequencing & starts (Readiness-Aware, Phase 7.7c §4 & §5)
     def evaluate_start_stage(s_id: str):
         return solve_stage_bootstrap(
             s_id, world_context, get_candidate_base_state(s_id), pool_counts, len(active_sg)
@@ -699,6 +697,8 @@ def make_plan(options, rng, world=None):
         "goal_stage": goal_stage,
         "goal_as_item": goal_as_item,
         "bootstrap_inventory": bootstrap_inventory,
+        "fixed_dash_completion_stage": (None if options.randomize_dash.value or "Dash" in bootstrap_inventory
+                                         else "e1m2_war" if "e1m2_war" in sequence else sequence[0]),
         "bootstrap_cost": bootstrap_cost,
         "readiness_bootstrap_items": readiness_bootstrap_items,
         "battery_bootstrap_items": battery_bootstrap_items,

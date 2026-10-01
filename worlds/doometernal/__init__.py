@@ -481,6 +481,14 @@ class DoomEternalWorld(World):
                     item_type=DoomEternalItem,
                 )
                 event_item.classification = ItemClassification.progression_skip_balancing
+                if (plan.get("fixed_dash_completion_stage") == s["id"]
+                        and s["id"] != "e1m2_war"):
+                    dash = region.add_event(
+                        "Fixed Dash Acquisition", "Dash",
+                        rule=lambda state, public_location=public_location: public_location.can_reach(state),
+                        location_type=DoomEternalLocation, item_type=DoomEternalItem,
+                    )
+                    dash.classification = ItemClassification.progression_skip_balancing
 
         # 6. Suffix victory requirement events
         requirement_location_suffixes = {
@@ -628,8 +636,6 @@ class DoomEternalWorld(World):
         if self.starting_weapon_name in pool_names:
             pool_names.remove(self.starting_weapon_name)
         self.multiworld.push_precollected(self.create_item(self.starting_weapon_name))
-
-        # Readiness Bootstrap Precollected Items (Phase 7.7c §6)
         # Bootstrap materialization must be logically active: a precollected
         # readiness item only contributes to Combat Rating / readiness rules when
         # it is traceable as progression in CollectionState. Never silently skip
@@ -691,8 +697,6 @@ class DoomEternalWorld(World):
 
         pool = [self.create_item(name) for name in pool_names]
         self.multiworld.itempool += pool
-
-        # Dynamic Progression Classification (Phase 7.7 / 7.8B)
         from .classification import apply_dynamic_progression_classification
         apply_dynamic_progression_classification(self)
 

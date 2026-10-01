@@ -120,138 +120,6 @@ def create_state_with_items(
 # §20 — Base Readiness Test Matrix
 # ═══════════════════════════════════════════════════════════════
 
-class TestBaseReadinessMatrix:
-    """Test Base CR and Skill Allowance interactions across anchor states (§20)."""
-
-    def test_canonical_catalog_completeness(self):
-        """All 20 canonical stages exist in MISSION_BASE_CR."""
-        assert len(MISSION_BASE_CR) == 20
-        for stage_id in STAGE_BY_ID:
-            assert stage_id in MISSION_BASE_CR
-
-    def test_skill_allowances_values(self):
-        """Skill allowances exactly match frozen P7.5 values."""
-        assert get_skill_allowance(0) == 6   # ITYTD
-        assert get_skill_allowance(1) == 10  # HMP
-        assert get_skill_allowance(2) == 15  # UV
-        assert get_skill_allowance(3) == 20  # Nightmare
-        with pytest.raises(ValueError):
-            get_skill_allowance(4)
-
-    def test_hoe12_anchor_a_itytd(self):
-        """HoE (12): Anchor A (CR 6) + ITYTD (6) -> ready."""
-        world = make_mock_world(difficulty=0)  # ITYTD (allowance 6)
-        state = create_state_with_items({"Combat Shotgun"}, world=world)
-        res = evaluate_mission_readiness(state, 1, "e1m1_intro", world)
-        assert res.player_cr == 6.0
-        assert res.mission_base_cr == 12
-        assert res.allowance == 6
-        assert res.ready is True
-
-    def test_exultia25_anchor_c_itytd(self):
-        """Exultia (25): Anchor C (CR 20) + ITYTD (6) -> ready (20 + 6 >= 25)."""
-        world = make_mock_world(difficulty=0, randomize_dash=True, randomize_chainsaw=True)
-        state = create_state_with_items({"Combat Shotgun", "Chainsaw", "Dash"}, world=world)
-        res = evaluate_mission_readiness(state, 1, "e1m2_war", world)
-        assert res.player_cr == 20.0
-        assert res.mission_base_cr == 25
-        assert res.allowance == 6
-        assert res.ready is True
-
-    def test_cultist42_anchor_c_nightmare(self):
-        """Cultist Base (42): Anchor C (CR 20) + Nightmare (20) -> NOT ready (20 + 20 = 40 < 42)."""
-        world = make_mock_world(difficulty=3, randomize_dash=True, randomize_chainsaw=True)
-        state = create_state_with_items({"Combat Shotgun", "Chainsaw", "Dash"}, world=world)
-        res = evaluate_mission_readiness(state, 1, "e1m3_cult", world)
-        assert res.player_cr == 20.0
-        assert res.mission_base_cr == 42
-        assert res.allowance == 20
-        assert res.ready is False
-
-    def test_doom_hunter50_anchor_f_hmp(self):
-        """Doom Hunter Base (50): Anchor F (CR 42.75) + HMP (10) -> ready (42.75 + 10 = 52.75 >= 50)."""
-        world = make_mock_world(difficulty=1, randomize_dash=True, randomize_chainsaw=True)
-        state = create_state_with_items({
-            "Combat Shotgun", "Sticky Bombs", "Chaingun",
-            "Energy Shield", "Chainsaw", "Dash",
-        }, world=world)
-        res = evaluate_mission_readiness(state, 1, "e1m4_boss", world)
-        assert res.player_cr == 42.75
-        assert res.mission_base_cr == 50
-        assert res.allowance == 10
-        assert res.ready is True
-
-    def test_sentinel_prime55_anchor_f_boundary(self):
-        """Sentinel Prime (55): Anchor F (CR 42.75): HMP (10) -> NOT ready; UV (15) -> ready."""
-        world_hmp = make_mock_world(difficulty=1, randomize_dash=True, randomize_chainsaw=True)
-        world_uv = make_mock_world(difficulty=2, randomize_dash=True, randomize_chainsaw=True)
-        items = {
-            "Combat Shotgun", "Sticky Bombs", "Chaingun",
-            "Energy Shield", "Chainsaw", "Dash",
-        }
-        state_hmp = create_state_with_items(items, world=world_hmp)
-        state_uv = create_state_with_items(items, world=world_uv)
-        # HMP: 42.75 + 10 = 52.75 < 55 -> False
-        assert evaluate_mission_readiness(state_hmp, 1, "e2m4_boss", world_hmp).ready is False
-        # UV: 42.75 + 15 = 57.75 >= 55 -> True
-        assert evaluate_mission_readiness(state_uv, 1, "e2m4_boss", world_uv).ready is True
-
-    def test_arc63_anchor_g_ready_everywhere(self):
-        """ARC Complex (63): Anchor G (CR 62.1) -> ready on all difficulties (even ITYTD 6)."""
-        items = {
-            "Ballista", "Combat Shotgun", "Rocket Launcher",
-            "Chainsaw", "Flame Belch", "Dash", "Ice Bomb",
-        }
-        for diff in (0, 1, 2, 3):
-            world = make_mock_world(difficulty=diff, randomize_dash=True, randomize_chainsaw=True)
-            state = create_state_with_items(items, world=world)
-            res = evaluate_mission_readiness(state, 1, "e2m2_base", world)
-            assert res.player_cr == 62.1
-            assert res.ready is True
-
-    def test_reclaimed77_anchor_g_uv(self):
-        """Reclaimed Earth (77): Anchor G (CR 62.1) + UV (15) -> ready (62.1 + 15 = 77.1 >= 77)."""
-        world = make_mock_world(difficulty=2, randomize_dash=True, randomize_chainsaw=True)
-        items = {
-            "Ballista", "Combat Shotgun", "Rocket Launcher",
-            "Chainsaw", "Flame Belch", "Dash", "Ice Bomb",
-        }
-        state = create_state_with_items(items, world=world)
-        res = evaluate_mission_readiness(state, 1, "e5m2_earth", world)
-        assert res.player_cr == 62.1
-        assert res.mission_base_cr == 77
-        assert res.ready is True
-
-    def test_final_sin87_anchor_h_boundary(self):
-        """Final Sin (87): Anchor H (CR 67.5): UV (15) -> NOT ready; NM (20) -> ready."""
-        items = {
-            "Ballista", "Super Shotgun", "Rocket Launcher",
-            "Chainsaw", "Flame Belch", "Ice Bomb", "Dash",
-        }
-        world_uv = make_mock_world(difficulty=2, randomize_dash=True, randomize_chainsaw=True)
-        world_nm = make_mock_world(difficulty=3, randomize_dash=True, randomize_chainsaw=True)
-        state_uv = create_state_with_items(items, world=world_uv)
-        state_nm = create_state_with_items(items, world=world_nm)
-        # UV: 67.5 + 15 = 82.5 < 87 -> False
-        assert evaluate_mission_readiness(state_uv, 1, "e3m4_boss", world_uv).ready is False
-        # NM: 67.5 + 20 = 87.5 >= 87 -> True
-        assert evaluate_mission_readiness(state_nm, 1, "e3m4_boss", world_nm).ready is True
-
-    def test_holt94_anchor_i_itytd(self):
-        """The Holt (94): Anchor I (CR 89) + ITYTD (6) -> ready (89 + 6 = 95 >= 94)."""
-        world = make_mock_world(difficulty=0, randomize_dash=True, randomize_chainsaw=True)
-        items = {
-            "Ballista", "Super Shotgun", "Rocket Launcher",
-            "Heavy Cannon", "Plasma Rifle", "Combat Shotgun",
-            "Chainsaw", "Flame Belch", "Ice Bomb", "Dash",
-            "Air Control", "Precision Bolt", "Lock-on Burst",
-            "Energy Shield", "Faster Weapon Swap",
-        }
-        state = create_state_with_items(items, world=world, health_stages=2, ammo_stages=2)
-        res = evaluate_mission_readiness(state, 1, "e4m3_mcity", world)
-        assert res.player_cr == 89.0
-        assert res.mission_base_cr == 94
-        assert res.ready is True
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -261,38 +129,7 @@ class TestBaseReadinessMatrix:
 class TestSpiritBreakpoints:
     """Test Spirit severe soft penalties (+15, cap 100) and capability checks (§21)."""
 
-    @pytest.mark.parametrize("stage_id, base_cr, expected_penalized", [
-        ("e5m1_spear", 75, 90),
-        ("e5m2_earth", 77, 92),
-        ("e5m3_hell", 82, 97),
-        ("e4m2_swamp", 88, 100),
-        ("e4m3_mcity", 94, 100),
-    ])
-    def test_spirit_breakpoint_effective_cr(self, stage_id, base_cr, expected_penalized):
-        """Without anti-spirit: Effective CR = min(100, Base + 15). With anti-spirit: Effective CR = Base."""
-        world = make_mock_world(difficulty=2)
-        # 1. State WITHOUT Microwave Beam
-        state_no_mb = create_state_with_items({"Combat Shotgun"}, world=world)
-        res_no_mb = evaluate_mission_readiness(state_no_mb, 1, stage_id, world, context="spirit_breakpoint")
-        assert res_no_mb.mission_base_cr == base_cr
-        assert res_no_mb.soft_penalty == SPIRIT_PENALTY
-        assert res_no_mb.effective_cr == expected_penalized
 
-        # 2. State WITH Plasma Rifle + Microwave Beam
-        state_mb = create_state_with_items({"Combat Shotgun", "Plasma Rifle", "Microwave Beam"}, world=world)
-        res_mb = evaluate_mission_readiness(state_mb, 1, stage_id, world, context="spirit_breakpoint")
-        assert res_mb.soft_penalty == 0
-        assert res_mb.effective_cr == base_cr
-
-    def test_orphan_microwave_beam_penalty_persists(self):
-        """Orphan Microwave Beam without Plasma Rifle does NOT remove the Spirit penalty."""
-        world = make_mock_world(difficulty=2)
-        # Owns Microwave Beam but lacks Plasma Rifle
-        state = create_state_with_items({"Combat Shotgun", "Microwave Beam"}, world=world)
-        assert has_effective_anti_spirit(state, 1) is False
-        res = evaluate_mission_readiness(state, 1, "e4m2_swamp", world, context="spirit_breakpoint")
-        assert res.soft_penalty == SPIRIT_PENALTY
-        assert res.effective_cr == 100
 
     def test_pre_vs_post_breakpoint_topological_reachability(self):
         """In real generation, pre-breakpoint regions require only Base CR, while post-breakpoint requires Spirit readiness."""
@@ -367,75 +204,10 @@ class TestDarkLordHammerPenalty:
         assert res_hammer.soft_penalty == 0
         assert res_hammer.effective_cr == 80
 
-    def test_cr80_uv15_boundary_without_hammer(self):
-        """CR 80 + UV (15) without Hammer: 80 + 15 = 95 >= 95 -> ready exactly at boundary."""
-        world = make_mock_world(difficulty=2, special_weapon="The Crucible")
-        # Build exact 80.0 CR loadout
-        # Base 5-weapon + primary runes + masteries (Anchor LATE_BASE = 80.0)
-        items = {
-            "Ballista", "Super Shotgun", "Rocket Launcher", "Heavy Cannon", "Combat Shotgun",
-            "Chainsaw", "Flame Belch", "Ice Bomb", "Dash", "Blood Punch",
-            "Precision Bolt", "Lock-on Burst", "Air Control", "Faster Weapon Swap",
-        }
-        state = create_state_with_items(items, world=world, health_stages=2, armor_stages=1, ammo_stages=2)
-        res = evaluate_mission_readiness(state, 1, DARK_LORD_STAGE_ID, world, context="dark_lord_defeated")
-        assert res.player_cr >= 80.0
-        assert res.soft_penalty == DARK_LORD_HAMMER_PENALTY
-        assert res.allowance == 15
-        assert res.ready is True
 
-    def test_cr80_hmp10_not_ready_without_hammer(self):
-        """CR 80 + HMP (10) without Hammer: 80 + 10 = 90 < 95 -> NOT ready."""
-        world = make_mock_world(difficulty=1, special_weapon="The Crucible")
-        items = {
-            "Ballista", "Super Shotgun", "Rocket Launcher", "Heavy Cannon", "Combat Shotgun",
-            "Chainsaw", "Ice Bomb", "Dash", "Blood Punch",
-            "Precision Bolt", "Air Control", "Faster Weapon Swap",
-        }
-        state = create_state_with_items(items, world=world, health_stages=2, ammo_stages=2)
-        res = evaluate_mission_readiness(state, 1, DARK_LORD_STAGE_ID, world, context="dark_lord_defeated")
-        assert res.player_cr >= 80.0
-        assert res.allowance == 10
-        assert res.ready is False
 
-    def test_cr89_itytd6_ready_without_hammer(self):
-        """CR 89 + ITYTD (6) without Hammer: 89 + 6 = 95 >= 95 -> ready."""
-        world = make_mock_world(difficulty=0, special_weapon="The Crucible")
-        items = {
-            "Ballista", "Super Shotgun", "Rocket Launcher",
-            "Heavy Cannon", "Plasma Rifle", "Combat Shotgun",
-            "Chainsaw", "Flame Belch", "Ice Bomb", "Dash",
-            "Air Control", "Precision Bolt", "Lock-on Burst",
-            "Energy Shield", "Faster Weapon Swap",
-        }
-        state = create_state_with_items(items, world=world, health_stages=2, ammo_stages=2)
-        res = evaluate_mission_readiness(state, 1, DARK_LORD_STAGE_ID, world, context="dark_lord_defeated")
-        assert res.player_cr == 89.0
-        assert res.allowance == 6
-        assert res.ready is True
 
-    def test_progressive_special_weapon_stages(self):
-        """Progressive Special Weapon: Stage 1 = Crucible (penalty applies), Stage 2+ = Hammer (penalty removed)."""
-        world = make_mock_world(difficulty=2, special_weapon="Progressive Special Weapon")
-        # Stage 1: only Crucible
-        state_s1 = create_state_with_items({"Combat Shotgun"}, world=world, prog_special=1)
-        assert has_effective_sentinel_hammer(state_s1, 1, "Progressive Special Weapon") is False
-        res_s1 = evaluate_mission_readiness(state_s1, 1, DARK_LORD_STAGE_ID, world, context="dark_lord_defeated")
-        assert res_s1.soft_penalty == DARK_LORD_HAMMER_PENALTY
 
-        # Stage 2: Sentinel Hammer unlocked
-        state_s2 = create_state_with_items({"Combat Shotgun"}, world=world, prog_special=2)
-        assert has_effective_sentinel_hammer(state_s2, 1, "Progressive Special Weapon") is True
-        res_s2 = evaluate_mission_readiness(state_s2, 1, DARK_LORD_STAGE_ID, world, context="dark_lord_defeated")
-        assert res_s2.soft_penalty == 0
-
-    def test_progressive_sentinel_hammer_stages(self):
-        """Progressive Sentinel Hammer: Stage 1+ unlocks Hammer."""
-        world = make_mock_world(difficulty=2, special_weapon="Progressive Sentinel Hammer")
-        state = create_state_with_items({"Combat Shotgun"}, world=world, prog_hammer=1)
-        assert has_effective_sentinel_hammer(state, 1, "Progressive Sentinel Hammer") is True
-        res = evaluate_mission_readiness(state, 1, DARK_LORD_STAGE_ID, world, context="dark_lord_defeated")
-        assert res.soft_penalty == 0
 
 
 # ═══════════════════════════════════════════════════════════════

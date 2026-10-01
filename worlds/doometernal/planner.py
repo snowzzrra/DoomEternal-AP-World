@@ -1,4 +1,4 @@
-"""Canonical semantic pool planner and readiness package selector (Phase 7.8B).
+"""Canonical semantic pool planner and readiness package selector.
 
 This module is the single source of truth for:
 
@@ -462,7 +462,7 @@ def is_compact_campaign(active_normal_ids: Sequence[str]) -> bool:
 
 
 def special_weapon_pool_count(special_name: str, *, use_dlc: bool, n_normals: int) -> int:
-    """Frozen special-weapon multiplicities, compact-aware (Phase 7.8B §2A/§R08)."""
+    """Special-weapon multiplicities for full and compact campaigns."""
     if use_dlc and special_name.startswith("Progressive"):
         if n_normals >= FULL_LENGTH_MIN_MISSIONS:
             return SPECIAL_WEAPON_POOL_COUNTS[special_name]

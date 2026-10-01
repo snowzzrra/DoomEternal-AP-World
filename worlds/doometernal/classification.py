@@ -1,6 +1,6 @@
 """DOOM Eternal Archipelago v0.6 — Dynamic Progression Classification Authority.
 
-Implements Phase 7.7 Dynamic Item Progression Classification:
+Dynamic item progression classification:
 - Derives required readiness targets from active campaign plan (RMO, MAI, Vanilla).
 - Computes baseline progression-only expected state (precollected + existing progression).
 - Handles Weapon Mastery / WUP requirements for victory and accessibility.

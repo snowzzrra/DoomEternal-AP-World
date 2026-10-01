@@ -1,7 +1,7 @@
 """
 Implements the Combat Readiness solver model:
-- Mission Base CR catalog (20 stages from Phase 7.2)
-- Skill Allowances (0: 6, 1: 10, 2: 15, 3: 20 from Phase 7.5)
+- Mission Base CR catalog (20 stages)
+- Skill Allowances (0: 6, 1: 10, 2: 15, 3: 20)
 - Severe Soft Penalties:
     - Missing effective Microwave Beam at mandatory Spirit breakpoint: +15
     - Missing effective Sentinel Hammer at The Dark Lord: +15
@@ -20,8 +20,6 @@ from .logic import sentinel_hammer_available
 
 if TYPE_CHECKING:
     from BaseClasses import CollectionState
-
-# ── Frozen Phase 7.2 Mission Base CR Catalog ───────────────────
 # Canonical P7.3 stage IDs -> integer Base CR (0..100)
 MISSION_BASE_CR: dict[str, int] = {
     "e1m1_intro": 12,   # Hell on Earth
@@ -45,8 +43,6 @@ MISSION_BASE_CR: dict[str, int] = {
     "e5m3_hell": 82,    # Immora
     "e5m4_boss": 80,    # The Dark Lord
 }
-
-# ── Frozen Phase 7.5 Skill Allowances ─────────────────────────
 # CampaignDifficulty option value -> numerical CR allowance
 SKILL_ALLOWANCES: dict[int, int] = {
     0: 6,   # I'm Too Young to Die
@@ -54,8 +50,6 @@ SKILL_ALLOWANCES: dict[int, int] = {
     2: 15,  # Ultra-Violence (default)
     3: 20,  # Nightmare
 }
-
-# ── Frozen Phase 7.5 Severe Soft Penalties & Caps ──────────────
 SPIRIT_PENALTY: int = 15
 DARK_LORD_HAMMER_PENALTY: int = 15
 MAX_EFFECTIVE_CR: int = 100
