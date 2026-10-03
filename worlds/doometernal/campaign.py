@@ -3,7 +3,9 @@ from collections import Counter
 from dataclasses import replace
 import itertools
 from .generated_content import CAMPAIGN_STAGES, FORTRESS_SPEND_GROUPS, FORTRESS_POLICY
-from .logic import goal_endpoint_event_name, mission_clear_event_name
+from .logic import goal_endpoint_event_name, mission_clear_event_name, CRUCIBLE_CHALLENGE, crucible_challenge_enabled
+from .items import suit_perk_item_names
+from .options import resolve_praetor_suit_upgrade_count
 from .locations import location_data_table
 from .combat_rating import (
     WEAPON_NAMES,
@@ -18,6 +20,7 @@ from .combat_readiness import (
     is_mission_ready,
     MISSION_BASE_CR,
     SPIRIT_BREAKPOINTS,
+    ENDURANCE_STAGES,
 )
 from .planner import (
     FastState,
@@ -27,6 +30,8 @@ from .planner import (
     build_semantic_counts,
     derive_readiness_targets,
     is_compact_campaign,
+    select_readiness_items,
+    ReadinessTarget,
 )
 
 STAGE_BY_ID = {stage["id"]: stage for stage in CAMPAIGN_STAGES}
@@ -198,6 +203,44 @@ def solve_stage_bootstrap(
             "final_cr": res_0.player_cr,
             "effective_cr": res_0.effective_cr,
             "overshoot": res_0.allowance - res_0.deficit,
+        }
+
+    if stage_id in ENDURANCE_STAGES:
+        # ponytail: greedy package pruning; exact search if a constrained pool rejects a legal start.
+        targets = [ReadinessTarget(stage_id, "base", "Starting endurance mission")]
+        if stage_id in SPIRIT_STAGE_IDS:
+            targets.append(ReadinessTarget(stage_id, "spirit_breakpoint", "Starting Spirit breakpoint"))
+        selection = select_readiness_items(
+            base_items=base_state.prog_items,
+            targets=targets,
+            additional=pool_counts, world_context=world_context, player=player, slack=0,
+        )
+        package = [step.item_name for step in selection.steps]
+        if selection.satisfied:
+            for name in tuple(package):
+                reduced = package.copy()
+                reduced.remove(name)
+                state = base_state.copy()
+                for item in reduced:
+                    state.collect(item)
+                if _start_stage_readiness(state, player, stage_id, world_context).ready:
+                    package = reduced
+        package = tuple(package)
+        bootstrap_size = max(0, len(package) - len(FORTRESS_BOOTSTRAP_LOCATIONS))
+        if selection.satisfied and bootstrap_size <= 5:
+            state = base_state.copy()
+            for name in package:
+                state.collect(name)
+            final = _start_stage_readiness(state, player, stage_id, world_context)
+            return {
+                "stage_id": stage_id, "bootstrap_cost": bootstrap_size,
+                "bootstrap_items": package[:bootstrap_size], "placed_items": package[bootstrap_size:],
+                "initial_cr": res_0.player_cr, "final_cr": final.player_cr,
+                "effective_cr": final.effective_cr, "overshoot": final.allowance - final.deficit,
+            }
+        return {
+            "stage_id": stage_id, "bootstrap_cost": 999, "bootstrap_items": (), "placed_items": (),
+            "initial_cr": res_0.player_cr, "final_cr": 0.0, "effective_cr": 0.0, "overshoot": 0.0,
         }
 
     # Available items in pool that contribute to CR or capacity
@@ -597,6 +640,24 @@ def make_plan(options, rng, world=None):
         "stage_ids": list(active_stage_ids),
     }
     readiness_targets = derive_readiness_targets(options, provisional_plan)
+    special_weapon = options.special_weapon.current_option_name if options.use_dlc_content.value else "The Crucible"
+    if not crucible_challenge_enabled(special_weapon) and CRUCIBLE_CHALLENGE in location_data_table:
+        if REGION_STAGE.get(location_data_table[CRUCIBLE_CHALLENGE].region) in active_stage_set:
+            mission_loc_count -= 1
+    hub_location_count = len(FORTRESS_NON_CONSUMER_LOCATIONS | {
+        name for group in active_sg for name in group["locations"]
+    }) + int(set(BASE_GATE_STAGE_IDS).issubset(active_stage_set))
+    planned_location_count = mission_loc_count + hub_location_count + active_masteries_count
+    raw_suit_count = resolve_praetor_suit_upgrade_count(options.praetor_suit_upgrades_in_pool.value, rng)
+    effective_suit_count = (raw_suit_count if raw_suit_count < 3 else
+                            min(raw_suit_count, max(3, round(raw_suit_count * planned_location_count / 439))))
+    requested_suits = {name for name in suit_perk_item_names if options.start_inventory.value.get(name)}
+    suit_count = max(effective_suit_count, len(requested_suits))
+    chosen_suits = requested_suits | set(rng.sample(
+        [name for name in suit_perk_item_names if name not in requested_suits],
+        suit_count - len(requested_suits),
+    ))
+    compact_runes = rng.sample(sorted(NORMAL_RUNE_NAMES), 2) if is_compact_campaign(active_normal_ids) else ()
     semantic_pool = build_semantic_counts(
         options,
         active_normal_ids=active_normal_ids,
@@ -607,6 +668,8 @@ def make_plan(options, rng, world=None):
         targets=readiness_targets,
         player=player,
         world_context=world_context,
+        suit_counts={name: 1 for name in sorted(chosen_suits)},
+        compact_runes=compact_runes,
     )
     pool_counts = Counter(semantic_pool.placement_counts)
     def evaluate_start_stage(s_id: str):
@@ -698,7 +761,7 @@ def make_plan(options, rng, world=None):
         "goal_as_item": goal_as_item,
         "bootstrap_inventory": bootstrap_inventory,
         "fixed_dash_completion_stage": (None if options.randomize_dash.value or "Dash" in bootstrap_inventory
-                                         else "e1m2_war" if "e1m2_war" in sequence else sequence[0]),
+                                         else sequence[0]),
         "bootstrap_cost": bootstrap_cost,
         "readiness_bootstrap_items": readiness_bootstrap_items,
         "battery_bootstrap_items": battery_bootstrap_items,
@@ -739,6 +802,7 @@ def make_plan(options, rng, world=None):
         "goal_forced_active": goal_forced_active,
         "compact_short_world": semantic_pool.compact,
         "semantic_counts": semantic_counts,
+        "praetor_suit_upgrades_in_pool": len(chosen_suits),
         "semantic_placement_counts": semantic_placement_counts,
         "readiness_selection": {name: qty for name, qty in sorted(semantic_pool.optional_selected.items())},
         "readiness_initial_deficit": round(semantic_pool.readiness_initial_deficit, 2),

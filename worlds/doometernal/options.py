@@ -357,7 +357,7 @@ class PraetorSuitUpgradesInPool(NamedRange):
     display_name = "Praetor Suit Upgrades in Pool"
     range_start = 0
     range_end = len(suit_perk_item_names)
-    default = 21
+    default = len(suit_perk_item_names)
     special_range_names = {"random": -1}
 
     @classmethod

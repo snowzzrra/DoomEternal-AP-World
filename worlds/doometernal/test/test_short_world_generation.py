@@ -7,6 +7,7 @@ from worlds.doometernal.campaign import (
     STAGE_BY_ID,
 )
 from worlds.doometernal.items import suit_perk_item_names
+from worlds.doometernal.planner import STAGE_SLAYER_GATE_KEYS
 
 
 class TestShortWorldGeneration(unittest.TestCase):
@@ -42,7 +43,7 @@ class TestShortWorldGeneration(unittest.TestCase):
         self.assertEqual(item_names.count("Weapon Upgrade Points (3)"), 39)
         self.assertEqual(item_names.count("Sentinel Battery"), 27)
         praetor_count = sum(item_names.count(p) for p in suit_perk_item_names)
-        self.assertEqual(praetor_count, 21)
+        self.assertEqual(praetor_count, 17)
 
         # 13 mastery locations
         mastery_locs = [loc for loc in unfilled if loc.parent_region.name == "Weapon Masteries"]
@@ -204,6 +205,13 @@ class TestShortWorldGeneration(unittest.TestCase):
         self.assertGreaterEqual(len(plan["active_normal_mission_ids"]), 6)
         for gate_stage in BASE_GATE_STAGE_IDS:
             self.assertIn(gate_stage, plan["active_normal_mission_ids"])
+            key = STAGE_SLAYER_GATE_KEYS[gate_stage]
+            owned = [item.name for item in mw.itempool + mw.precollected_items[1]]
+            self.assertEqual(owned.count(key), 1)
+            names = {location.name for location in mw.get_locations(1)}
+            prefix = STAGE_BY_ID[gate_stage]["name"]
+            self.assertTrue(any(name.startswith(prefix + " - Slayer Key -") for name in names))
+            self.assertIn(prefix + " - Slayer Gate Complete", names)
 
     def test_goal_acquire_unmaykr_rejects_dlc_only(self) -> None:
         """Goal Acquire the Unmaykr cannot be generated with DLC Only pool."""

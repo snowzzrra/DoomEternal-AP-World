@@ -214,7 +214,7 @@ def connection_requirement(
         for capability in capabilities
         if capability not in {"requires_first_battery", "requires_dash", "requires_dlc_content", "anti_spirit"}
     )
-    all_of: tuple[str, ...] = ("Dash",) if dash_gate and randomize_dash else ()
+    all_of: tuple[str, ...] = ("Dash",) if dash_gate else ()
     return LocationRequirement(
         all_of=all_of,
         battery_currency=1 if first_battery_gate and randomize_first_battery else 0,
@@ -691,9 +691,7 @@ def build_location_prerequisites(
             all_of: tuple[str, ...] = ()
             combat_all_of: tuple[str, ...] = ()
             if mission_name == "Urdak":
-                all_of = ("Blood Punch",)
-                if randomize_dash:
-                    all_of = (*all_of, "Dash")
+                all_of = ("Blood Punch", "Dash")
             table[location_name] = LocationRequirement(
                 all_of=all_of,
                 combat_all_of=combat_all_of,
