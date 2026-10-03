@@ -235,10 +235,12 @@ starting_weapon_item_names = tuple(
 )
 
 PRAETOR_SUIT_UPGRADE_ID_RANGE = range(7770097, 7770122)
+LEGACY_AUTOMAP_PERK_IDS = frozenset({7770101, 7770102, 7770103, 7770104})
 suit_perk_item_names = [
     name
     for name, data in item_data_table.items()
-    if data.code in PRAETOR_SUIT_UPGRADE_ID_RANGE and data.code not in RESERVED_ITEM_IDS
+    if data.code in PRAETOR_SUIT_UPGRADE_ID_RANGE
+    and data.code not in RESERVED_ITEM_IDS | LEGACY_AUTOMAP_PERK_IDS
 ]
 
 DEVINV_START_INVENTORY_ITEM_NAMES = frozenset({
@@ -253,8 +255,7 @@ DEVINV_START_INVENTORY_ITEM_NAMES = frozenset({
     "Remote Detonate Mastery", "Destroyer Blade Mastery", "Meat Hook", "Meat Hook Mastery",
     "Progressive Health Upgrade", "Progressive Armor Upgrade", "Progressive Ammo Upgrade",
     "Faster Ledge Grab", "Faster Weapon Swap", "Faster Dash Recharge", "Dash Refill on Glory Kill",
-    "Reveal Automap Stations", "Reveal Automap Progression Items", "Larger Automap Reveal",
-    "Reveal Dossier Progression Items", "Reduced Hazard Damage", "Reduced Self Damage", "Respawning Barrels",
+    "Reduced Hazard Damage", "Reduced Self Damage", "Respawning Barrels",
     "Ammo from Barrels", "Powerup Extender", "Frag Grenade Cooldown", "Frag Grenade Concussive Blast",
     "Frag Grenade Cluster Bombs", "Second Frag Grenade", "Ice Bomb Cooldown", "Extended Ice Bomb Duration",
     "Health from Frozen Demons", "Frozen Melee Shatter", "Sentinel Battery", "Sentinel Battery Bundle",

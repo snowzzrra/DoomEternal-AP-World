@@ -11,6 +11,7 @@ Dynamic item progression classification:
 """
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Sequence
 
@@ -121,6 +122,8 @@ def build_progression_only_state(world: DoomEternalWorld) -> CollectionState:
         if item.player == player and item.advancement:
             state.collect(item)
 
+    state.sweep_for_advancements()
+
     return state
 
 
@@ -198,6 +201,18 @@ def apply_dynamic_progression_classification(world: DoomEternalWorld) -> Classif
             item.classification = (ItemClassification.progression if battery_required > 0
                                    else ItemClassification.useful)
             battery_required -= 1
+
+    bootstrap_copies = Counter(world.campaign_plan.get("bootstrap_placed_items", ()))
+    for item in mw.itempool:
+        if item.player == player and bootstrap_copies[item.name] > 0:
+            bootstrap_copies[item.name] -= 1
+            if not item.advancement:
+                original = item.classification
+                item.classification = ItemClassification.progression
+                ledger.promotions.append(PromotionRecord(
+                    item.name, 1, original, ItemClassification.progression,
+                    "starting_stage_witness", 0.0, "Concrete starting-stage readiness witness", (),
+                ))
 
     # 2. Baseline progression-only state
     state = build_progression_only_state(world)

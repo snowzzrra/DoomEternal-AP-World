@@ -20,6 +20,7 @@ from BaseClasses import ItemClassification
 from .combat_rating import (
     ALL_MASTERY_NAMES,
     ALL_MOD_NAMES,
+    ITEM_CONTRIBUTIONS,
     NORMAL_RUNE_NAMES,
     SUPPORT_RUNE_NAMES,
     WEAPON_NAMES,
@@ -37,6 +38,7 @@ from .items import (
     WEAPON_UPGRADE_POINTS_NAME,
     item_data_table,
     world_pool_weapon_item_names,
+    suit_perk_item_names,
 )
 
 STAGE_BY_ID = {stage["id"]: stage for stage in CAMPAIGN_STAGES}
@@ -127,6 +129,11 @@ ITEM_DEPENDENCIES: dict[str, tuple[str, ...]] = {
     "Energy Shield": ("Chaingun",),
     "Mobile Turret": ("Chaingun",),
 }
+ITEM_DEPENDENCIES.update({
+    name: tuple(dict.fromkeys(dep for _, _, deps in contributions for dep in deps))
+    for name, contributions in ITEM_CONTRIBUTIONS.items()
+    if name in suit_perk_item_names
+})
 
 # Items the dynamic classifier demotes to ``useful`` before readiness
 # evaluation (combat baseline); they only count once promoted.
@@ -335,6 +342,8 @@ def select_readiness_items(
                 context=target.context, player_cr=cr,
             )
             deficit = result.effective_cr - result.player_cr - result.allowance
+            if result.preparation_deficit > 0:
+                deficit = max(deficit, result.preparation_deficit)
             if deficit > worst:
                 worst = deficit
                 worst_target = target
@@ -484,12 +493,13 @@ def build_semantic_counts(
     targets: Sequence[ReadinessTarget] | None = None,
     player: int = 1,
     world_context: Any = None,
+    suit_counts: Mapping[str, int] | None = None,
+    compact_runes: Sequence[str] = (),
 ) -> SemanticPool:
     """Build the concrete semantic multiset for the active campaign.
 
-    Compact short worlds select optional families only when the production
-    readiness evaluator proves they are needed. Full-length campaigns preserve
-    the frozen legacy economies.
+    Compact short worlds include a family floor and select additional copies
+    with the production readiness evaluator. Full-length campaigns use full-size economies.
     """
     start_inv = Counter(options.start_inventory.value)
     n_normals = len(active_normal_ids)
@@ -500,6 +510,14 @@ def build_semantic_counts(
     base_pool: Counter[str] = Counter()      # policy floor of pool copies
     optional_caps: Counter[str] = Counter()  # extra selectable copies beyond floor
     mandatory_mods: set[str] = set()
+    for name, quantity in (suit_counts or {}).items():
+        base_pool[name] = max(0, quantity - start_inv.get(name, 0))
+    if compact:
+        for name in compact_runes:
+            base_pool[name] = max(0, 1 - start_inv.get(name, 0))
+        for stat in _CAPACITY_STATS:
+            name = f"Progressive {stat} Upgrade"
+            base_pool[name] = max(0, 1 - start_inv.get(name, 0))
 
     # --- Weapons (guarantee: 7 normal + BFG-9000) -------------------------
     for weapon in world_pool_weapon_item_names:
@@ -600,7 +618,6 @@ def build_semantic_counts(
     base_pool[WEAPON_UPGRADE_POINTS_NAME] = max(0, wup_policy - start_inv.get(WEAPON_UPGRADE_POINTS_NAME, 0))
 
     if not compact:
-        # Full-length: preserve the frozen legacy optional families.
         mod_quota = 12
         selected_mods = set(mandatory_mods)
         selected_mods.update(requested_mods)
@@ -645,6 +662,8 @@ def build_semantic_counts(
             baseline[name] += qty
     if starting_weapon:
         baseline[starting_weapon] += 1
+    if not _option_value(options, "randomize_dash"):
+        baseline["Dash"] = 1
 
     mastery_victory_active = (
         "Complete All Weapon Mastery Challenges" in set(
@@ -728,8 +747,8 @@ def build_pool_candidate_counts(
 ) -> Counter:
     """Placement-view candidate pool consumed by the bootstrap solver.
 
-    Compatibility wrapper kept for existing callers/tests; the same builder
-    feeds production ``create_items`` through ``plan['semantic_counts']``.
+    Production ``create_items`` consumes the semantic builder through
+    ``plan['semantic_counts']``.
     """
     if targets is None and is_compact_campaign(active_normal_ids):
         provisional_plan: dict[str, Any] = {

@@ -87,6 +87,7 @@ class TestDynamicProgressionClassification(unittest.TestCase):
     def test_case_d_orphan_mod_not_independent_gain(self) -> None:
         """Case D: An orphan mod/mastery without host weapon cannot provide CR gain."""
         state = CollectionState(self.mw)
+        state.sweep_for_advancements()
         cr_base = evaluate_player_loadout_cr(state, self.player, self.world)
         # Collect Energy Shield (promoted to progression) without Chaingun
         state.collect(self._create_prog_item("Energy Shield"))
@@ -101,6 +102,7 @@ class TestDynamicProgressionClassification(unittest.TestCase):
     def test_case_e_capacities_only_required_copies(self) -> None:
         """Case E: Progressive capacity upgrades give exact marginal CR per promoted copy."""
         state = CollectionState(self.mw)
+        state.sweep_for_advancements()
         cr0 = evaluate_player_loadout_cr(state, self.player, self.world)
         base_def = cr0.categories["Defense"]
 

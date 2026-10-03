@@ -6,7 +6,7 @@ Implements the Combat Readiness solver model:
     - Missing effective Microwave Beam at mandatory Spirit breakpoint: +15
     - Missing effective Sentinel Hammer at The Dark Lord: +15
 - Effective Mission CR: min(100, Base CR + Soft Penalty)
-- Readiness Condition: Player_CR + Skill_Allowance >= Effective_Mission_CR
+- Readiness Condition: CR allowance, mechanical traversal and endurance preparation
 
 Pure deterministic evaluation for Archipelago logical reachability.
 """
@@ -15,8 +15,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from .combat_rating import evaluate_player_loadout_cr
-from .logic import sentinel_hammer_available
+from .combat_rating import evaluate_player_loadout_cr, NORMAL_RUNE_NAMES
+from .logic import dash_available, sentinel_hammer_available
 
 if TYPE_CHECKING:
     from BaseClasses import CollectionState
@@ -38,7 +38,7 @@ MISSION_BASE_CR: dict[str, int] = {
     "e4m1_rig": 83,     # UAC Atlantica Facility
     "e4m2_swamp": 88,   # The Blood Swamps
     "e4m3_mcity": 94,   # The Holt
-    "e5m1_spear": 75,   # The World Spear
+    "e5m1_spear": 86,   # The World Spear: provisional endurance comparison with Atlantica (83) / Blood Swamps (88)
     "e5m2_earth": 77,   # Reclaimed Earth
     "e5m3_hell": 82,    # Immora
     "e5m4_boss": 80,    # The Dark Lord
@@ -53,6 +53,21 @@ SKILL_ALLOWANCES: dict[int, int] = {
 SPIRIT_PENALTY: int = 15
 DARK_LORD_HAMMER_PENALTY: int = 15
 MAX_EFFECTIVE_CR: int = 100
+
+# Authored presentation, independent of inventory, difficulty and campaign order.
+MISSION_SKULL_TIERS = {
+    "e1m1_intro": 1, "e1m2_war": 1, "e1m3_cult": 2, "e1m4_boss": 2,
+    "e2m1_nest": 2, "e2m2_base": 2, "e2m3_core": 2, "e2m4_boss": 2,
+    "e3m1_slayer": 3, "e3m2_hell": 3, "e3m2_hell_b": 3, "e3m3_maykr": 3,
+    "e3m4_boss": 4, "e4m1_rig": 4, "e4m2_swamp": 4, "e4m3_mcity": 4,
+    "e5m1_spear": 4, "e5m2_earth": 3, "e5m3_hell": 3, "e5m4_boss": 3,
+}
+TRAVERSAL_DASH_STAGES = frozenset({
+    "e3m3_maykr", "e4m1_rig", "e4m2_swamp", "e4m3_mcity",
+    "e5m1_spear", "e5m2_earth", "e5m3_hell",
+})
+HOOK_TRAVERSAL_STAGES = frozenset({"e5m1_spear", "e5m2_earth", "e5m3_hell"})
+ENDURANCE_STAGES = TRAVERSAL_DASH_STAGES - {"e3m3_maykr"}
 
 # ── Breakpoint Topology Mapping ────────────────────────────────
 # Region connection (source, destination) -> canonical stage ID
@@ -81,6 +96,8 @@ class ReadinessResult:
     ready: bool
     context: str = "base"
     reason: str = ""
+    preparation_deficit: float = 0.0
+    missing_requirements: tuple[str, ...] = ()
 
     @property
     def is_ready(self) -> bool:
@@ -192,7 +209,23 @@ def evaluate_mission_readiness(
 
     effective_cr = min(MAX_EFFECTIVE_CR, base_cr + soft_penalty)
     deficit = round(effective_cr - player_cr, 2)
-    ready = deficit <= allowance
+    missing = []
+    options = getattr(world, "options", None)
+    randomize_dash = bool(getattr(getattr(options, "randomize_dash", None), "value", 0))
+    if stage_id in TRAVERSAL_DASH_STAGES and not dash_available(state, player, randomize_dash=randomize_dash):
+        missing.append("Dash")
+    if stage_id in HOOK_TRAVERSAL_STAGES:
+        missing.extend(name for name in ("Super Shotgun", "Meat Hook") if not state.has(name, player))
+    preparation_deficit = float(len(missing))
+    if stage_id in ENDURANCE_STAGES:
+        # ponytail: provisional family/dimensional floors; revise with comparative playtest evidence.
+        capacities = ("Progressive Health Upgrade", "Progressive Armor Upgrade", "Progressive Ammo Upgrade")
+        preparation_deficit += sum(not state.has(name, player) for name in capacities)
+        preparation_deficit += not any(state.has(name, player) for name in NORMAL_RUNE_NAMES)
+        categories = evaluate_player_loadout_cr(state, player, world).categories
+        preparation_deficit += sum(max(0.0, floor - categories[category]) for category, floor in
+                                   (("Mobility", 4.0), ("Defense", 6.0), ("Sustain", 9.0)))
+    ready = deficit <= allowance and preparation_deficit <= 0
 
     return ReadinessResult(
         stage_id=stage_id,
@@ -205,6 +238,8 @@ def evaluate_mission_readiness(
         ready=ready,
         context=context,
         reason=reason,
+        preparation_deficit=preparation_deficit,
+        missing_requirements=tuple(missing),
     )
 
 

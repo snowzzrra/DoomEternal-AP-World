@@ -161,9 +161,11 @@ class TestSpiritBreakpoints:
             "Chainsaw", "Ice Bomb", "Blood Punch", "Dash",
             "Air Control", "Faster Weapon Swap",
         }
-        state = create_state_with_items(items, world=world, health_stages=2, ammo_stages=1)
-        # Mark structural access to swamp
-        state.collect(DoomEternalItem("Internal Mission Clear: UAC Atlantica Facility", ItemClassification.progression, None, 1))
+        state = create_state_with_items(items, world=world, health_stages=2, armor_stages=1, ammo_stages=2)
+        from worlds.doometernal.campaign import completion_event
+        sequence = world.campaign_plan["sequence"]
+        for predecessor in sequence[:sequence.index("e4m2_swamp")]:
+            state.collect(DoomEternalItem(completion_event(predecessor), ItemClassification.progression, None, 1), True)
 
         res_base = evaluate_mission_readiness(state, 1, "e4m2_swamp", world)
         assert 75.0 <= res_base.player_cr < 85.0

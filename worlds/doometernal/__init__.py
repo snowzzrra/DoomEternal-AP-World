@@ -77,7 +77,7 @@ from .logic import (
     requirement_satisfied,
     validate_location_prerequisites,
 )
-from .options import DLCLogicTiming, DeathLinkMode, DoomEternalOptions, SpecialWeapon, resolve_praetor_suit_upgrade_count
+from .options import DLCLogicTiming, DeathLinkMode, DoomEternalOptions, SpecialWeapon
 from .settings import DoomEternalSettings
 from .version import (
     APWORLD_REVISION,
@@ -117,14 +117,10 @@ class DoomEternalWorld(World):
     options: DoomEternalOptions
     settings: DoomEternalSettings
 
-    AUTOMAP_STARTING_ITEM = "Reveal Automap Progression Items"
 
     def effective_starting_inventory(self) -> Counter[str]:
         """Return every item materialized before normal AP receipt delivery."""
-        inventory = Counter(self.options.start_inventory.value)
-        if self.options.reveal_ap_locations_on_automap.value:
-            inventory[self.AUTOMAP_STARTING_ITEM] = 1
-        return inventory
+        return Counter(self.options.start_inventory.value)
 
     def generate_early(self) -> None:
         if self.options.start_inventory.value.get("Blood Punch"):
@@ -139,8 +135,6 @@ class DoomEternalWorld(World):
             initial_logical_items.add(self.starting_weapon_name)
         initial_logical_items.update(self.campaign_plan.get("bootstrap_inventory", ()))
         initial_logical_items.update(self.campaign_plan.get("readiness_bootstrap_items", ()))
-        if self.options.reveal_ap_locations_on_automap.value:
-            initial_logical_items.add(self.AUTOMAP_STARTING_ITEM)
         self.initial_logical_items = frozenset(initial_logical_items)
         dlc_enabled = bool(self.options.use_dlc_content.value)
         effective_special_weapon = (
@@ -210,9 +204,6 @@ class DoomEternalWorld(World):
             raise ValueError(
                 f"Starting Weapon '{selected_weapon}' is redundant with start_inventory"
             )
-        if self.options.reveal_ap_locations_on_automap.value:
-            if self.AUTOMAP_STARTING_ITEM not in self.options.start_inventory.value:
-                self.multiworld.push_precollected(self.create_item(self.AUTOMAP_STARTING_ITEM))
 
     required_client_version = (0, 6, 7)
 
@@ -243,44 +234,12 @@ class DoomEternalWorld(World):
         return None
 
     def _mission_presentation(self) -> dict[str, dict[str, int | float]]:
-        stages = self.campaign_plan["sequence"]
-        presentation = {}
-        for stage_id in stages:
-            base_cr = get_mission_base_cr(stage_id)
-            presentation[stage_id] = {
-                "base_cr": base_cr,
-                "skill_allowance": get_skill_allowance(self.options.campaign_difficulty.value),
-            }
-
-        # Mirror AP's filled-location spheres only to sample the frozen CR
-        # evaluator at first logical access; no readiness or placement changes.
-        state = CollectionState(self.multiworld)
-        remaining = set(stages)
-        for sphere in self.multiworld.get_spheres():
-            if not sphere:
-                break
-            for stage_id in tuple(remaining):
-                region = self.multiworld.get_region(STAGE_BY_ID[stage_id]["regions"][0], self.player)
-                if state.can_reach(region):
-                    presentation[stage_id]["expected_player_cr"] = evaluate_player_loadout_cr(
-                        state, self.player, self).total
-                    remaining.remove(stage_id)
-            if not remaining:
-                break
-            for location in sphere:
-                state.collect(location.item, True, location)
-        for stage_id in remaining:
-            region = self.multiworld.get_region(STAGE_BY_ID[stage_id]["regions"][0], self.player)
-            if state.can_reach(region):
-                presentation[stage_id]["expected_player_cr"] = evaluate_player_loadout_cr(
-                    state, self.player, self).total
-        for facts in presentation.values():
-            if "expected_player_cr" in facts:
-                # Visual bins of the frozen CR deficit, independent of access/readiness.
-                deficit = round((facts["base_cr"] - facts["expected_player_cr"]
-                                 - facts["skill_allowance"]) * 100)
-                facts["skull_tier"] = 1 + sum(deficit > cut for cut in (-1000, 0, 1000))
-        return presentation
+        from .combat_readiness import MISSION_SKULL_TIERS
+        return {stage_id: {
+            "base_cr": get_mission_base_cr(stage_id),
+            "skill_allowance": get_skill_allowance(self.options.campaign_difficulty.value),
+            "skull_tier": MISSION_SKULL_TIERS[stage_id],
+        } for stage_id in self.campaign_plan["sequence"]}
 
     def fill_slot_data(self) -> dict[str, object]:
         start_inventory = dict(self.effective_starting_inventory())
@@ -350,7 +309,7 @@ class DoomEternalWorld(World):
             "mission_difficulty": {
                 mission: dict(metadata) for mission, metadata in MISSION_DIFFICULTY.items()
             },
-            "mission_presentation_v1": self._mission_presentation(),
+            "mission_presentation_v2": self._mission_presentation(),
             "special_weapon": "The Crucible" if not dlc_enabled else self.options.special_weapon.current_option_name,
             "enhanced_melee_damage": bool(self.options.enhanced_melee_damage.value),
             "apworld_revision": APWORLD_REVISION,
@@ -460,6 +419,11 @@ class DoomEternalWorld(World):
             native_name = "Exultia - Sentinel Battery - King Novik Return Path"
             region = multiworld.get_region(catalog_locations[native_name].region, player)
             region.add_event(native_name, "Sentinel Battery", location_type=DoomEternalLocation,
+                             item_type=DoomEternalItem)
+
+        if plan.get("fixed_dash_completion_stage") == "e1m2_war":
+            region = multiworld.get_region(catalog_locations["Exultia - Dash"].region, player)
+            region.add_event("Fixed Dash Acquisition", "Dash", location_type=DoomEternalLocation,
                              item_type=DoomEternalItem)
 
         # 5. Create Mission Clear events
@@ -591,35 +555,7 @@ class DoomEternalWorld(World):
 
         locations_count = len(self.multiworld.get_unfilled_locations(self.player))
 
-        # Praetor Suit upgrades: explicit bounded option, sampled here to keep
-        # the established world RNG stream.
-        suit_names = suit_perk_item_names
-        manual_automap_count = int(bool(start_inventory[self.AUTOMAP_STARTING_ITEM]))
-        automap_start_count = manual_automap_count
-        requested_suits = [
-            name for name in suit_names
-            if name != self.AUTOMAP_STARTING_ITEM and start_inventory[name]
-        ]
-        requested_real_suit_count = sum(start_inventory[name] for name in requested_suits)
-
-        raw_praetor_count = self.resolve_praetor_suit_upgrade_count()
-        eff_praetor_count = min(raw_praetor_count, max(3, round(raw_praetor_count * locations_count / 439)))
-        if raw_praetor_count < 3:
-            eff_praetor_count = raw_praetor_count
-
-        target_suit_count = max(eff_praetor_count, automap_start_count)
-        self.praetor_suit_upgrades_in_pool = target_suit_count - automap_start_count
-        for name in requested_suits:
-            pool_names.extend([name] * start_inventory[name])
-        suit_candidates = [
-            name for name in suit_names
-            if name != self.AUTOMAP_STARTING_ITEM or not automap_start_count
-            if name not in requested_suits
-        ]
-        sample_k = max(0, target_suit_count - automap_start_count - requested_real_suit_count)
-        pool_names.extend(self.multiworld.random.sample(suit_candidates, sample_k))
-
-        pool_names.extend(["Ammo Refill"] * start_inventory.get("Ammo Refill", 0))
+        self.praetor_suit_upgrades_in_pool = plan["praetor_suit_upgrades_in_pool"]
 
         # Starting Weapon: physical ownership path. The planner already
         # excluded it from the semantic multiset.
@@ -656,8 +592,6 @@ class DoomEternalWorld(World):
         # Explicit start_inventory removes exactly its planned copies; a missing
         # copy is a conservation failure, not a silent skip.
         for name, quantity in start_inventory.items():
-            if name == self.AUTOMAP_STARTING_ITEM:
-                continue
             for _ in range(quantity):
                 if name not in pool_names:
                     raise ValueError(
@@ -699,12 +633,6 @@ class DoomEternalWorld(World):
         self.multiworld.itempool += pool
         from .classification import apply_dynamic_progression_classification
         apply_dynamic_progression_classification(self)
-
-    def resolve_praetor_suit_upgrade_count(self) -> int:
-        return resolve_praetor_suit_upgrade_count(
-            self.options.praetor_suit_upgrades_in_pool.value,
-            self.multiworld.random,
-        )
 
     def set_rules(self) -> None:
         active_location_names = {
@@ -802,11 +730,12 @@ class DoomEternalWorld(World):
         fill_locations: list[Location],
     ) -> None:
         plan = getattr(self, "campaign_plan", {})
-        bootstrap_placed = set(plan.get("bootstrap_placed_items", ()))
+        bootstrap_placed = Counter(plan.get("bootstrap_placed_items", ()))
 
         def sort_key(item: Item) -> int:
             if item.player == self.player:
-                if item.name in bootstrap_placed:
+                if bootstrap_placed[item.name] > 0:
+                    bootstrap_placed[item.name] -= 1
                     return 0
                 if "Battery" in item.name:
                     return 2
