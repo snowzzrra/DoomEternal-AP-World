@@ -27,7 +27,6 @@ from worlds.doometernal.combat_readiness import (
     SPIRIT_PENALTY,
     evaluate_mission_readiness,
     get_mission_base_cr,
-    get_skill_allowance,
     has_effective_anti_spirit,
     has_effective_sentinel_hammer,
     is_dark_lord_defeated_ready,
@@ -126,6 +125,28 @@ def create_state_with_items(
 # §21 — Spirit Breakpoint Tests
 # ═══════════════════════════════════════════════════════════════
 
+def test_canonical_readiness_and_dlc_intrinsic_difficulty():
+    for difficulty in range(4):
+        world = make_mock_world(difficulty=difficulty, randomize_dash=True)
+        world.options.dlc_logic_timing.value = 1
+        for stage in MISSION_BASE_CR:
+            state = create_state_with_items({"Combat Shotgun"}, world=world)
+            result = evaluate_mission_readiness(state, 1, stage, world)
+            assert is_mission_ready(state, 1, stage, world) == result.ready
+            assert result.mission_base_cr == MISSION_BASE_CR[stage]
+            if stage.startswith(("e4", "e5")) and stage != DARK_LORD_STAGE_ID:
+                assert not result.ready
+
+
+def test_victory_requirement_alias_keeps_canonical_export():
+    from worlds.doometernal.options import AdditionalVictoryRequirements
+    requirement = AdditionalVictoryRequirements.from_any(["Complete All Enabled Missions", "Acquire the Unmaykr"])
+    assert "Complete All Included Missions" in requirement.value
+    assert "Complete All Enabled Missions" not in requirement.value
+    assert "Acquire the Unmaykr" in requirement.value
+    assert requirement.value <= requirement.valid_keys
+
+
 class TestSpiritBreakpoints:
     """Test Spirit severe soft penalties (+15, cap 100) and capability checks (§21)."""
 
@@ -139,37 +160,34 @@ class TestSpiritBreakpoints:
             options={
                 "mission_pool": "dlc_only",
                 "goal": "kill_the_dark_lord",
-                "campaign_difficulty": 2,  # UV (allowance 15)
+                "campaign_difficulty": 2,
                 "dlc_logic_timing": "from_the_beginning",
             },
         )
         world: DoomEternalWorld = mw.worlds[1]
 
-        # The Blood Swamps: Base CR 88, Breakpoint connection into Sunken Courtyard
-        # Player CR 75 + UV 15 = 90 >= 88 (Base ready)
-        # Without Microwave Beam, post-breakpoint effective CR is 100 (90 < 100 -> NOT ready)
-        # With Plasma + Microwave Beam, post-breakpoint effective CR is 88 (90 >= 88 -> ready)
+        # From Beginning exempts the entry barrier; the Spirit breakpoint uses intrinsic CR 88.
 
         # Region before breakpoint: "The Blood Swamps - Underworld Crossroad"
         # Region after breakpoint: "The Blood Swamps - Sunken Courtyard"
         crossroad_region = mw.get_region("The Blood Swamps - Underworld Crossroad", 1)
         courtyard_region = mw.get_region("The Blood Swamps - Sunken Courtyard", 1)
 
-        # Build loadout with 75 <= CR < 85 without Microwave Beam
+        # A sustainable kit needs effective Spirit control to cross the breakpoint.
         items = {
             "Ballista", "Super Shotgun", "Rocket Launcher", "Heavy Cannon",
             "Chainsaw", "Ice Bomb", "Blood Punch", "Dash",
             "Air Control", "Faster Weapon Swap",
         }
-        state = create_state_with_items(items, world=world, health_stages=2, armor_stages=1, ammo_stages=2)
+        state = create_state_with_items(items, world=world, health_stages=3, armor_stages=3, ammo_stages=3)
         from worlds.doometernal.campaign import completion_event
         sequence = world.campaign_plan["sequence"]
         for predecessor in sequence[:sequence.index("e4m2_swamp")]:
             state.collect(DoomEternalItem(completion_event(predecessor), ItemClassification.progression, None, 1), True)
 
         res_base = evaluate_mission_readiness(state, 1, "e4m2_swamp", world)
-        assert 75.0 <= res_base.player_cr < 85.0
-        assert res_base.ready is True  # Base CR 88 is satisfied!
+        assert 75.0 <= res_base.player_cr < 94.0
+        assert res_base.ready is True
 
         # Check pre-breakpoint reachability: crossroad is reachable!
         assert crossroad_region.can_reach(state) is True

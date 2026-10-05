@@ -97,7 +97,7 @@ class DLCLogicTiming(_ExactLabelChoice):
 
     Late Game — DLC mission paths enter logic once your inventory reaches their intended combat readiness.
 
-    From the Beginning — Removes the extra late-game combat-readiness gate. DLC paths become logical as soon as their real traversal, equipment, and internal mission requirements are satisfied (vanilla Dash becomes available after Exultia; The World Spear requires Super Shotgun / Meat Hook traversal and a sustainable ammo-resource tool).
+    From the Beginning — Removes the extra late-game combat-readiness gate. DLC paths become logical as soon as their real traversal, equipment, and internal mission requirements are satisfied (fixed Dash follows the campaign's starting kit or first included mission completion; The World Spear requires Super Shotgun / Meat Hook traversal and a sustainable ammo-resource tool).
 
     This changes Archipelago progression only. It does not change DOOM Eternal's difficulty or hide missions from the campaign menus.
     """
@@ -195,6 +195,9 @@ class AdditionalVictoryRequirements(OptionSet):
 
     display_name = "Additional Victory Requirements"
     valid_keys = VICTORY_REQUIREMENT_NAMES
+    def __init__(self, value, random_str=None):
+        super().__init__({"Complete All Included Missions" if key == "Complete All Enabled Missions" else key
+                         for key in value}, random_str)
     default = frozenset({
         "Complete All Included Missions",
         "Complete All Slayer Gates",
@@ -248,7 +251,12 @@ class RandomizeChainsaw(Toggle):
 
 
 class RandomizeDash(Toggle):
-    """Shuffle the Dash pickup into the item pool."""
+    """Shuffle the Dash pickup into the item pool.
+
+    Warning: routes before finding Dash can require advanced movement such as
+    bunny hopping (bhop) or Ballista boosting. Enable this only if you are
+    comfortable playing without Dash until you find it.
+    """
 
     display_name = "Randomize Dash"
     default = 0

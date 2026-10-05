@@ -175,11 +175,6 @@ def _start_stage_readiness(state, player, stage_id, world_context):
         )
         if breakpoint.deficit > result.deficit:
             result = breakpoint
-    if context == "base" and stage_id in DLC_STAGE_IDS:
-        timing = getattr(getattr(world_context, "options", None), "dlc_logic_timing", None)
-        if timing is not None and getattr(timing, "value", 0) == 1:
-            if not is_mission_ready(state, player, stage_id, world_context, context="base"):
-                result = replace(result, ready=False)
     return result
 
 
@@ -695,8 +690,8 @@ def make_plan(options, rng, world=None):
                 + ", ".join(unresolved)
             )
         tied_candidates = [s for s in ordinary if candidate_results[s]["bootstrap_cost"] == min_cost]
-        min_effective_cr = min(candidate_results[s]["effective_cr"] for s in tied_candidates)
-        headroom_candidates = sorted(s for s in tied_candidates if candidate_results[s]["effective_cr"] == min_effective_cr)
+        min_intrinsic_cr = min(MISSION_BASE_CR[s] for s in tied_candidates)
+        headroom_candidates = sorted(s for s in tied_candidates if MISSION_BASE_CR[s] == min_intrinsic_cr)
         chosen_start = rng.choice(headroom_candidates)
         chosen_result = candidate_results[chosen_start]
 

@@ -43,12 +43,12 @@ MISSION_BASE_CR: dict[str, int] = {
     "e5m3_hell": 82,    # Immora
     "e5m4_boss": 80,    # The Dark Lord
 }
-# CampaignDifficulty option value -> numerical CR allowance
+# how above your cr can levels come by.
 SKILL_ALLOWANCES: dict[int, int] = {
     0: 6,   # I'm Too Young to Die
-    1: 10,  # Hurt Me Plenty
-    2: 15,  # Ultra-Violence (default)
-    3: 20,  # Nightmare
+    1: 9,   # Hurt Me Plenty
+    2: 12,   # Ultra-Violence (default)
+    3: 15,   # Nightmare
 }
 SPIRIT_PENALTY: int = 15
 DARK_LORD_HAMMER_PENALTY: int = 15
@@ -186,10 +186,10 @@ def evaluate_mission_readiness(
         "e5m1_spear", "e5m2_earth", "e5m3_hell", "e5m4_boss"
     }
 
-    if context == "base" and is_dlc_stage and is_from_the_beginning:
-        base_cr = 0
-    else:
-        base_cr = get_mission_base_cr(stage_id)
+    if stage_id == DARK_LORD_STAGE_ID and context == "base":
+        context = "darklord"
+    base_cr = get_mission_base_cr(stage_id)
+    entry_exempt = context == "base" and is_dlc_stage and is_from_the_beginning
     if player_cr is None:
         cr_result = evaluate_player_loadout_cr(state, player, world)
         player_cr = float(cr_result.total)
@@ -207,7 +207,7 @@ def evaluate_mission_readiness(
             soft_penalty = DARK_LORD_HAMMER_PENALTY
             reason = "Missing effective Sentinel Hammer against The Dark Lord (+15 CR)"
 
-    effective_cr = min(MAX_EFFECTIVE_CR, base_cr + soft_penalty)
+    effective_cr = min(MAX_EFFECTIVE_CR, (0 if entry_exempt else base_cr) + soft_penalty)
     deficit = round(effective_cr - player_cr, 2)
     missing = []
     options = getattr(world, "options", None)
@@ -216,6 +216,10 @@ def evaluate_mission_readiness(
         missing.append("Dash")
     if stage_id in HOOK_TRAVERSAL_STAGES:
         missing.extend(name for name in ("Super Shotgun", "Meat Hook") if not state.has(name, player))
+        from .logic import ammo_resource_producer
+        if not ammo_resource_producer(state, player,
+                randomize_chainsaw=bool(getattr(getattr(options, "randomize_chainsaw", None), "value", 0)), special_weapon=sw):
+            missing.append("Ammo resource producer")
     preparation_deficit = float(len(missing))
     if stage_id in ENDURANCE_STAGES:
         # ponytail: provisional family/dimensional floors; revise with comparative playtest evidence.
@@ -254,24 +258,6 @@ def is_mission_ready(
     context: str = "base",
 ) -> bool:
     """Return whether player is logically combat-ready for a mission."""
-    if world is not None and getattr(getattr(world, "options", None), "dlc_logic_timing", None):
-        if getattr(world.options.dlc_logic_timing, "value", 0) == 1 and context == "base":
-            from .logic import tag1_from_the_beginning_satisfied, tag2_from_the_beginning_satisfied
-            if stage_id in {"e4m1_rig", "e4m2_swamp", "e4m3_mcity"}:
-                return tag1_from_the_beginning_satisfied(
-                    state, player,
-                    randomize_dash=bool(getattr(world.options.randomize_dash, "value", 0)),
-                )
-            if stage_id in {"e5m1_spear", "e5m2_earth", "e5m3_hell", "e5m4_boss"}:
-                opt = getattr(world.options, "special_weapon", None)
-                sw = getattr(opt, "current_option_name", "Progressive Special Weapon") if opt else "Progressive Special Weapon"
-                return tag2_from_the_beginning_satisfied(
-                    state, player,
-                    randomize_dash=bool(getattr(world.options.randomize_dash, "value", 0)),
-                    randomize_chainsaw=bool(getattr(world.options.randomize_chainsaw, "value", 0)),
-                    special_weapon=sw,
-                )
-
     return evaluate_mission_readiness(
         state,
         player,
