@@ -29,9 +29,8 @@ class TestShortWorldGeneration(unittest.TestCase):
         world: DoomEternalWorld = mw.worlds[1]
         unfilled = [loc for loc in mw.get_locations(1) if not loc.item]
 
-        # 439 enabled locations, 439 items in itempool
-        self.assertEqual(len(unfilled), 440)
-        self.assertEqual(len(mw.itempool), 440)
+        self.assertEqual(len(unfilled), 441)
+        self.assertEqual(len(mw.itempool), 441)
 
         # Plan inspection
         plan = world.campaign_plan
@@ -41,7 +40,7 @@ class TestShortWorldGeneration(unittest.TestCase):
         # Economy inspection
         item_names = [item.name for item in mw.itempool]
         self.assertEqual(item_names.count("Weapon Upgrade Points (3)"), 39)
-        self.assertEqual(item_names.count("Sentinel Battery"), 27)
+        self.assertEqual(item_names.count("Sentinel Battery"), 28)
         praetor_count = sum(item_names.count(p) for p in suit_perk_item_names)
         self.assertEqual(praetor_count, 17)
 
@@ -62,7 +61,7 @@ class TestShortWorldGeneration(unittest.TestCase):
         self.assertEqual(slot_data["mission_pool"], "full_saga")
         self.assertTrue(slot_data["dark_lord_enabled"])
         self.assertEqual(slot_data["effective_mission_count"], 19)
-        self.assertEqual(slot_data["active_location_count"], 440)
+        self.assertEqual(slot_data["active_location_count"], 441)
 
     # -------------------------------------------------------------------------
     # 2. Base Campaign Presets

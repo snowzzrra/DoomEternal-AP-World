@@ -193,14 +193,13 @@ def combat_capability_alternatives(capability: str) -> tuple[tuple[str, ...], ..
     raise ValueError(f"Unknown combat capability: {capability}")
 
 
-def fortress_battery_consumer_cost(active_spend_groups_count: int = 11, *, randomize_first_battery: bool = False) -> int:
+def fortress_battery_consumer_cost(active_spend_groups_count: int = 11) -> int:
     return active_spend_groups_count * 2
 
 
 def connection_requirement(
     condition: Mapping[str, object],
     *,
-    randomize_first_battery: bool = False,
     randomize_dash: bool = False,
 ) -> LocationRequirement:
     """Convert generated connection metadata into AP access logic."""
@@ -217,7 +216,7 @@ def connection_requirement(
     all_of: tuple[str, ...] = ("Dash",) if dash_gate else ()
     return LocationRequirement(
         all_of=all_of,
-        battery_currency=1 if first_battery_gate and randomize_first_battery else 0,
+        battery_currency=1 if first_battery_gate else 0,
         combat_all_of=combat_capabilities,
     )
 
@@ -573,10 +572,7 @@ def effective_victory_requirements(
     )
     content_present = {
         "Complete All Included Missions": any(name.endswith(" - Mission Complete") for name in active_locations),
-        "Complete All Slayer Gates": (
-            not use_dlc_content
-            or any(" - Slayer Gate Complete" in name for name in active_locations)
-        ),
+        "Complete All Slayer Gates": any(" - Slayer Gate Complete" in name for name in active_locations),
         "Complete All Escalation Encounters": any(" - Escalation Encounter Wave " in name for name in active_locations),
         "Complete All Secret Encounters": any(" - Secret Encounter - " in name for name in active_locations),
         "Complete All Mission Challenges": any(" - All Mission Challenges Completed" in name for name in active_locations),
@@ -612,7 +608,6 @@ def build_location_prerequisites(
     active_region_names: set[str] | None = None,
     randomize_chainsaw: bool = False,
     randomize_dash: bool = False,
-    randomize_first_battery: bool = False,
     special_weapon: str = "The Crucible",
     active_battery_cost: int | None = None,
     campaign_difficulty: int = 2,
@@ -714,7 +709,7 @@ def build_location_prerequisites(
     battery_cost = (
         active_battery_cost
         if active_battery_cost is not None
-        else fortress_battery_consumer_cost(randomize_first_battery=randomize_first_battery)
+        else fortress_battery_consumer_cost()
     )
     if active_spend_groups is not None:
         cost = sum(group["cost"] for group in active_spend_groups)

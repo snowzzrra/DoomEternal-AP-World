@@ -198,11 +198,7 @@ class AdditionalVictoryRequirements(OptionSet):
     def __init__(self, value, random_str=None):
         super().__init__({"Complete All Included Missions" if key == "Complete All Enabled Missions" else key
                          for key in value}, random_str)
-    default = frozenset({
-        "Complete All Included Missions",
-        "Complete All Slayer Gates",
-        "Complete All Escalation Encounters",
-    })
+    default = frozenset()
 
 
 class SpecialWeapon(_ExactLabelChoice):
@@ -262,14 +258,18 @@ class RandomizeDash(Toggle):
     default = 0
 
 
-class RandomizeFirstBattery(Toggle):
-    """
-    When enabled, the mandatory first Sentinel Battery is shuffled into the
-    item pool instead of being locked to its Exultia pickup.
-    """
+class IncludeSlayerGates(Toggle):
+    """Include Slayer Gate completion checks and their keys in the item pool. Acquire the Unmaykr requires this option."""
 
-    display_name = "Randomize First Sentinel Battery"
-    default = 0
+    display_name = "Include Slayer Gates"
+    default = 1
+
+
+class IncludeSecretEncounters(Toggle):
+    """Include Secret Encounter completion checks."""
+
+    display_name = "Include Secret Encounters"
+    default = 1
 
 
 class IncludeWeaponMasteryChallenges(Toggle):
@@ -409,7 +409,8 @@ class DoomEternalOptions(DeathLinkMixin, PerGameCommonOptions):
     enhanced_melee_damage: EnhancedMeleeDamage
     randomize_chainsaw: RandomizeChainsaw
     randomize_dash: RandomizeDash
-    randomize_first_battery: RandomizeFirstBattery
+    include_slayer_gates: IncludeSlayerGates
+    include_secret_encounters: IncludeSecretEncounters
     include_weapon_mastery_challenges: IncludeWeaponMasteryChallenges
     reveal_ap_locations_on_automap: RevealAPLocationsOnAutomap
     starting_weapon: StartingWeapon

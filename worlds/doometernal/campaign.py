@@ -6,7 +6,7 @@ from .generated_content import CAMPAIGN_STAGES, FORTRESS_SPEND_GROUPS, FORTRESS_
 from .logic import goal_endpoint_event_name, mission_clear_event_name, CRUCIBLE_CHALLENGE, crucible_challenge_enabled
 from .items import suit_perk_item_names
 from .options import resolve_praetor_suit_upgrade_count
-from .locations import location_data_table
+from .locations import location_data_table, optional_location_enabled
 from .combat_rating import (
     WEAPON_NAMES,
     ALL_MOD_NAMES,
@@ -462,6 +462,8 @@ def make_plan(options, rng, world=None):
     pool_name = options.mission_pool.current_option_name
     goal_name = options.goal.current_option_name
     order_mode = options.mission_order.value  # 0: Vanilla, 1: RMO, 2: MAI
+    if goal_name == "Acquire the Unmaykr" and not options.include_slayer_gates.value:
+        raise ValueError("Acquire the Unmaykr requires Include Slayer Gates; choose another Goal or enable Slayer Gates.")
 
     # 1. Candidate resolution
     if pool_name == "Base":
@@ -567,12 +569,13 @@ def make_plan(options, rng, world=None):
     vanilla_physical_locations = {
         "Hell on Earth - Chainsaw": options.randomize_chainsaw.value,
         "Exultia - Dash": options.randomize_dash.value,
-        "Exultia - Sentinel Battery - King Novik Return Path": options.randomize_first_battery.value,
     }
     mission_loc_count = 0
     for loc_name, loc_data in location_data_table.items():
         stage_id = REGION_STAGE.get(loc_data.region)
         if stage_id in active_stage_set:
+            if not optional_location_enabled(loc_name, options):
+                continue
             if loc_name in vanilla_physical_locations and not vanilla_physical_locations[loc_name]:
                 continue
             mission_loc_count += 1
@@ -781,9 +784,7 @@ def make_plan(options, rng, world=None):
             "surplus": battery_surplus,
             "total": sum(group["cost"] for group in active_sg) + battery_surplus,
             "surplus_percent": FORTRESS_POLICY["battery_surplus_percent"],
-            "native_first_battery": int(
-                not options.randomize_first_battery.value and "e1m2_war" in active_normal_ids
-            ),
+            "native_first_battery": 0,
         },
         "fortress_phase_thresholds": [
             (count * len([key for key in sequence if key != goal_stage])

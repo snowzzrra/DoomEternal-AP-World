@@ -22,3 +22,11 @@ location_data_table: dict[str, LocationData] = {
     name: LocationData(code, region) for name, code, region in LOCATION_ROWS
 }
 location_name_to_id = LOCATION_NAME_TO_ID
+
+
+def optional_location_enabled(name: str, options) -> bool:
+    if name.endswith(" - Slayer Gate Complete"):
+        return bool(options.include_slayer_gates.value)
+    if " - Secret Encounter - " in name:
+        return bool(options.include_secret_encounters.value)
+    return True

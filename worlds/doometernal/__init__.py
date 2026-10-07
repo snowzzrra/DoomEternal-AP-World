@@ -55,7 +55,7 @@ from .items import (
     world_pool_weapon_item_names,
     suit_perk_item_names,
 )
-from .locations import DoomEternalLocation, location_data_table, location_name_to_id
+from .locations import DoomEternalLocation, location_data_table, location_name_to_id, optional_location_enabled
 from .logic import (
     FORTRESS_BATTERY_CONSUMER_LOCATIONS,
     build_location_prerequisites,
@@ -276,7 +276,9 @@ class DoomEternalWorld(World):
             "praetor_suit_upgrades_in_pool": self.praetor_suit_upgrades_in_pool,
             "randomize_chainsaw": bool(self.options.randomize_chainsaw.value),
             "randomize_dash": bool(self.options.randomize_dash.value),
-            "randomize_first_battery": bool(self.options.randomize_first_battery.value),
+            "randomize_first_battery": True,
+            "include_slayer_gates": bool(self.options.include_slayer_gates.value),
+            "include_secret_encounters": bool(self.options.include_secret_encounters.value),
             "include_weapon_mastery_challenges": bool(self.options.include_weapon_mastery_challenges.value),
             "reveal_ap_locations_on_automap": bool(self.options.reveal_ap_locations_on_automap.value),
             "trap_percentage": int(self.options.trap_percentage.value),
@@ -337,7 +339,8 @@ class DoomEternalWorld(World):
         special_weapon = self.options.special_weapon.current_option_name if dlc_enabled else "The Crucible"
         catalog_locations = {
             name: data for name, data in location_data_table.items()
-            if name != CRUCIBLE_CHALLENGE or crucible_challenge_enabled(special_weapon)
+            if (name != CRUCIBLE_CHALLENGE or crucible_challenge_enabled(special_weapon))
+            and optional_location_enabled(name, self.options)
         }
         plan = self.campaign_plan
         active_normal_ids = plan["active_normal_mission_ids"]
@@ -346,7 +349,6 @@ class DoomEternalWorld(World):
         vanilla_physical_locations = {
             "Hell on Earth - Chainsaw": self.options.randomize_chainsaw.value,
             "Exultia - Dash": self.options.randomize_dash.value,
-            "Exultia - Sentinel Battery - King Novik Return Path": self.options.randomize_first_battery.value,
         }
         # Regions and the item pool consume the same pre-economy scaling decision.
         active_sg = plan["active_spend_groups"]
@@ -357,7 +359,7 @@ class DoomEternalWorld(World):
         self.battery_surplus = battery_surplus
 
         # Active Fortress locations
-        has_unmaykr_check = set(BASE_GATE_STAGE_IDS).issubset(set(active_normal_ids))
+        has_unmaykr_check = bool(self.options.include_slayer_gates.value) and set(BASE_GATE_STAGE_IDS).issubset(set(active_normal_ids))
         active_fortress_consumer_locs = {loc for sg in active_sg for loc in sg["locations"]}
         active_hub_locations = (
             FORTRESS_NON_CONSUMER_LOCATIONS
@@ -414,12 +416,6 @@ class DoomEternalWorld(World):
             region = multiworld.get_region(reg_name, player)
             location = DoomEternalLocation(player, loc_name, loc_data.code, region)
             region.locations.append(location)
-
-        if plan["battery_economy"]["native_first_battery"]:
-            native_name = "Exultia - Sentinel Battery - King Novik Return Path"
-            region = multiworld.get_region(catalog_locations[native_name].region, player)
-            region.add_event(native_name, "Sentinel Battery", location_type=DoomEternalLocation,
-                             item_type=DoomEternalItem)
 
         if plan.get("fixed_dash_completion_stage") == "e1m2_war":
             region = multiworld.get_region(catalog_locations["Exultia - Dash"].region, player)
@@ -521,7 +517,6 @@ class DoomEternalWorld(World):
             entrance = regions[source_name].connect(regions[destination_name], entrance_name)
             requirement = connection_requirement(
                 condition,
-                randomize_first_battery=bool(self.options.randomize_first_battery.value),
                 randomize_dash=bool(self.options.randomize_dash.value),
             )
             set_rule(entrance, partial(self._campaign_entrance_access, None, requirement))
@@ -647,7 +642,6 @@ class DoomEternalWorld(World):
             active_region_names={region.name for region in self.multiworld.get_regions(self.player)},
             randomize_chainsaw=bool(self.options.randomize_chainsaw.value),
             randomize_dash=bool(self.options.randomize_dash.value),
-            randomize_first_battery=bool(self.options.randomize_first_battery.value),
             special_weapon=(
                 "The Crucible"
                 if not self.options.use_dlc_content.value

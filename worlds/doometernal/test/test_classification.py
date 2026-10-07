@@ -186,6 +186,7 @@ class TestMinimalReadinessBootstrap(unittest.TestCase):
     def test_user_start_inventory_priority(self) -> None:
         """User start_inventory items are never duplicated by the bootstrap solver."""
         class MockOptions:
+            include_slayer_gates = type("Opts", (), {"value": 1})()
             campaign_difficulty = type("Opts", (), {"value": 0})()
             use_dlc_content = type("Opts", (), {"value": 1})()
             special_weapon = type("Opts", (), {"current_option_name": "The Crucible"})()

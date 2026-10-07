@@ -148,7 +148,6 @@ def apply_dynamic_progression_classification(world: DoomEternalWorld) -> Classif
         active_region_names=active_regions,
         randomize_chainsaw=bool(world.options.randomize_chainsaw.value),
         randomize_dash=bool(world.options.randomize_dash.value),
-        randomize_first_battery=bool(world.options.randomize_first_battery.value),
         special_weapon=world.options.special_weapon.current_option_name,
         campaign_difficulty=world.options.campaign_difficulty.value,
         active_spend_groups=getattr(world, "active_spend_groups", None),
@@ -164,7 +163,6 @@ def apply_dynamic_progression_classification(world: DoomEternalWorld) -> Classif
             hard_items.update(required_item_names(connection_requirement(
                 condition,
                 randomize_dash=bool(world.options.randomize_dash.value),
-                randomize_first_battery=bool(world.options.randomize_first_battery.value),
             )))
     combat_baselines = {
         "Combat Shotgun", "Heavy Cannon", "Plasma Rifle", "Rocket Launcher", "Ballista", "Chaingun",

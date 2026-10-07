@@ -550,6 +550,8 @@ def build_semantic_counts(
 
     # --- Slayer Gate Keys --------------------------------------------------
     for stage_id, key_name in STAGE_SLAYER_GATE_KEYS.items():
+        if not options.include_slayer_gates.value:
+            continue
         if stage_id not in active_normal_ids:
             continue
         if stage_id in ("e4m1_rig", "e4m3_mcity") and not use_dlc:
@@ -559,15 +561,12 @@ def build_semantic_counts(
     # --- Battery economy ---------------------------------------------------
     battery_cost = sum(group["cost"] for group in active_sg)
     battery_total = battery_cost + battery_surplus
-    native_first_battery = int(
-        not _option_value(options, "randomize_first_battery") and "e1m2_war" in active_normal_ids
-    )
     if start_inv.get("Sentinel Battery Bundle"):
         raise ValueError("Sentinel Battery Bundle belongs to legacy rooms; use individual Sentinel Battery items")
     if start_inv.get("Sentinel Battery", 0) > battery_total:
         raise ValueError(f"Sentinel Battery starting inventory exceeds the {battery_total}-unit economy")
     base_pool["Sentinel Battery"] = max(
-        0, battery_total - native_first_battery - start_inv.get("Sentinel Battery", 0)
+        0, battery_total - start_inv.get("Sentinel Battery", 0)
     )
 
     # --- Weapon Masteries (content scaling) & prerequisite mods ------------
