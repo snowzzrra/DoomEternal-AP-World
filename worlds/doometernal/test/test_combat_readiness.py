@@ -251,17 +251,12 @@ class TestStructuralVsLogicalReachability:
         world: DoomEternalWorld = mw.worlds[1]
         plan = world.campaign_plan
 
-        # Suppose stage 2 in sequence is a high-CR stage (e.g. Urdak or Final Sin)
-        # Clear stage 1 to structurally reveal stage 2
-        stage1_id = plan["sequence"][0]
-        stage2_id = plan["sequence"][1]
+        stage2_id = "e3m2_hell"
 
         state = CollectionState(mw)
-        # Empty state with start inventory (Combat Shotgun CR 6 + allowance 6 = 12)
-        # Stage 1 (e1m1_intro or other)
-        # Mark stage 1 clear event
         from worlds.doometernal.campaign import completion_event
-        state.collect(DoomEternalItem(completion_event(stage1_id), ItemClassification.progression, None, 1))
+        for stage in plan["sequence"][:plan["sequence"].index(stage2_id)]:
+            state.collect(DoomEternalItem(completion_event(stage), ItemClassification.progression, None, 1))
 
         from worlds.doometernal.campaign import stage_available
         # Structural check: stage 2 IS available

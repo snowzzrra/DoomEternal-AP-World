@@ -699,7 +699,13 @@ def make_plan(options, rng, world=None):
             # Random Mission Order (§4)
             rem_ordinary = [s for s in ordinary if s != chosen_start]
             rng.shuffle(rem_ordinary)
-            sequence = [chosen_start] + rem_ordinary + ([goal_stage] if goal_stage else [])
+            opening = [chosen_start]
+            while rem_ordinary and len(opening) < 4:
+                eligible = [stage for stage in rem_ordinary if MISSION_BASE_CR[stage] <= 63]
+                stage = eligible[0] if eligible else min(rem_ordinary, key=MISSION_BASE_CR.__getitem__)
+                opening.append(stage)
+                rem_ordinary.remove(stage)
+            sequence = opening + rem_ordinary + ([goal_stage] if goal_stage else [])
             starts = [chosen_start]
             access = []
             goal_as_item = False

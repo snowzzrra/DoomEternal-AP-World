@@ -67,7 +67,7 @@ TRAVERSAL_DASH_STAGES = frozenset({
     "e5m1_spear", "e5m2_earth", "e5m3_hell",
 })
 HOOK_TRAVERSAL_STAGES = frozenset({"e5m1_spear", "e5m2_earth", "e5m3_hell"})
-ENDURANCE_STAGES = TRAVERSAL_DASH_STAGES - {"e3m3_maykr"}
+ENDURANCE_STAGES = TRAVERSAL_DASH_STAGES | {"e3m1_slayer"}
 
 # ── Breakpoint Topology Mapping ────────────────────────────────
 # Region connection (source, destination) -> canonical stage ID

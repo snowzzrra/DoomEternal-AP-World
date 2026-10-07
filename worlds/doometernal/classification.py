@@ -183,9 +183,11 @@ def apply_dynamic_progression_classification(world: DoomEternalWorld) -> Classif
                 "active_hard_requirement", 0.0, "Active location or traversal prerequisite", (),
             ))
 
-    needs_blood_punch = "Blood Punch" in hard_items and not any(
-        item.name == "Progressive Blood Punch" for item in mw.precollected_items[player]
-    )
+    starting_blood_punch = next((item for item in mw.precollected_items[player]
+                                if item.name == "Progressive Blood Punch"), None)
+    if starting_blood_punch is not None:
+        starting_blood_punch.classification = ItemClassification.progression
+    needs_blood_punch = starting_blood_punch is None
     for item in mw.itempool:
         if item.player == player and item.name == "Progressive Blood Punch":
             item.classification = ItemClassification.progression if needs_blood_punch else ItemClassification.useful
