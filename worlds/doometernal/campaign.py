@@ -694,7 +694,7 @@ def make_plan(options, rng, world=None):
             )
         tied_candidates = [s for s in ordinary if candidate_results[s]["bootstrap_cost"] == min_cost]
         min_intrinsic_cr = min(MISSION_BASE_CR[s] for s in tied_candidates)
-        headroom_candidates = sorted(s for s in tied_candidates if MISSION_BASE_CR[s] == min_intrinsic_cr)
+        headroom_candidates = sorted(s for s in tied_candidates if order_mode == 2 or MISSION_BASE_CR[s] == min_intrinsic_cr)
         chosen_start = rng.choice(headroom_candidates)
         chosen_result = candidate_results[chosen_start]
 
