@@ -25,7 +25,6 @@ from .generated_content import (
 from .identity import GAME_NAME
 from .campaign import (
     BASE_GATE_STAGE_IDS,
-    FORTRESS_BOOTSTRAP_LOCATIONS,
     FORTRESS_NON_CONSUMER_LOCATIONS,
     FORTRESS_SPEND_GROUPS,
     ORDERED_MASTERY_CHALLENGES,
@@ -399,10 +398,6 @@ class DoomEternalWorld(World):
             if "Fortress of Doom" in reg_name:
                 if loc_name not in active_hub_locations:
                     continue
-                if loc_name in FORTRESS_BOOTSTRAP_LOCATIONS:
-                    reg_name = "Fortress of Doom"
-                elif loc_name in active_fortress_consumer_locs and loc_name != "Fortress of Doom - Fully Upgraded Suit Cheat Code":
-                    reg_name = "Fortress of Doom"
             elif reg_name == "Weapon Masteries":
                 if loc_name not in active_mastery_locations:
                     continue

@@ -120,9 +120,11 @@ def build_progression_only_state(world: DoomEternalWorld) -> CollectionState:
     # Generated items in pool that are progression
     for item in mw.itempool:
         if item.player == player and item.advancement:
-            state.collect(item)
+            state.collect(item, prevent_sweep=True)
 
-    state.sweep_for_advancements()
+    state.sweep_for_advancements(
+        loc for loc in mw.get_locations(player) if loc.address is None
+    )
 
     return state
 
@@ -246,7 +248,7 @@ def apply_dynamic_progression_classification(world: DoomEternalWorld) -> Classif
         for idx in range(promoted_count):
             item_to_promote = wup_list.pop(0)
             item_to_promote.classification = ItemClassification.progression
-            state.collect(item_to_promote)
+            state.collect(item_to_promote, prevent_sweep=True)
             ledger.promotions.append(PromotionRecord(
                 item_name=wup_name,
                 copy_index=idx + 1,
@@ -283,7 +285,7 @@ def apply_dynamic_progression_classification(world: DoomEternalWorld) -> Classif
         if not item_list:
             del useful_items[step.item_name]
         promoted_item.classification = ItemClassification.progression
-        state.collect(promoted_item)
+        state.collect(promoted_item, prevent_sweep=True)
 
         copy_idx = sum(1 for p in ledger.promotions if p.item_name == step.item_name) + 1
         reason = step.reason if not step.is_dependency else f"dependency_for_{step.package_lead}"

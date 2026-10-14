@@ -2,7 +2,7 @@
 from collections import Counter
 from dataclasses import replace
 import itertools
-from .generated_content import CAMPAIGN_STAGES, FORTRESS_SPEND_GROUPS, FORTRESS_POLICY
+from .generated_content import CAMPAIGN_STAGES, FORTRESS_SPEND_GROUPS, FORTRESS_POLICY, LOCATION_ROWS
 from .logic import goal_endpoint_event_name, mission_clear_event_name, CRUCIBLE_CHALLENGE, crucible_challenge_enabled
 from .items import suit_perk_item_names
 from .options import resolve_praetor_suit_upgrade_count
@@ -56,9 +56,10 @@ FORTRESS_NON_CONSUMER_LOCATIONS = frozenset({
     "Fortress of Doom - Ballista",
     "Fortress of Doom - Fully Upgraded Suit Cheat Code",
 })
-FORTRESS_BOOTSTRAP_LOCATIONS = FORTRESS_NON_CONSUMER_LOCATIONS - {
-    "Fortress of Doom - Fully Upgraded Suit Cheat Code",
-}
+FORTRESS_BOOTSTRAP_LOCATIONS = frozenset(
+    name for name, _, region in LOCATION_ROWS
+    if name in FORTRESS_NON_CONSUMER_LOCATIONS and region == "Fortress of Doom - First Visit"
+)
 
 
 SPEND_GROUP_BY_ID = {sg["id"]: sg for sg in FORTRESS_SPEND_GROUPS}
@@ -183,10 +184,10 @@ def solve_stage_bootstrap(
     world_context,
     base_state: FastState,
     pool_counts: Counter,
-    active_sg_count: int = 4,
 ):
     """Compute minimal readiness bootstrap cost and items for stage_id."""
     player = base_state.player
+    free_capacity = len(FORTRESS_BOOTSTRAP_LOCATIONS)
     res_0 = _start_stage_readiness(base_state, player, stage_id, world_context)
     if res_0.ready:
         return {
@@ -222,7 +223,7 @@ def solve_stage_bootstrap(
                     package = reduced
         package = tuple(package)
         bootstrap_size = max(0, len(package) - len(FORTRESS_BOOTSTRAP_LOCATIONS))
-        if selection.satisfied and bootstrap_size <= 5:
+        if selection.satisfied:
             state = base_state.copy()
             for name in package:
                 state.collect(name)
@@ -250,7 +251,6 @@ def solve_stage_bootstrap(
             or name in {"The Crucible", "Sentinel Hammer", "Progressive Special Weapon"}
         )
     }
-    battery_pool_count = pool_counts.get("Sentinel Battery", 0)
 
     # Categories
     all_weapons = []
@@ -300,7 +300,7 @@ def solve_stage_bootstrap(
             dep_cache[key] = cached
         return cached
 
-    def iter_placed_combos(k, candidates, max_capacity):
+    def iter_placed_combos(k, candidates):
         other_cands = [c for c in candidates if c not in all_weapons]
         max_w = min(k, len(all_weapons), 3)
         min_w = 2 if k >= 4 else (1 if k >= 2 else 0)
@@ -311,9 +311,6 @@ def solve_stage_bootstrap(
                     for other_combo in itertools.combinations(other_cands, rem_k):
                         yield w_combo + other_combo
 
-    # 1. Search for B = 0 (up to 6 placed items in free Fortress checks).
-    #    The feasibility gate is an input-valid monotone upper bound: CR of the
-    #    baseline plus every candidate item, which no 6-item subset can exceed.
     best_zero = None
     target_cr = res_0.effective_cr - res_0.allowance
     upper_state = base_state.copy()
@@ -321,10 +318,10 @@ def solve_stage_bootstrap(
         upper_state.collect(candidate)
     max_total_cr = evaluate_player_loadout_cr(upper_state, player, world_context).total
     if target_cr <= max_total_cr:
-        for k in range(1, 7):
-            for combo in iter_placed_combos(k, primary_candidates, 6):
+        for k in range(1, free_capacity + 1):
+            for combo in iter_placed_combos(k, primary_candidates):
                 valid, full = resolve_cached(combo, combat_pool)
-                if not valid or len(full) > 6:
+                if not valid or len(full) > free_capacity:
                     continue
                 r, cr = eval_pkg(full)
                 if r.ready:
@@ -348,52 +345,41 @@ def solve_stage_bootstrap(
         }
 
     # 2. Search for B > 0 (minimal bootstrap)
-    for B in range(1, 6):
+    for B in range(1, len(primary_candidates) + 1):
         best_b = None
-        for b_bat in range(min(B, battery_pool_count, 2 * active_sg_count) + 1):
-            b_combat = B - b_bat
-            bat_pkg = ("Sentinel Battery",) * b_bat
-            owned_batteries = base_state.count("Sentinel Battery", player) + b_bat
-            extra_capacity = active_sg_count if owned_batteries >= 2 * active_sg_count else 0
-            placed_capacity = 6 + extra_capacity
+        placed_capacity = free_capacity
 
-            combat_boot_pool = all_weapons + all_mods + all_equip
-            boot_combos = [()] if b_combat == 0 else itertools.combinations(combat_boot_pool, b_combat)
+        for c_boot in itertools.combinations(primary_candidates, B):
+            valid_b, full_boot = resolve_cached(c_boot, pool_counts)
+            if not valid_b or len(full_boot) != B:
+                continue
 
-            for c_boot in boot_combos:
-                boot_pkg = bat_pkg + c_boot
-                valid_b, full_boot = resolve_cached(boot_pkg, pool_counts)
-                if not valid_b or len(full_boot) != B:
-                    continue
+            rem_pool = Counter(pool_counts)
+            for it in full_boot:
+                rem_pool[it] -= 1
 
-                rem_pool = Counter(pool_counts)
-                for it in full_boot:
-                    rem_pool[it] -= 1
-
-                placed_cands = [c for c in primary_candidates if rem_pool[c] > 0]
-
-                ranked_placed = [
-                    c for c in [
-                        "Dash", "Super Shotgun", "Ballista", "Chaingun", "Progressive Special Weapon",
-                        "The Crucible", "Sentinel Hammer",
-                        "Energy Shield", "Flame Belch", "Ice Bomb", "Progressive Blood Punch", "Destroyer Blade",
-                        "Arbalest", "Lock-on Burst", "Rocket Launcher", "Plasma Rifle", "Microwave Beam",
-                        "Precision Bolt", "Sticky Bombs", "Mobile Turret", "Heat Blast", "Remote Detonate",
-                        "Chainsaw",
-                    ] if rem_pool[c] > 0
-                ]
-                placed_sample = tuple(ranked_placed[:placed_capacity])
-                valid_p, full_p = resolve_dependencies(placed_sample, base_state, player, rem_pool)
-                if valid_p and len(full_p) <= placed_capacity:
-                    full_total = full_boot + full_p
-                    r, cr = eval_pkg(full_total)
-                    if r.ready:
-                        overshoot = r.allowance - r.deficit
-                        best_b = (overshoot, len(full_total), full_boot, tuple(sorted(full_p)), cr, r.effective_cr)
-                        break
-            if best_b is not None:
-                break
-
+            ranked_placed = [
+                c for c in [
+                    "Dash", "Super Shotgun", "Ballista", "Chaingun", "Progressive Special Weapon",
+                    "The Crucible", "Sentinel Hammer",
+                    "Energy Shield", "Flame Belch", "Ice Bomb", "Progressive Blood Punch", "Destroyer Blade",
+                    "Arbalest", "Lock-on Burst", "Rocket Launcher", "Plasma Rifle", "Microwave Beam",
+                    "Precision Bolt", "Sticky Bombs", "Mobile Turret", "Heat Blast", "Remote Detonate",
+                    "Chainsaw",
+                ] if rem_pool[c] > 0
+            ]
+            placed_sample = tuple(ranked_placed[:placed_capacity])
+            boot_state = base_state.copy()
+            for item in full_boot:
+                boot_state.collect(item)
+            valid_p, full_p = resolve_dependencies(placed_sample, boot_state, player, rem_pool)
+            if valid_p and len(full_p) <= placed_capacity:
+                full_total = full_boot + full_p
+                r, cr = eval_pkg(full_total)
+                if r.ready:
+                    overshoot = r.allowance - r.deficit
+                    best_b = (overshoot, len(full_total), full_boot, tuple(sorted(full_p)), cr, r.effective_cr)
+                    break
         if best_b is not None:
             return {
                 "stage_id": stage_id,
@@ -672,7 +658,7 @@ def make_plan(options, rng, world=None):
     pool_counts = Counter(semantic_pool.placement_counts)
     def evaluate_start_stage(s_id: str):
         return solve_stage_bootstrap(
-            s_id, world_context, get_candidate_base_state(s_id), pool_counts, len(active_sg)
+            s_id, world_context, get_candidate_base_state(s_id), pool_counts
         )
 
     if order_mode == 0:

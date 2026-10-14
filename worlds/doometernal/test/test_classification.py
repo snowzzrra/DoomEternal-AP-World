@@ -18,7 +18,7 @@ M. deterministic repeated planner output
 import unittest
 
 from collections import Counter
-from BaseClasses import CollectionState, ItemClassification, MultiWorld
+from BaseClasses import CollectionState, ItemClassification, MultiWorld, Region, Item, Location
 from test.general import setup_multiworld
 from worlds.doometernal import DoomEternalWorld
 from worlds.doometernal.campaign import (
@@ -33,6 +33,7 @@ from worlds.doometernal.classification import (
     PromotionRecord,
     ReadinessTarget,
     apply_dynamic_progression_classification,
+    build_progression_only_state,
     get_required_readiness_targets,
 )
 from worlds.doometernal.combat_rating import evaluate_player_loadout_cr
@@ -76,7 +77,6 @@ class TestDynamicProgressionClassification(unittest.TestCase):
         cr_before = evaluate_player_loadout_cr(state, self.player, self.world)
         self.assertEqual(cr_before.categories["Arsenal"], 35.0)
 
-        # A mastery that only adds Arsenal CR now gives 0 marginal CR
         temp_state = state.copy()
         temp_state.collect(self.mw.create_item("Sticky Bombs", self.player))
         mastery = self._create_prog_item("Sticky Bombs Mastery")
@@ -137,12 +137,7 @@ class TestDynamicProgressionClassification(unittest.TestCase):
 
 
     def test_case_n_fortress_bootstrap_locations_reachable_at_sphere_0(self) -> None:
-        """Case N: The 6 non-consumer Fortress locations are reachable at sphere 0.
-
-        The starting weapon provides enough CR (≥6) that e1m1_intro (base CR=12)
-        is also reachable under UV allowance (15), so we verify the 6 Fortress
-        bootstrap locations are all reachable rather than asserting exact equality.
-        """
+        """Initial Fortress checks match the physical First Visit layer."""
         from worlds.doometernal.campaign import FORTRESS_BOOTSTRAP_LOCATIONS
         state = CollectionState(self.mw)
         reachable = {loc.name for loc in self.mw.get_reachable_locations(state, self.player) if loc.address is not None}
@@ -150,6 +145,23 @@ class TestDynamicProgressionClassification(unittest.TestCase):
             FORTRESS_BOOTSTRAP_LOCATIONS.issubset(reachable),
             f"Missing Fortress bootstrap locations: {FORTRESS_BOOTSTRAP_LOCATIONS - reachable}",
         )
+        fortress = {name for name in reachable if name.startswith("Fortress of Doom - ")}
+        self.assertEqual(fortress, FORTRESS_BOOTSTRAP_LOCATIONS)
+
+    def test_classification_does_not_sweep_unconnected_foreign_world(self):
+        from test.general import TestWorld
+        mw = setup_multiworld([DoomEternalWorld, TestWorld], seed=42,
+                              steps=("generate_early", "create_regions"))
+        menu = Region("Menu", 2, mw)
+        unfinished = Region("Unconnected", 2, mw)
+        mw.regions.extend((menu, unfinished))
+        event = Location(2, "Foreign Event", None, unfinished)
+        event.place_locked_item(Item("Foreign Progress", ItemClassification.progression, None, 2))
+        unfinished.locations.append(event)
+        mw.worlds[1].create_items()
+        state = build_progression_only_state(mw.worlds[1])
+        self.assertFalse(state.has("Foreign Progress", 2))
+        self.assertTrue(mw.worlds[1].classification_ledger.all_targets_satisfied)
 
     def test_case_o_late_red_fortress_remains_gated(self) -> None:
         """Case O: Spire Cheat and Unmaykr are unreachable at sphere 0."""
@@ -164,6 +176,9 @@ class TestDynamicProgressionClassification(unittest.TestCase):
         praetor_loc = self.mw.get_location("Fortress of Doom - Praetor Suit", self.player)
         runes_loc = self.mw.get_location("Fortress of Doom - All Runes Cheat Code", self.player)
         state = CollectionState(self.mw)
+        from worlds.doometernal.campaign import completion_event
+        for key in self.world.campaign_plan["sequence"]:
+            state.collect(Item(completion_event(key), ItemClassification.progression, None, 1), prevent_sweep=True)
         for _ in range(10):
             state.collect(self.mw.create_item("Sentinel Battery Bundle", self.player))
         self.assertFalse(praetor_loc.can_reach(state))
