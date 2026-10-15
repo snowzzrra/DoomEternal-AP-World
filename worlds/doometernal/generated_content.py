@@ -723,7 +723,7 @@ LOCATION_NAMES_BY_REGION = {
         "ARC Complex - Return of Dr. Hayden - Part 2 Codex",
         "ARC Complex - Sentinel Crystal - ARC Part I Stairwell",
         "ARC Complex - Secret Encounter - Generator Room",
-        "ARC Complex - Secret Encounter - Samuel Hayden Gap",
+        "ARC Complex - Secret Encounter - Building On Fire Across Gap",
     ),
     "Cultist Base - Basilica of Adjuration": (
         "Cultist Base - Praetor Suit Token - Raised-Skull Chamber",
