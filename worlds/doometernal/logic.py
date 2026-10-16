@@ -449,7 +449,7 @@ def build_location_prerequisites(
     randomize_dash: bool = False,
     special_weapon: str = "The Crucible",
     active_battery_cost: int | None = None,
-    campaign_difficulty: int = 2,
+    logic_difficulty: int = 1,
     active_spend_groups: Sequence[Mapping[str, Any]] | None = None,
 ) -> dict[str, LocationRequirement]:
     mastery_locations = sorted(name for name in location_names if name.endswith(MASTERY_SUFFIX))
@@ -518,6 +518,8 @@ def build_location_prerequisites(
         child_requirements = [table.get(child, LocationRequirement()) for child in children]
         table[aggregate_name] = LocationRequirement(
             all_requirements=tuple(child_requirements),
+            custom_rule=(None if children else lambda state, player, complete=f"{mission_prefix} - Mission Complete":
+                         state.can_reach(complete, "Location", player)),
         )
     for location_name in location_names:
         if location_name.endswith(" - Mission Complete"):
@@ -535,12 +537,12 @@ def build_location_prerequisites(
     if "The Dark Lord - Defeated" in location_names:
         from .combat_readiness import is_dark_lord_defeated_ready
         dark_lord_custom_rule = (
-            lambda state, player, sw=special_weapon, diff=campaign_difficulty: is_dark_lord_defeated_ready(
+            lambda state, player, sw=special_weapon, diff=logic_difficulty: is_dark_lord_defeated_ready(
                 state,
                 player,
                 world=getattr(getattr(state, "multiworld", None), "worlds", {}).get(player),
                 special_weapon=sw,
-                difficulty=diff,
+                logic_difficulty=diff,
             )
         )
         table["The Dark Lord - Defeated"] = LocationRequirement(

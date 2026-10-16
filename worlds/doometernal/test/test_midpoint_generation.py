@@ -55,10 +55,10 @@ class TestMidpointGeneration(unittest.TestCase):
     def test_traversal_and_endurance(self):
         state = FastState(item_data_table.keys())
         state.prog_items.update({f"Progressive {stat} Upgrade": 4 for stat in ("Health", "Armor", "Ammo")})
-        full = evaluate_mission_readiness(state, 1, "e5m1_spear", difficulty=1)
+        full = evaluate_mission_readiness(state, 1, "e5m1_spear", logic_difficulty=1)
         self.assertTrue(full.ready)
         state.prog_items.pop("Dash")
-        self.assertFalse(evaluate_mission_readiness(state, 1, "e5m1_spear", difficulty=1).ready)
+        self.assertFalse(evaluate_mission_readiness(state, 1, "e5m1_spear", logic_difficulty=1).ready)
         state.collect("Dash")
         state.prog_items.pop("Super Shotgun")
         self.assertIn("Super Shotgun", evaluate_mission_readiness(state, 1, "e5m1_spear").missing_requirements)

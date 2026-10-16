@@ -2,13 +2,13 @@
 
 # This file has no timestamp: stable input yields a stable diff.
 CONTENT_SCHEMA_VERSION = 3
-CONTENT_REVISION = "0.5.0"
+CONTENT_REVISION = "0.7.0"
 BRIDGE_PROTOCOL_VERSION = 4
-COMPILER_REVISION = 4
-SESSION_MOD_CONTRACT_REVISION = 1
+COMPILER_REVISION = 5
+SESSION_MOD_CONTRACT_REVISION = 2
 MANIFEST_SCHEMA_VERSION = 3
-SLOT_DATA_SCHEMA_VERSION = 5
-SLOT_DATA_REVISION = "0.6.0"
+SLOT_DATA_SCHEMA_VERSION = 6
+SLOT_DATA_REVISION = "0.7.0"
 
 LOCATION_ROWS = (
     ("Hell on Earth - Chainsaw", 7770001, "Hell on Earth - Barge - Hell Priest Barge"),
@@ -31,6 +31,7 @@ LOCATION_ROWS = (
     ("Hell on Earth - Doom Slayer Toy", 7770018, "Hell on Earth - City - Midtown"),
     ("Hell on Earth - Imp Toy", 7770019, "Hell on Earth - City - Downtown"),
     ("Hell on Earth - Infinite Extra Lives Cheat", 7770020, "Hell on Earth - City - Metro Station"),
+    ("Hell on Earth - Automap Station", 7770492, "Hell on Earth - City - Ravaged Cathedral"),
     ("Exultia - Rune - First Ruined Hall", 7770044, "Exultia - Exultia - Mourning Spire"),
     ("Exultia - Arachnotron Toy", 7770031, "Exultia - Exultia - Mourning Spire"),
     ("Exultia - Cacodemon Toy", 7770032, "Exultia - Exultia - Mourning Spire"),
@@ -61,6 +62,10 @@ LOCATION_ROWS = (
     ("Exultia - Sentinel Battery - King Novik Return Path", 7770084, "Exultia - Exultia - Central Rotunda"),
     ("Exultia - Slayer Key - Falling-Platform Overlook", 7770045, "Exultia - Hell - Ichor Expanse"),
     ("Exultia - Slayer Gate Complete", 7770486, "Exultia - Hell - Ichor Expanse"),
+    ("Exultia - Secret Armor - Breakable Wall", 7770493, "Exultia - Exultia - Mourning Spire"),
+    ("Exultia - Soulsphere - First Ruined Hall", 7770494, "Exultia - Exultia - Mourning Spire"),
+    ("Exultia - Automap Station", 7770495, "Exultia - Exultia - Belphegor's Gate"),
+    ("Exultia - Soulsphere - Trenches Secret Wall", 7770514, "Exultia - Exultia - Belphegor's Gate"),
     ("Exultia - Secret Encounter - Capitol Arena", 7770089, "Exultia - Hell - Ichor Expanse"),
     ("Exultia - Secret Encounter - Gore Nest Arena", 7770090, "Exultia - Hell - Ichor Expanse"),
     ("Fortress of Doom - Fortress of Doom Codex Entry", 7770072, "Fortress of Doom - Second Visit"),
@@ -108,6 +113,8 @@ LOCATION_ROWS = (
     ("Cultist Base - Sentinel Battery - Post-Arena Interior", 7770069, "Cultist Base - Station of Anointment"),
     ("Cultist Base - Sentinel Battery - Moving Elevator Shaft", 7770070, "Cultist Base - Station of Anointment"),
     ("Cultist Base - Slayer Gate Complete", 7770487, "Cultist Base - Promenade of Culling"),
+    ("Cultist Base - Automap Station", 7770497, "Cultist Base - Basilica of Adjuration"),
+    ("Cultist Base - Soulsphere - Central Hub Secret", 7770517, "Cultist Base - Basilica of Adjuration"),
     ("Cultist Base - Secret Encounter - Cave Mancubus", 7770091, "Cultist Base - Promenade of Culling"),
     ("Cultist Base - Secret Encounter - Torture Pit", 7770092, "Cultist Base - Promenade of Culling"),
     ("Doom Hunter Base - Extra Life - Red Generator Interior", 7770143, "Doom Hunter Base - Station of Redemption"),
@@ -157,6 +164,7 @@ LOCATION_ROWS = (
     ("Doom Hunter Base - Silver Bullet Mode Cheat Code", 7770159, "Doom Hunter Base - Skies of Stigmata"),
     ("Doom Hunter Base - Lost Soul Toy", 7770160, "Doom Hunter Base - Chamber of Penance"),
     ("Doom Hunter Base - Rune - Deag Ranak Hall", 7770161, "Doom Hunter Base - Chamber of Penance"),
+    ("Doom Hunter Base - Automap Station", 7770496, "Doom Hunter Base - Station of Redemption"),
     (
         "Super Gore Nest - Praetor Suit Token - Zombie Wall Opening",
         7770176,
@@ -242,6 +250,8 @@ LOCATION_ROWS = (
     ),
     ("Super Gore Nest - Slayer Key - Blue-Vent Upper Route", 7770205, "Super Gore Nest - Upper Area - Vermilion Canal"),
     ("Super Gore Nest - Slayer Gate Complete", 7770488, "Super Gore Nest - Upper Area - Vermilion Canal"),
+    ("Super Gore Nest - Automap Station", 7770498, "Super Gore Nest - Lower Area - Argent Energy Station"),
+    ("Super Gore Nest - Soulsphere - Birthday Secret", 7770513, "Super Gore Nest - Upper Area - Vermilion Canal"),
     (
         "Super Gore Nest - Secret Encounter - Yellow-Key Return Portal",
         7770202,
@@ -293,6 +303,7 @@ LOCATION_ROWS = (
         "ARC Complex - Moring Aeronautics",
     ),
     ("ARC Complex - Slayer Gate Complete", 7770489, "ARC Complex - Convention Parking"),
+    ("ARC Complex - Automap Station", 7770499, "ARC Complex - Vargo Convention Center"),
     ("ARC Complex - Secret Encounter - Generator Room", 7770242, "ARC Complex - Vargo Convention Center"),
     ("ARC Complex - Secret Encounter - Building On Fire Across Gap", 7770243, "ARC Complex - Vargo Convention Center"),
     ("Mars Core - Praetor Suit Token - Post-BFG Cracked Wall", 7770256, "Mars Core - Phobos - BFG-10000 Gun Deck"),
@@ -322,6 +333,7 @@ LOCATION_ROWS = (
     ("Mars Core - Slayer Key - Tentacle Vent", 7770280, "Mars Core - Hell - Temple of Sin"),
     ("Mars Core - Sentinel Crystal - Flying-Island Blue-Vent Landing", 7770281, "Mars Core - Hell - Temple of Sin"),
     ("Mars Core - Slayer Gate Complete", 7770490, "Mars Core - Hell - Temple of Sin"),
+    ("Mars Core - Automap Station", 7770500, "Mars Core - UAC - BFG-10000 Ventilation"),
     ("Mars Core - Secret Encounter - Post-BFG Cracked-Wall Side Room", 7770283, "Mars Core - Hell - Temple of Sin"),
     ("Mars Core - Secret Encounter - Tentacle Portal Arena", 7770284, "Mars Core - Hell - Temple of Sin"),
     ("Sentinel Prime - Sentinel Prime Codex", 7770291, "Sentinel Prime - Holy Pathway"),
@@ -336,6 +348,7 @@ LOCATION_ROWS = (
     ("Sentinel Prime - Praetor Suit Token - Gladiator Approach Gap", 7770300, "Sentinel Prime - Dungeons"),
     ("Sentinel Prime - Extra Life - Switch-Opened Wall Alcove", 7770301, "Sentinel Prime - Dungeons"),
     ("Sentinel Prime - Extra Life - Beside the Gladiator Approach Token", 7770302, "Sentinel Prime - Dungeons"),
+    ("Sentinel Prime - Automap Station", 7770501, "Sentinel Prime - Training Hall"),
     ("Taras Nabad - Sentinel Crystal - Broken-Bridge Lower Room", 7770303, "Taras Nabad - City Outskirts"),
     ("Taras Nabad - Praetor Suit Token - First Marauder Courtyard Exit", 7770306, "Taras Nabad - City Outskirts"),
     ("Taras Nabad - Praetor Suit Token - First Swim Exit", 7770307, "Taras Nabad - City Outskirts"),
@@ -365,6 +378,7 @@ LOCATION_ROWS = (
     ("Taras Nabad - Mastery Token - Archvile Courtyard Button Gate", 7770338, "Taras Nabad - Central Power Core"),
     ("Taras Nabad - Mastery Token - Crucible Room Opposite Walkway", 7770339, "Taras Nabad - Central Power Core"),
     ("Taras Nabad - Slayer Gate Complete", 7770491, "Taras Nabad - City Outskirts"),
+    ("Taras Nabad - Automap Station", 7770502, "Taras Nabad - Atrium Plaza"),
     ("Taras Nabad - Secret Encounter - Archvile Courtyard Breakable Wall", 7770331, "Taras Nabad - Catacombs"),
     ("Taras Nabad - Secret Encounter - Post-Swim Breakable Wall", 7770332, "Taras Nabad - Catacombs"),
     ("Nekravol - Cheat Code - Famine Mode", 7770340, "Nekravol - Pain's Basin"),
@@ -383,6 +397,7 @@ LOCATION_ROWS = (
     ("Nekravol - Toy - Doom Hunter", 7770353, "Nekravol - Halls of Torment"),
     ("Nekravol - Extra Life - Final Arena Rear Platform", 7770354, "Nekravol - Halls of Torment"),
     ("Nekravol - Sentinel Crystal - Opening Wall-Cannon Fork", 7770355, "Nekravol - Halls of Torment"),
+    ("Nekravol - Automap Station", 7770503, "Nekravol - The Mill"),
     ("Nekravol - Secret Encounter - Prison-Cage Gap", 7770356, "Nekravol - Halls of Torment"),
     ("Nekravol - Secret Encounter - Green-Skull Gate Return", 7770357, "Nekravol - Halls of Torment"),
     ("Nekravol Part II - Toy - Tyrant", 7770363, "Nekravol Part II - Corpse Conveyor"),
@@ -415,6 +430,7 @@ LOCATION_ROWS = (
         7770380,
         "Nekravol Part II - Soul Ascent",
     ),
+    ("Nekravol Part II - Automap Station", 7770504, "Nekravol Part II - Demon Foundry"),
     ("Nekravol Part II - Secret Encounter - Dread Knight Wall Hall", 7770381, "Nekravol Part II - Soul Ascent"),
     ("Nekravol Part II - Secret Encounter - Starting Bridge Side Platforms", 7770382, "Nekravol Part II - Soul Ascent"),
     ("Urdak - Mastery Token - First Forcefield Room Upper Ledge", 7770388, "Urdak - Infernal Demodulator"),
@@ -434,6 +450,7 @@ LOCATION_ROWS = (
     ("Urdak - Urdak Codex", 7770402, "Urdak - Perse Harmonizer"),
     ("Urdak - Icon of Sin Codex", 7770403, "Urdak - Perse Harmonizer"),
     ("Urdak - Maykr Angels Codex", 7770404, "Urdak - Perse Harmonizer"),
+    ("Urdak - Automap Station", 7770505, "Urdak - The Sanctuary"),
     ("Urdak - Secret Encounter - Statue-Puzzle Upper Door", 7770405, "Urdak - Xanthous Harmonizer"),
     ("Urdak - Secret Encounter - Eighth-Arena Breakable Wall", 7770406, "Urdak - Xanthous Harmonizer"),
     ("Final Sin - Extra Life - First Building Vent", 7770412, "Final Sin - Starstruct Industries"),
@@ -441,6 +458,7 @@ LOCATION_ROWS = (
     ("Final Sin - Extra Life - Second Building Lower Vent", 7770415, "Final Sin - Viris West"),
     ("Final Sin - Extra Life - Twin-Elevator Vent", 7770416, "Final Sin - Viris West"),
     ("Final Sin - Extra Life - Fourth-Arena Gore Room", 7770417, "Final Sin - Viris West"),
+    ("Final Sin - Automap Station", 7770506, "Final Sin - Starstruct Industries"),
     (
         "UAC Atlantica Facility - UAC Atlantica Facility Codex",
         7770420,
@@ -492,6 +510,16 @@ LOCATION_ROWS = (
         "UAC Atlantica Facility - UAC Facility (Destroyed) - Burning Shipyard",
     ),
     (
+        "UAC Atlantica Facility - Automap Station",
+        7770507,
+        "UAC Atlantica Facility - UAC Facility (Destroyed) - Flooded Lab",
+    ),
+    (
+        "UAC Atlantica Facility - Soulsphere - Underwater Facility Secret",
+        7770516,
+        "UAC Atlantica Facility - Underwater Facility",
+    ),
+    (
         "UAC Atlantica Facility - Secret Encounter - Lower Maintenance Platform",
         7770422,
         "UAC Atlantica Facility - UAC Facility (Intact) - Service Elevator",
@@ -509,6 +537,7 @@ LOCATION_ROWS = (
     ("The Blood Swamps - Support Rune - Desolate Cavern", 7770439, "The Blood Swamps - Forest of the Torch"),
     ("The Blood Swamps - Book of the Seraphs - Part IV Codex", 7770441, "The Blood Swamps - Ishii Castle Gate"),
     ("The Blood Swamps - Extra Life - Castle Keep Catacombs", 7770442, "The Blood Swamps - Ishii Castle Gate"),
+    ("The Blood Swamps - Automap Station", 7770508, "The Blood Swamps - Swamp Entrance"),
     ("The Blood Swamps - Secret Encounter - Fog Chasm Arena", 7770436, "The Blood Swamps - Sunken Courtyard"),
     ("The Blood Swamps - Secret Encounter - Toxic Mire Tree", 7770440, "The Blood Swamps - Forest of the Torch"),
     ("The Holt - The Holt Codex", 7770444, "The Holt - Tranquility"),
@@ -522,6 +551,8 @@ LOCATION_ROWS = (
     ("The Holt - Book of the Seraphs - Part VII Codex", 7770453, "The Holt - Ivory Path"),
     ("The Holt - Extra Life - Ivory Colonnade Crypt", 7770454, "The Holt - Ivory Path"),
     ("The Holt - Book of the Seraphs - Part VIII Codex", 7770456, "The Holt - Pantheon of Khans"),
+    ("The Holt - Automap Station", 7770509, "The Holt - Crimson Forest"),
+    ("The Holt - Soulsphere - Crimson Forest Secret Wall", 7770515, "The Holt - Crimson Forest"),
     ("The Holt - Secret Encounter - Crimson Glade Ruins", 7770447, "The Holt - Crimson Forest"),
     ("The Holt - Secret Encounter - Ivory Bridge Alcove", 7770455, "The Holt - Ivory Path"),
     ("The World Spear - Codex - Shard Altar", 7770458, "The World Spear - World Spear - Shard Altar"),
@@ -543,6 +574,7 @@ LOCATION_ROWS = (
     ),
     ("The World Spear - Escalation Encounter Wave 1", 7770463, "The World Spear - Sentinel Mountain - Mountain Ruins"),
     ("The World Spear - Escalation Encounter Wave 2", 7770464, "The World Spear - Sentinel Mountain - Mountain Ruins"),
+    ("The World Spear - Automap Station", 7770510, "The World Spear - Sentinel Mountain - Mountain Forest"),
     ("Reclaimed Earth - Codex - City Entrance Streetlight", 7770466, "Reclaimed Earth - City Entrance"),
     ("Reclaimed Earth - Codex - Escalation Exit", 7770467, "Reclaimed Earth - Reclaimed Train Stop"),
     ("Reclaimed Earth - Codex - Overgrown Offices Pillars", 7770468, "Reclaimed Earth - Overgrown Offices"),
@@ -552,6 +584,7 @@ LOCATION_ROWS = (
     ("Reclaimed Earth - Extra Life - Lockdown Red Door", 7770472, "Reclaimed Earth - Lockdown"),
     ("Reclaimed Earth - Escalation Encounter Wave 1", 7770473, "Reclaimed Earth - Reclaimed Train Stop"),
     ("Reclaimed Earth - Escalation Encounter Wave 2", 7770474, "Reclaimed Earth - Reclaimed Train Stop"),
+    ("Reclaimed Earth - Automap Station", 7770511, "Reclaimed Earth - Reclaimed Train Stop"),
     ("Immora - Codex - Battlefield Second Bend", 7770476, "Immora - Immora Assault - Battlefield"),
     ("Immora - Codex - Breach Tank Landing", 7770477, "Immora - Immora Assault - Breach"),
     ("Immora - Codex - Bridge Platform", 7770478, "Immora - Immora Assault - Bridge Platform"),
@@ -561,6 +594,7 @@ LOCATION_ROWS = (
     ("Immora - Extra Life - Plateau Battle 2-Up", 7770482, "Immora - Immora Assault - Plateau Battle"),
     ("Immora - Escalation Encounter Wave 1", 7770483, "Immora - Immora Assault - Plateau Battle"),
     ("Immora - Escalation Encounter Wave 2", 7770484, "Immora - Immora Assault - Plateau Battle"),
+    ("Immora - Automap Station", 7770512, "Immora - Immora Assault - Plateau Battle"),
     ("Hell on Earth - Mission Complete", 7770122, "Hell on Earth - Citadel - Citadel of Hell"),
     ("Exultia - Mission Complete", 7770123, "Exultia - Hell - Isle of Torment"),
     ("Cultist Base - Mission Complete", 7770124, "Cultist Base - Station of Anointment"),
@@ -722,6 +756,7 @@ LOCATION_NAMES_BY_REGION = {
         "ARC Complex - Return of Dr. Hayden - Part 1 Codex",
         "ARC Complex - Return of Dr. Hayden - Part 2 Codex",
         "ARC Complex - Sentinel Crystal - ARC Part I Stairwell",
+        "ARC Complex - Automap Station",
         "ARC Complex - Secret Encounter - Generator Room",
         "ARC Complex - Secret Encounter - Building On Fire Across Gap",
     ),
@@ -729,6 +764,8 @@ LOCATION_NAMES_BY_REGION = {
         "Cultist Base - Praetor Suit Token - Raised-Skull Chamber",
         "Cultist Base - Praetor Suit Token - Elevator-Shaft Crates",
         "Cultist Base - Praetor Suit Token - Icy-Slope Cracked Wall",
+        "Cultist Base - Automap Station",
+        "Cultist Base - Soulsphere - Central Hub Secret",
     ),
     "Cultist Base - Challenges - Mission Challenges": (
         "Cultist Base - Mission Challenge - Pull the Crystal",
@@ -802,6 +839,7 @@ LOCATION_NAMES_BY_REGION = {
         "Doom Hunter Base - Doom Hunter Codex",
         "Doom Hunter Base - Sentinel Battery - First Combat Room Vent",
         "Doom Hunter Base - Praetor Suit Token - Train Dock Upper Area",
+        "Doom Hunter Base - Automap Station",
     ),
     "Doom Hunter Base - Tower of Baphomet": (
         "Doom Hunter Base - Praetor Suit Token - Electrified Hexagonal Structure",
@@ -810,6 +848,8 @@ LOCATION_NAMES_BY_REGION = {
     "Exultia - Exultia - Belphegor's Gate": (
         "Exultia - Modbot - Purple-Goo Power-Core Cave",
         "Exultia - Extra Life - Inside Electric Trap",
+        "Exultia - Automap Station",
+        "Exultia - Soulsphere - Trenches Secret Wall",
     ),
     "Exultia - Exultia - Central Rotunda": (
         "Exultia - Extra Life - Behind King Novik's Throne",
@@ -837,6 +877,8 @@ LOCATION_NAMES_BY_REGION = {
         "Exultia - King Novik Codex Entry",
         "Exultia - History of the Sentinels Part Two Codex Entry",
         "Exultia - History of the Sentinels Part Three Codex Entry",
+        "Exultia - Secret Armor - Breakable Wall",
+        "Exultia - Soulsphere - First Ruined Hall",
     ),
     "Exultia - Hell - Ichor Expanse": (
         "Exultia - Slayer Key - Falling-Platform Overlook",
@@ -853,6 +895,7 @@ LOCATION_NAMES_BY_REGION = {
     ),
     "Final Sin - Starstruct Industries": (
         "Final Sin - Extra Life - First Building Vent",
+        "Final Sin - Automap Station",
     ),
     "Final Sin - Viris West": (
         "Final Sin - Icon of Sin Codex",
@@ -920,6 +963,7 @@ LOCATION_NAMES_BY_REGION = {
     ),
     "Hell on Earth - City - Ravaged Cathedral": (
         "Hell on Earth - Heavy Cannon",
+        "Hell on Earth - Automap Station",
     ),
     "Immora - Final Plunge - Final Plunge": (
         "Immora - Mission Complete",
@@ -938,6 +982,7 @@ LOCATION_NAMES_BY_REGION = {
         "Immora - Extra Life - Plateau Battle 2-Up",
         "Immora - Escalation Encounter Wave 1",
         "Immora - Escalation Encounter Wave 2",
+        "Immora - Automap Station",
     ),
     "Immora - Immora Assault - Walls of Immora": (
         "Immora - Extra Life - Walls of Immora Spike Cave",
@@ -978,6 +1023,7 @@ LOCATION_NAMES_BY_REGION = {
     ),
     "Mars Core - UAC - BFG-10000 Ventilation": (
         "Mars Core - Rune - Post-Prowler Elevator",
+        "Mars Core - Automap Station",
     ),
     "Mars Core - UAC - UAC Outpost LD": (
         "Mars Core - Praetor Suit Token - Tentacle Control Room",
@@ -1026,6 +1072,7 @@ LOCATION_NAMES_BY_REGION = {
         "Nekravol - Praetor Suit Token - Kalibas Exit",
         "Nekravol - Toy - Baron of Hell",
         "Nekravol - Mastery Token - Doom Hunter Toy Wall",
+        "Nekravol - Automap Station",
     ),
     "Nekravol Part II - Argent Transmitter": (
         "Nekravol Part II - Mission Complete",
@@ -1045,6 +1092,9 @@ LOCATION_NAMES_BY_REGION = {
         "Nekravol Part II - Album - Starting Bridge Side Platforms",
         "Nekravol Part II - Mastery Token - Starting Bridge Side Platforms",
         "Nekravol Part II - Cheat Code - Party Mode",
+    ),
+    "Nekravol Part II - Demon Foundry": (
+        "Nekravol Part II - Automap Station",
     ),
     "Nekravol Part II - Soul Ascent": (
         "Nekravol Part II - Praetor Suit Token - Final Arena Elevator Undercroft",
@@ -1080,6 +1130,7 @@ LOCATION_NAMES_BY_REGION = {
         "Reclaimed Earth - Codex - Escalation Exit",
         "Reclaimed Earth - Escalation Encounter Wave 1",
         "Reclaimed Earth - Escalation Encounter Wave 2",
+        "Reclaimed Earth - Automap Station",
     ),
     "Reclaimed Earth - Upper Overgrown Offices": (
         "Reclaimed Earth - Extra Life - Upper Offices Side Room",
@@ -1101,6 +1152,9 @@ LOCATION_NAMES_BY_REGION = {
         "Sentinel Prime - Deag Grav Codex",
         "Sentinel Prime - Gladiator Codex",
     ),
+    "Sentinel Prime - Training Hall": (
+        "Sentinel Prime - Automap Station",
+    ),
     "Super Gore Nest - Challenges - Mission Challenges": (
         "Super Gore Nest - Mission Challenge - Weaponslave",
         "Super Gore Nest - Mission Challenge - A Bloody Secret",
@@ -1108,6 +1162,7 @@ LOCATION_NAMES_BY_REGION = {
         "Super Gore Nest - All Mission Challenges Completed",
     ),
     "Super Gore Nest - Lower Area - Argent Energy Station": (
+        "Super Gore Nest - Automap Station",
         "Super Gore Nest - Mission Complete",
     ),
     "Super Gore Nest - Upper Area - Mixom Square": (
@@ -1143,7 +1198,11 @@ LOCATION_NAMES_BY_REGION = {
         "Super Gore Nest - Chaingun",
         "Super Gore Nest - Slayer Key - Blue-Vent Upper Route",
         "Super Gore Nest - Slayer Gate Complete",
+        "Super Gore Nest - Soulsphere - Birthday Secret",
         "Super Gore Nest - Secret Encounter - Below the Red Key",
+    ),
+    "Taras Nabad - Atrium Plaza": (
+        "Taras Nabad - Automap Station",
     ),
     "Taras Nabad - Catacombs": (
         "Taras Nabad - Toy - Marauder",
@@ -1211,9 +1270,12 @@ LOCATION_NAMES_BY_REGION = {
     ),
     "The Blood Swamps - Swamp Entrance": (
         "The Blood Swamps - The Blood Swamps Codex",
+        "The Blood Swamps - Automap Station",
     ),
     "The Holt - Crimson Forest": (
         "The Holt - Book of the Seraphs - Part V Codex",
+        "The Holt - Automap Station",
+        "The Holt - Soulsphere - Crimson Forest Secret Wall",
         "The Holt - Secret Encounter - Crimson Glade Ruins",
     ),
     "The Holt - Holy Chamber": (
@@ -1242,6 +1304,9 @@ LOCATION_NAMES_BY_REGION = {
         "The World Spear - Codex - Mountain Cliffs",
         "The World Spear - Extra Life - Mountain Cliffs 2-Up",
     ),
+    "The World Spear - Sentinel Mountain - Mountain Forest": (
+        "The World Spear - Automap Station",
+    ),
     "The World Spear - Sentinel Mountain - Mountain Ruins": (
         "The World Spear - Escalation Encounter Wave 1",
         "The World Spear - Escalation Encounter Wave 2",
@@ -1269,6 +1334,7 @@ LOCATION_NAMES_BY_REGION = {
         "UAC Atlantica Facility - Extra Life - Flooded Lab Vent",
         "UAC Atlantica Facility - Extra Life - Submerged Sub-Station 1",
         "UAC Atlantica Facility - Extra Life - Submerged Sub-Station 2",
+        "UAC Atlantica Facility - Automap Station",
     ),
     "UAC Atlantica Facility - UAC Facility (Intact) - Generator Tower": (
         "UAC Atlantica Facility - The Father Codex",
@@ -1281,6 +1347,7 @@ LOCATION_NAMES_BY_REGION = {
         "UAC Atlantica Facility - Secret Encounter - Lower Maintenance Platform",
     ),
     "UAC Atlantica Facility - Underwater Facility": (
+        "UAC Atlantica Facility - Soulsphere - Underwater Facility Secret",
         "UAC Atlantica Facility - Mission Complete",
     ),
     "Urdak - Challenges - Mission Challenges": (
@@ -1309,6 +1376,9 @@ LOCATION_NAMES_BY_REGION = {
         "Urdak - Urdak Codex",
         "Urdak - Icon of Sin Codex",
         "Urdak - Maykr Angels Codex",
+    ),
+    "Urdak - The Sanctuary": (
+        "Urdak - Automap Station",
     ),
     "Urdak - Xanthous Harmonizer": (
         "Urdak - Secret Encounter - Statue-Puzzle Upper Door",
@@ -1731,3 +1801,7 @@ CAMPAIGN_STAGES = (
 
 FORTRESS_POLICY = {'schema_version': 1, 'battery_surplus_percent': 25, 'phase_completion_weights': [1, 2, 4, 5, 6, 8, 9], 'phase_completion_denominator': 13, 'spend_groups': [{'id': 'SG_LOWER_EAST', 'cost': 2, 'locations': ['Fortress of Doom - Sentinel Crystal - Battery Room Lower East'], 'station': 'sentinel_battery_room_interact_hub_2_battery_station_4'}, {'id': 'SG_LOWER_WEST', 'cost': 2, 'locations': ['Fortress of Doom - Sentinel Crystal - Battery Room Lower West'], 'station': 'sentinel_battery_room_interact_hub_2_battery_station_3'}, {'id': 'SG_UPPER_EAST_MODBOT', 'cost': 2, 'locations': ['Fortress of Doom - Modbot - Battery Room Upper East'], 'station': 'sentinel_battery_room_interact_hub_2_battery_station_1'}, {'id': 'SG_UPPER_WEST_MODBOT', 'cost': 2, 'locations': ['Fortress of Doom - Modbot - Battery Room Upper West'], 'station': 'sentinel_battery_room_interact_hub_2_battery_station_2'}, {'id': 'SG_UPPER_EAST_PRAETOR', 'cost': 2, 'locations': ['Fortress of Doom - Praetor Suit Token - Battery Room Upper East'], 'station': 'sentinel_battery_room_interact_hub_1_battery_station_1'}, {'id': 'SG_UPPER_WEST_PRAETOR', 'cost': 2, 'locations': ['Fortress of Doom - Praetor Suit Token - Battery Room Upper West'], 'station': 'sentinel_battery_room_interact_hub_1_battery_station_2'}, {'id': 'SG_ELEVATOR_EAST', 'cost': 2, 'locations': ['Fortress of Doom - Praetor Suit Token - Elevator Room East'], 'station': 'interact_hub_1_battery_station_12'}, {'id': 'SG_ELEVATOR_WEST', 'cost': 2, 'locations': ['Fortress of Doom - Praetor Suit Token - Elevator Room West'], 'station': 'interact_hub_1_battery_station_11'}, {'id': 'SG_SENTINEL_ARMOR', 'cost': 2, 'locations': ['Fortress of Doom - Sentinel Armor'], 'station': 'interact_hub_2_battery_station_2'}, {'id': 'SG_CLASSIC_MARINE', 'cost': 2, 'locations': ['Fortress of Doom - Classic Marine Suit'], 'station': 'interact_hub_2_battery_station_3'}, {'id': 'SG_PRAETOR_AND_RUNES', 'cost': 2, 'locations': ['Fortress of Doom - Praetor Suit', 'Fortress of Doom - All Runes Cheat Code'], 'station': 'interact_hub_2_battery_station_1'}]}
 FORTRESS_SPEND_GROUPS = tuple(FORTRESS_POLICY['spend_groups'])
+
+MASTERY_REQUIREMENT_COUNTS = {'Original': {'weapon_mastery/shotgun/sticky_bomb': 25, 'weapon_mastery/shotgun/full_auto': 15, 'weapon_mastery/heavy_cannon/piercing_bolt': 75, 'weapon_mastery/heavy_cannon/micro_missiles': 15, 'weapon_mastery/plasma_rifle/heat_blast': 30, 'weapon_mastery/plasma_rifle/microwave': 15, 'weapon_mastery/rocket_launcher/lock_on': 15, 'weapon_mastery/rocket_launcher/detonate': 60, 'weapon_mastery/ballista/destroyer': 15, 'weapon_mastery/ballista/arbalest': 20, 'weapon_mastery/chaingun/mobile_turret': 10, 'weapon_mastery/chaingun/energy_shield': 20000, 'weapon_mastery/double_barrel/meat_hook': 50}, 'Half': {'weapon_mastery/shotgun/sticky_bomb': 13, 'weapon_mastery/shotgun/full_auto': 8, 'weapon_mastery/heavy_cannon/piercing_bolt': 38, 'weapon_mastery/heavy_cannon/micro_missiles': 8, 'weapon_mastery/plasma_rifle/heat_blast': 15, 'weapon_mastery/plasma_rifle/microwave': 8, 'weapon_mastery/rocket_launcher/lock_on': 8, 'weapon_mastery/rocket_launcher/detonate': 30, 'weapon_mastery/ballista/destroyer': 8, 'weapon_mastery/ballista/arbalest': 10, 'weapon_mastery/chaingun/mobile_turret': 5, 'weapon_mastery/chaingun/energy_shield': 20000, 'weapon_mastery/double_barrel/meat_hook': 25}, 'Quarter': {'weapon_mastery/shotgun/sticky_bomb': 7, 'weapon_mastery/shotgun/full_auto': 4, 'weapon_mastery/heavy_cannon/piercing_bolt': 19, 'weapon_mastery/heavy_cannon/micro_missiles': 4, 'weapon_mastery/plasma_rifle/heat_blast': 8, 'weapon_mastery/plasma_rifle/microwave': 4, 'weapon_mastery/rocket_launcher/lock_on': 4, 'weapon_mastery/rocket_launcher/detonate': 15, 'weapon_mastery/ballista/destroyer': 4, 'weapon_mastery/ballista/arbalest': 5, 'weapon_mastery/chaingun/mobile_turret': 3, 'weapon_mastery/chaingun/energy_shield': 20000, 'weapon_mastery/double_barrel/meat_hook': 13}}
+
+RESOURCE_NEUTRAL_LOCATION_NAMES = frozenset(('ARC Complex - Automap Station', 'Cultist Base - Automap Station', 'Cultist Base - Soulsphere - Central Hub Secret', 'Doom Hunter Base - Automap Station', 'Exultia - Automap Station', 'Exultia - Secret Armor - Breakable Wall', 'Exultia - Soulsphere - First Ruined Hall', 'Exultia - Soulsphere - Trenches Secret Wall', 'Final Sin - Automap Station', 'Hell on Earth - Automap Station', 'Immora - Automap Station', 'Mars Core - Automap Station', 'Nekravol - Automap Station', 'Nekravol Part II - Automap Station', 'Reclaimed Earth - Automap Station', 'Sentinel Prime - Automap Station', 'Super Gore Nest - Automap Station', 'Super Gore Nest - Soulsphere - Birthday Secret', 'Taras Nabad - Automap Station', 'The Blood Swamps - Automap Station', 'The Holt - Automap Station', 'The Holt - Soulsphere - Crimson Forest Secret Wall', 'The World Spear - Automap Station', 'UAC Atlantica Facility - Automap Station', 'UAC Atlantica Facility - Soulsphere - Underwater Facility Secret', 'Urdak - Automap Station'))

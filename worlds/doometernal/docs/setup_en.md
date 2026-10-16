@@ -26,6 +26,12 @@ The APWorld does not register a game client in Archipelago Launcher. One standal
 worker for its profile. The launcher never starts DOOM Eternal and has no game-launch button. Open the game yourself
 through Steam when setup is ready. **Disconnect / Stop** or closing the launcher stops its worker.
 
+## Enemy Speed options
+
+Speed changes require positive qualification for each species. The catalog has no qualified Speed modifier,
+so generated enemies use 100% Speed. The launcher disables Speed editing and identifies the affected species.
+Imported `enemy_speed` YAML ranges are preserved; they do not change enemy movement until qualification exists.
+
 ## Windows installation
 
 1. Select the DOOM Eternal directory containing `DOOMEternalx64vk.exe`.
