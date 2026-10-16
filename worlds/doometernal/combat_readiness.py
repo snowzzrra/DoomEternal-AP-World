@@ -1,7 +1,7 @@
 """
 Implements the Combat Readiness solver model:
 - Mission Base CR catalog (20 stages)
-- Skill Allowances (0: 6, 1: 10, 2: 15, 3: 20)
+- Logic preparation allowances: Relaxed 15, Standard 12, Expert 6
 - Severe Soft Penalties:
     - Missing effective Microwave Beam at mandatory Spirit breakpoint: +15
     - Missing effective Sentinel Hammer at The Dark Lord: +15
@@ -20,7 +20,6 @@ from .logic import dash_available, sentinel_hammer_available
 
 if TYPE_CHECKING:
     from BaseClasses import CollectionState
-# Canonical P7.3 stage IDs -> integer Base CR (0..100)
 MISSION_BASE_CR: dict[str, int] = {
     "e1m1_intro": 12,   # Hell on Earth
     "e1m2_war": 25,     # Exultia
@@ -43,12 +42,10 @@ MISSION_BASE_CR: dict[str, int] = {
     "e5m3_hell": 82,    # Immora
     "e5m4_boss": 80,    # The Dark Lord
 }
-# how above your cr can levels come by.
 SKILL_ALLOWANCES: dict[int, int] = {
-    0: 6,   # I'm Too Young to Die
-    1: 9,   # Hurt Me Plenty
-    2: 12,   # Ultra-Violence (default)
-    3: 15,   # Nightmare
+    0: 15,  # Relaxed
+    1: 12,  # Standard
+    2: 6,   # Expert
 }
 SPIRIT_PENALTY: int = 15
 DARK_LORD_HAMMER_PENALTY: int = 15
@@ -111,14 +108,14 @@ def get_mission_base_cr(stage_id: str) -> int:
     return MISSION_BASE_CR[stage_id]
 
 
-def get_skill_allowance(difficulty: int) -> int:
-    """Return the frozen Skill Allowance for a CampaignDifficulty value (0..3)."""
-    if difficulty not in SKILL_ALLOWANCES:
+def get_skill_allowance(logic_difficulty: int) -> int:
+    """Return the preparation allowance for a LogicDifficulty value."""
+    if logic_difficulty not in SKILL_ALLOWANCES:
         raise ValueError(
-            f"Unsupported campaign difficulty: {difficulty}. "
-            f"Supported: 0 (ITYTD: 6), 1 (HMP: 10), 2 (UV: 15), 3 (Nightmare: 20)"
+            f"Unsupported logic difficulty: {logic_difficulty}. "
+            "Supported: 0 (Relaxed), 1 (Standard), 2 (Expert)"
         )
-    return SKILL_ALLOWANCES[difficulty]
+    return SKILL_ALLOWANCES[logic_difficulty]
 
 
 def has_effective_anti_spirit(state: CollectionState, player: int) -> bool:
@@ -137,15 +134,15 @@ def has_effective_sentinel_hammer(
 
 def _resolve_readiness_options(
     world: Any | None = None,
-    difficulty: int | None = None,
+    logic_difficulty: int | None = None,
     special_weapon: str | None = None,
 ) -> tuple[int, str]:
-    """Resolve difficulty and special weapon configuration."""
-    if difficulty is None:
-        if world is not None and hasattr(world, "options") and hasattr(world.options, "campaign_difficulty"):
-            difficulty = int(world.options.campaign_difficulty.value)
+    """Resolve logic difficulty and special weapon configuration."""
+    if logic_difficulty is None:
+        if world is not None and hasattr(world, "options") and hasattr(world.options, "logic_difficulty"):
+            logic_difficulty = int(world.options.logic_difficulty.value)
         else:
-            difficulty = 2  # default Ultra-Violence
+            logic_difficulty = 1
     if special_weapon is None:
         if world is not None and hasattr(world, "options") and hasattr(world.options, "special_weapon"):
             opt = world.options.special_weapon
@@ -158,7 +155,7 @@ def _resolve_readiness_options(
                 special_weapon = "Progressive Special Weapon"
         else:
             special_weapon = "Progressive Special Weapon"
-    return difficulty, special_weapon
+    return logic_difficulty, special_weapon
 
 
 def evaluate_mission_readiness(
@@ -167,7 +164,7 @@ def evaluate_mission_readiness(
     stage_id: str,
     world: Any | None = None,
     *,
-    difficulty: int | None = None,
+    logic_difficulty: int | None = None,
     special_weapon: str | None = None,
     context: str = "base",
     player_cr: float | None = None,
@@ -177,19 +174,12 @@ def evaluate_mission_readiness(
     ``player_cr`` may be supplied when the caller already evaluated the same
     state; it must be the exact ``evaluate_player_loadout_cr`` total.
     """
-    diff, sw = _resolve_readiness_options(world, difficulty, special_weapon)
+    diff, sw = _resolve_readiness_options(world, logic_difficulty, special_weapon)
     allowance = get_skill_allowance(diff)
-    dlc_timing = getattr(getattr(world, "options", None), "dlc_logic_timing", None)
-    is_from_the_beginning = (dlc_timing is not None and getattr(dlc_timing, "value", 0) == 1)
-    is_dlc_stage = stage_id in {
-        "e4m1_rig", "e4m2_swamp", "e4m3_mcity",
-        "e5m1_spear", "e5m2_earth", "e5m3_hell", "e5m4_boss"
-    }
 
     if stage_id == DARK_LORD_STAGE_ID and context == "base":
         context = "darklord"
     base_cr = get_mission_base_cr(stage_id)
-    entry_exempt = context == "base" and is_dlc_stage and is_from_the_beginning
     if player_cr is None:
         cr_result = evaluate_player_loadout_cr(state, player, world)
         player_cr = float(cr_result.total)
@@ -207,7 +197,7 @@ def evaluate_mission_readiness(
             soft_penalty = DARK_LORD_HAMMER_PENALTY
             reason = "Missing effective Sentinel Hammer against The Dark Lord (+15 CR)"
 
-    effective_cr = min(MAX_EFFECTIVE_CR, (0 if entry_exempt else base_cr) + soft_penalty)
+    effective_cr = min(MAX_EFFECTIVE_CR, base_cr + soft_penalty)
     deficit = round(effective_cr - player_cr, 2)
     missing = []
     options = getattr(world, "options", None)
@@ -253,7 +243,7 @@ def is_mission_ready(
     stage_id: str,
     world: Any | None = None,
     *,
-    difficulty: int | None = None,
+    logic_difficulty: int | None = None,
     special_weapon: str | None = None,
     context: str = "base",
 ) -> bool:
@@ -263,7 +253,7 @@ def is_mission_ready(
         player,
         stage_id,
         world,
-        difficulty=difficulty,
+        logic_difficulty=logic_difficulty,
         special_weapon=special_weapon,
         context=context,
     ).ready
@@ -275,12 +265,12 @@ def is_spirit_breakpoint_ready(
     stage_id: str,
     world: Any | None = None,
     *,
-    difficulty: int | None = None,
+    logic_difficulty: int | None = None,
 ) -> bool:
     """Return whether player is logically combat-ready to cross a mandatory Spirit breakpoint."""
     return evaluate_mission_readiness(
         state, player, stage_id, world,
-        difficulty=difficulty, context="spirit_breakpoint",
+        logic_difficulty=logic_difficulty, context="spirit_breakpoint",
     ).ready
 
 
@@ -289,11 +279,11 @@ def is_dark_lord_defeated_ready(
     player: int,
     world: Any | None = None,
     *,
-    difficulty: int | None = None,
+    logic_difficulty: int | None = None,
     special_weapon: str | None = None,
 ) -> bool:
     """Return whether player is logically combat-ready to defeat The Dark Lord."""
     return evaluate_mission_readiness(
         state, player, DARK_LORD_STAGE_ID, world,
-        difficulty=difficulty, special_weapon=special_weapon, context="dark_lord_defeated",
+        logic_difficulty=logic_difficulty, special_weapon=special_weapon, context="dark_lord_defeated",
     ).ready

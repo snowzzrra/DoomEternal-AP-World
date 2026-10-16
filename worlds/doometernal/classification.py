@@ -1,4 +1,4 @@
-"""DOOM Eternal Archipelago v0.6 — Dynamic Progression Classification Authority.
+"""DOOM Eternal dynamic progression classification.
 
 Dynamic item progression classification:
 - Derives required readiness targets from active campaign plan (RMO, MAI, Vanilla).
@@ -151,12 +151,10 @@ def apply_dynamic_progression_classification(world: DoomEternalWorld) -> Classif
         randomize_chainsaw=bool(world.options.randomize_chainsaw.value),
         randomize_dash=bool(world.options.randomize_dash.value),
         special_weapon=world.options.special_weapon.current_option_name,
-        campaign_difficulty=world.options.campaign_difficulty.value,
+        logic_difficulty=world.options.logic_difficulty.value,
         active_spend_groups=getattr(world, "active_spend_groups", None),
     )
     hard_items = set().union(*(required_item_names(req) for req in requirements.values()))
-    # TAG2 traversal still needs Hook when From the Beginning removes its CR
-    # target. Keep that hard requirement in progression, independent of mastery.
     if any(STAGE_BY_ID[stage_id]["source"] == "tag2"
            for stage_id in world.campaign_plan.get("active_normal_mission_ids", ())):
         hard_items.add("Meat Hook")
@@ -166,6 +164,19 @@ def apply_dynamic_progression_classification(world: DoomEternalWorld) -> Classif
                 condition,
                 randomize_dash=bool(world.options.randomize_dash.value),
             )))
+    if world.options.item_pool_counts.value:
+        available = {item.name for item in mw.itempool if item.player == player}
+        available.update(item.name for item in mw.precollected_items[player])
+        if "Progressive Blood Punch" in available:
+            available.add("Blood Punch")
+        if not world.options.randomize_chainsaw.value:
+            available.add("Chainsaw")
+        if not world.options.randomize_dash.value:
+            available.add("Dash")
+        from .items import item_data_table
+        missing = sorted(name for name in hard_items if name in item_data_table and name not in available)
+        if missing:
+            raise ValueError(f"Item Pool Overrides exclude active requirements: {', '.join(missing)}")
     combat_baselines = {
         "Combat Shotgun", "Heavy Cannon", "Plasma Rifle", "Rocket Launcher", "Ballista", "Chaingun",
         "Sticky Bombs", "Full Auto", "Precision Bolt", "Micro Missiles", "Heat Blast", "Microwave Beam",

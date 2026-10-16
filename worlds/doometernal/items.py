@@ -271,6 +271,18 @@ DEVINV_NON_PERSISTENT_USEFUL_ITEM_NAMES = frozenset({
     "Extra Life", "Extra Life Pack", "One Extra Life",
 })
 
+POOL_ITEM_LIMITS = {
+    name: 1 for name in DEVINV_START_INVENTORY_ITEM_NAMES | set(world_pool_weapon_item_names)
+    if name not in {"Blood Punch", "Ammo Refill", "Sentinel Battery", "Sentinel Battery Bundle"}
+    and not name.startswith("Slayer Gate Key ")
+}
+POOL_ITEM_LIMITS.update({f"Progressive {stat} Upgrade": 4 for stat in ("Health", "Armor", "Ammo")})
+POOL_ITEM_LIMITS.update(SPECIAL_WEAPON_POOL_COUNTS)
+POOL_ITEM_LIMITS["Progressive Blood Punch"] = 4
+POOL_ITEM_LIMITS[WEAPON_UPGRADE_POINTS_NAME] = WEAPON_UPGRADE_POINTS_ITEM_COUNT
+FILLER_WEIGHT_NAMES = frozenset(name for name, item in item_data_table.items()
+                              if item.classification == ItemClassification.filler) | {"Extra Life", "Ammo Refill"}
+
 # Canonical eligibility for the parent Dossier > Suit page. Crystal
 # progressives are displayed there; Frag and Ice have vanilla Suit-family
 # preReqStats. Flame Belch is not part of that Suit group, so its base item is

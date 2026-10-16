@@ -254,22 +254,31 @@ class TestShortWorldGeneration(unittest.TestCase):
 
 
 
-    # -------------------------------------------------------------------------
-    # 10. Auto-Promotion of Use DLC Content
-    # -------------------------------------------------------------------------
-    def test_dlc_mission_auto_promotes_use_dlc_content(self) -> None:
-        """Selecting DLC mission pool when use_dlc_content=0 auto-promotes to 1."""
-        mw = setup_multiworld(
-            DoomEternalWorld,
-            seed=42,
-            options={
-                "mission_pool": "dlc_only",
-                "use_dlc_content": 0,
-                "goal": "kill_the_dark_lord",
-            },
-        )
-        world: DoomEternalWorld = mw.worlds[1]
-        self.assertTrue(bool(world.options.use_dlc_content.value))
+    def test_dlc_missions_preserve_disabled_dlc_content(self) -> None:
+        for randomize_chainsaw in (False, True):
+            with self.subTest(randomize_chainsaw=randomize_chainsaw):
+                mw = setup_multiworld(
+                    DoomEternalWorld,
+                    seed=42,
+                    options={
+                        "mission_pool": "dlc_only",
+                        "use_dlc_content": 0,
+                        "goal": "kill_the_dark_lord",
+                        "randomize_chainsaw": randomize_chainsaw,
+                    },
+                )
+                world: DoomEternalWorld = mw.worlds[1]
+                self.assertFalse(bool(world.options.use_dlc_content.value))
+                self.assertTrue(world.campaign_plan["dark_lord_active"])
+                self.assertTrue(all(STAGE_BY_ID[stage]["source"] in ("tag1", "tag2")
+                                    for stage in world.campaign_plan["active_normal_mission_ids"]))
+                self.assertNotIn("stone_imp", world.enemies["weights"])
+                self.assertEqual(world.campaign_plan["bootstrap_inventory"].get("Chainsaw", 0), int(not randomize_chainsaw))
+                self.assertEqual(world.campaign_plan["semantic_counts"].get("Chainsaw", 0), int(randomize_chainsaw))
+                precollected = sum(item.name == "Chainsaw" for item in mw.precollected_items[1])
+                self.assertEqual(precollected, int(not randomize_chainsaw) +
+                                 world.campaign_plan["readiness_bootstrap_items"].count("Chainsaw"))
+                self.assertEqual(sum(item.name == "Chainsaw" for item in mw.itempool) + precollected, 1)
 
 
     # -------------------------------------------------------------------------

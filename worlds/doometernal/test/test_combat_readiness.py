@@ -1,4 +1,4 @@
-"""DOOM Eternal Archipelago v0.6 — Combat Readiness Solver Integration Tests (P7.6).
+"""DOOM Eternal combat readiness integration tests.
 
 Tests cover:
 - Base readiness matrix against frozen P7.1 anchors and P7.5 allowances
@@ -22,7 +22,6 @@ from worlds.doometernal.combat_readiness import (
     DARK_LORD_STAGE_ID,
     MAX_EFFECTIVE_CR,
     MISSION_BASE_CR,
-    SKILL_ALLOWANCES,
     SPIRIT_BREAKPOINTS,
     SPIRIT_PENALTY,
     evaluate_mission_readiness,
@@ -39,6 +38,7 @@ from test.general import setup_multiworld
 
 def make_mock_world(
     difficulty: int = 2,
+    logic_difficulty: int = 1,
     special_weapon: str = "Progressive Special Weapon",
     randomize_dash: bool = False,
     randomize_chainsaw: bool = False,
@@ -52,6 +52,7 @@ def make_mock_world(
     world.starting_weapon_name = "Combat Shotgun"
     world.options = MagicMock()
     world.options.campaign_difficulty = MagicMock(value=difficulty)
+    world.options.logic_difficulty = MagicMock(value=logic_difficulty)
     sw_val = 0
     if special_weapon == "Progressive Sentinel Hammer":
         sw_val = 1
@@ -126,9 +127,8 @@ def create_state_with_items(
 # ═══════════════════════════════════════════════════════════════
 
 def test_canonical_readiness_and_dlc_intrinsic_difficulty():
-    for difficulty in range(4):
-        world = make_mock_world(difficulty=difficulty, randomize_dash=True)
-        world.options.dlc_logic_timing.value = 1
+    for logic_difficulty in range(3):
+        world = make_mock_world(logic_difficulty=logic_difficulty, randomize_dash=True)
         for stage in MISSION_BASE_CR:
             state = create_state_with_items({"Combat Shotgun"}, world=world)
             result = evaluate_mission_readiness(state, 1, stage, world)
@@ -136,6 +136,22 @@ def test_canonical_readiness_and_dlc_intrinsic_difficulty():
             assert result.mission_base_cr == MISSION_BASE_CR[stage]
             if stage.startswith(("e4", "e5")) and stage != DARK_LORD_STAGE_ID:
                 assert not result.ready
+
+
+@pytest.mark.parametrize(("items", "expected"), [
+    ({"Combat Shotgun", "Frag Grenade"}, (True, False, False)),
+    ({"Combat Shotgun", "Chainsaw"}, (True, True, False)),
+    ({"Combat Shotgun", "Chainsaw", "Dash"}, (True, True, True)),
+])
+def test_logic_profiles_are_independent_of_campaign_difficulty(items, expected):
+    for campaign_difficulty in range(4):
+        for logic_difficulty, ready in enumerate(expected):
+            world = make_mock_world(
+                difficulty=campaign_difficulty, logic_difficulty=logic_difficulty,
+                randomize_chainsaw=True, randomize_dash=True,
+            )
+            state = create_state_with_items(items, world=world)
+            assert evaluate_mission_readiness(state, 1, "e1m2_war", world).ready is ready
 
 
 def test_victory_requirement_alias_keeps_canonical_export():
@@ -161,12 +177,9 @@ class TestSpiritBreakpoints:
                 "mission_pool": "dlc_only",
                 "goal": "kill_the_dark_lord",
                 "campaign_difficulty": 2,
-                "dlc_logic_timing": "from_the_beginning",
             },
         )
         world: DoomEternalWorld = mw.worlds[1]
-
-        # From Beginning exempts the entry barrier; the Spirit breakpoint uses intrinsic CR 88.
 
         # Region before breakpoint: "The Blood Swamps - Underworld Crossroad"
         # Region after breakpoint: "The Blood Swamps - Sunken Courtyard"
@@ -180,6 +193,8 @@ class TestSpiritBreakpoints:
             "Air Control", "Faster Weapon Swap",
         }
         state = create_state_with_items(items, world=world, health_stages=3, armor_stages=3, ammo_stages=3)
+        for item in mw.precollected_items[1]:
+            state.remove(item)
         from worlds.doometernal.campaign import completion_event
         sequence = world.campaign_plan["sequence"]
         for predecessor in sequence[:sequence.index("e4m2_swamp")]:
@@ -245,7 +260,7 @@ class TestStructuralVsLogicalReachability:
             options={
                 "mission_pool": "full_saga",
                 "mission_order": "random_mission_order",
-                "campaign_difficulty": 0,  # ITYTD (allowance 6)
+                "logic_difficulty": "expert",
             },
         )
         world: DoomEternalWorld = mw.worlds[1]
@@ -310,7 +325,7 @@ class TestStructuralVsLogicalReachability:
             options={
                 "mission_pool": "full_saga",
                 "mission_order": "mission_access_as_items",
-                "campaign_difficulty": 0,  # ITYTD (allowance 6)
+                "logic_difficulty": "expert",
             },
         )
         world: DoomEternalWorld = mw.worlds[1]

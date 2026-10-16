@@ -2,7 +2,8 @@
 from collections import Counter
 from dataclasses import replace
 import itertools
-from .generated_content import CAMPAIGN_STAGES, FORTRESS_SPEND_GROUPS, FORTRESS_POLICY, LOCATION_ROWS
+import logging
+from .generated_content import CAMPAIGN_STAGES, FORTRESS_SPEND_GROUPS, FORTRESS_POLICY, LOCATION_ROWS, RESOURCE_NEUTRAL_LOCATION_NAMES
 from .logic import goal_endpoint_event_name, mission_clear_event_name, CRUCIBLE_CHALLENGE, crucible_challenge_enabled
 from .items import suit_perk_item_names
 from .options import resolve_praetor_suit_upgrade_count
@@ -30,6 +31,7 @@ from .planner import (
     build_semantic_counts,
     derive_readiness_targets,
     is_compact_campaign,
+    mastery_resource_family_count,
     select_readiness_items,
     ReadinessTarget,
 )
@@ -78,30 +80,14 @@ def get_short_world_scaling(
 ):
     n = len(active_normal_stage_ids)
     if n <= 3:
-        if mission_location_count <= 28:
-            active_sg = FORTRESS_SPEND_GROUPS[:1]
-            active_masteries = 0
-        elif mission_location_count <= 36:
-            active_sg = FORTRESS_SPEND_GROUPS[:2]
-            active_masteries = 1
-        elif mission_location_count <= 50:
-            active_sg = FORTRESS_SPEND_GROUPS[:3]
-            active_masteries = 2
-        else:
-            active_sg = FORTRESS_SPEND_GROUPS[:4]
-            active_masteries = 2
+        active_sg = FORTRESS_SPEND_GROUPS[:3]
     elif n <= 5:
         active_sg = FORTRESS_SPEND_GROUPS[:4]
-        active_masteries = 3
     elif n <= 8:
         active_sg = FORTRESS_SPEND_GROUPS[:8]
-        active_masteries = 5
     else:
         active_sg = FORTRESS_SPEND_GROUPS
-        active_masteries = 13
-
-    if not include_weapon_masteries:
-        active_masteries = 0
+    active_masteries = mastery_resource_family_count(n) if include_weapon_masteries else 0
 
     cost = sum(group["cost"] for group in active_sg)
     surplus = (cost * FORTRESS_POLICY["battery_surplus_percent"] + 99) // 100
@@ -151,12 +137,6 @@ def resolve_dependencies(package, base_state, player, pool_counts):
 
 SPIRIT_STAGE_IDS = frozenset(SPIRIT_BREAKPOINTS.values())
 
-DLC_STAGE_IDS = frozenset({
-    "e4m1_rig", "e4m2_swamp", "e4m3_mcity",
-    "e5m1_spear", "e5m2_earth", "e5m3_hell", "e5m4_boss",
-})
-
-
 def _start_stage_readiness(state, player, stage_id, world_context):
     """Readiness required to choose stage_id as a starting mission.
 
@@ -165,8 +145,8 @@ def _start_stage_readiness(state, player, stage_id, world_context):
     mission-root entrance:
     - mission-root readiness (base CR, or Dark Lord readiness),
     - the mandatory Spirit breakpoint when the stage has one,
-    - from_the_beginning traversal requirements (Dash and, for TAG2 stages,
-      Super Shotgun + ammo-resource producer).
+    - traversal requirements (Dash and, for TAG2 stages, Super Shotgun + an
+      ammo-resource producer).
     """
     context = "dark_lord_defeated" if stage_id == "e5m4_boss" else "base"
     result = evaluate_mission_readiness(state, player, stage_id, world_context, context=context)
@@ -473,7 +453,6 @@ def make_plan(options, rng, world=None):
     else:
         raise ValueError(f"Unknown Mission Pool: {pool_name}")
 
-    # 2. Goal normalization (must run before deriving effective DLC flags)
     goal_forced_active = False
     forced_normal_ids = set()
     goal_stage = None
@@ -508,13 +487,6 @@ def make_plan(options, rng, world=None):
         elif final == 0:
             final = rng.choice((1, 2))
         goal_stage = "e3m4_boss" if final == 1 else "e5m4_boss"
-
-    # 3. Auto-promote Use DLC Content after goal normalization, so Base +
-    #    DLC OFF + a goal that forces the Dark Lord or the Full Saga also
-    #    normalizes the effective DLC flags.
-    has_dlc = any(STAGE_BY_ID[s]["source"] in ("tag1", "tag2") for s in candidate_normal_ids) or dark_lord_candidate
-    if has_dlc and not options.use_dlc_content.value:
-        options.use_dlc_content.value = 1
 
     # 4. Mission Count & Active Normal Missions selection
     raw_count = options.mission_count.value
@@ -557,6 +529,7 @@ def make_plan(options, rng, world=None):
         "Exultia - Dash": options.randomize_dash.value,
     }
     mission_loc_count = 0
+    resource_mission_locations = 0
     for loc_name, loc_data in location_data_table.items():
         stage_id = REGION_STAGE.get(loc_data.region)
         if stage_id in active_stage_set:
@@ -565,6 +538,7 @@ def make_plan(options, rng, world=None):
             if loc_name in vanilla_physical_locations and not vanilla_physical_locations[loc_name]:
                 continue
             mission_loc_count += 1
+            resource_mission_locations += int(loc_name not in RESOURCE_NEUTRAL_LOCATION_NAMES)
 
     active_sg, active_masteries_count, battery_surplus = get_short_world_scaling(
         active_normal_ids,
@@ -628,18 +602,32 @@ def make_plan(options, rng, world=None):
     if not crucible_challenge_enabled(special_weapon) and CRUCIBLE_CHALLENGE in location_data_table:
         if REGION_STAGE.get(location_data_table[CRUCIBLE_CHALLENGE].region) in active_stage_set:
             mission_loc_count -= 1
+            resource_mission_locations -= 1
     hub_location_count = len(FORTRESS_NON_CONSUMER_LOCATIONS | {
         name for group in active_sg for name in group["locations"]
     }) + int(set(BASE_GATE_STAGE_IDS).issubset(active_stage_set))
     planned_location_count = mission_loc_count + hub_location_count + active_masteries_count
-    raw_suit_count = resolve_praetor_suit_upgrade_count(options.praetor_suit_upgrades_in_pool.value, rng)
-    effective_suit_count = (raw_suit_count if raw_suit_count < 3 else
-                            min(raw_suit_count, max(3, round(raw_suit_count * planned_location_count / 439))))
+    resource_budget = resource_mission_locations + hub_location_count + active_masteries_count
+    eff_starts = max(1, min(options.starting_missions.value, len(ordinary)))
+    access_count = (len(ordinary) - eff_starts + int(bool(goal_stage and options.goal_mission_as_item.value))) if order_mode == 2 else 0
+    suit_option = options.praetor_suit_upgrades_in_pool.value
+    profile = options.resource_profile.current_option_name
+    auto_span = {"Balanced": 13, "Generous": 9, "Lean": 19}[profile]
+    effective_suit_count = (min(len(suit_perk_item_names), max(3,
+                            (len(suit_perk_item_names) * len(active_normal_ids) + auto_span - 1) // auto_span))
+                            if suit_option == -2 else resolve_praetor_suit_upgrade_count(suit_option, rng))
+    overrides = options.item_pool_counts.value
     requested_suits = {name for name in suit_perk_item_names if options.start_inventory.value.get(name)}
-    suit_count = max(effective_suit_count, len(requested_suits))
-    chosen_suits = requested_suits | set(rng.sample(
-        [name for name in suit_perk_item_names if name not in requested_suits],
-        suit_count - len(requested_suits),
+    explicit_suits = {name for name in suit_perk_item_names if overrides.get(name, 0) > 0}
+    fixed_suits = requested_suits | explicit_suits
+    suit_count = max(effective_suit_count, len(fixed_suits))
+    candidates = [name for name in suit_perk_item_names if name not in fixed_suits and overrides.get(name, 1) > 0]
+    if suit_option >= 0 and (len(explicit_suits | requested_suits) > max(effective_suit_count, len(requested_suits))
+                            or len(candidates) < suit_count - len(fixed_suits)):
+        raise ValueError("Praetor Suit count conflicts with Item Pool Overrides")
+    chosen_suits = fixed_suits | set(rng.sample(
+        candidates,
+        min(len(candidates), suit_count - len(fixed_suits)),
     ))
     compact_runes = rng.sample(sorted(NORMAL_RUNE_NAMES), 2) if is_compact_campaign(active_normal_ids) else ()
     semantic_pool = build_semantic_counts(
@@ -654,7 +642,14 @@ def make_plan(options, rng, world=None):
         world_context=world_context,
         suit_counts={name: 1 for name in sorted(chosen_suits)},
         compact_runes=compact_runes,
+        placement_budget=max(0, resource_budget - access_count),
     )
+    chosen_suits = {name for name in chosen_suits if semantic_pool.total_counts.get(name, 0)}
+    if semantic_pool.auto_adjustments:
+        actual = sum(semantic_pool.placement_counts.values())
+        logging.info("DOOM Eternal %s resource profile: Auto adjusted %d to %d pool copies (budget %d).",
+                     profile, actual + sum(semantic_pool.auto_adjustments.values()), actual,
+                     max(0, resource_budget - access_count))
     pool_counts = Counter(semantic_pool.placement_counts)
     def evaluate_start_stage(s_id: str):
         return solve_stage_bootstrap(
@@ -700,8 +695,6 @@ def make_plan(options, rng, world=None):
             goal_as_item = False
         else:
             # Mission Access as Items (§5)
-            eff_starts = min(options.starting_missions.value, len(ordinary))
-            eff_starts = max(1, eff_starts)
             rem_ordinary = [s for s in ordinary if s != chosen_start]
             rng.shuffle(rem_ordinary)
 
@@ -744,6 +737,7 @@ def make_plan(options, rng, world=None):
         "schema": 1,
         "mode": options.mission_order.current_option_name,
         "difficulty": options.campaign_difficulty.value,
+        "logic_difficulty": options.logic_difficulty.current_option_name,
         "sequence": sequence,
         "starting_stages": starts,
         "starting_weapon": starting_weapon,
@@ -792,6 +786,8 @@ def make_plan(options, rng, world=None):
         "semantic_counts": semantic_counts,
         "praetor_suit_upgrades_in_pool": len(chosen_suits),
         "semantic_placement_counts": semantic_placement_counts,
+        "resource_permanent_budget": resource_budget,
+        "resource_auto_adjustments": dict(sorted(semantic_pool.auto_adjustments.items())),
         "readiness_selection": {name: qty for name, qty in sorted(semantic_pool.optional_selected.items())},
         "readiness_initial_deficit": round(semantic_pool.readiness_initial_deficit, 2),
         "readiness_final_deficit": round(semantic_pool.readiness_final_deficit, 2),

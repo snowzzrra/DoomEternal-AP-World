@@ -23,6 +23,8 @@ from .generated_content import (
     MISSION_DIFFICULTY,
 )
 from .identity import GAME_NAME
+from .enemy_options import normalize_enemy_options
+from .enemy_plan import validate_frozen_enemy_plan
 from .campaign import (
     BASE_GATE_STAGE_IDS,
     FORTRESS_NON_CONSUMER_LOCATIONS,
@@ -76,8 +78,9 @@ from .logic import (
     requirement_satisfied,
     validate_location_prerequisites,
 )
-from .options import DLCLogicTiming, DeathLinkMode, DoomEternalOptions, SpecialWeapon
+from .options import DeathLinkMode, DoomEternalOptions, SpecialWeapon
 from .settings import DoomEternalSettings
+from .generated_content import MASTERY_REQUIREMENT_COUNTS
 from .version import (
     APWORLD_REVISION,
     BRIDGE_PROTOCOL,
@@ -121,14 +124,28 @@ class DoomEternalWorld(World):
         """Return every item materialized before normal AP receipt delivery."""
         return Counter(self.options.start_inventory.value)
 
+    def _enemy_option_values(self) -> dict[str, object]:
+        names = [name for name in self.options_dataclass.type_hints if name.startswith("enemy_")]
+        raw = self.options.as_dict(*names, "progressive_difficulty", "use_dlc_content", toggles_as_bools=True)
+        for name in ("enemy_preset", "enemy_count_mode"):
+            option = getattr(self.options, name)
+            raw[name] = option.name_lookup[option.value]
+        return {name: "auto" if value == -1 else value for name, value in raw.items()}
+
     def generate_early(self) -> None:
         if self.options.start_inventory.value.get("Blood Punch"):
             raise ValueError("Blood Punch belongs to legacy rooms; new seeds require Progressive Blood Punch (0..4)")
         self.campaign_plan = make_plan(self.options, self.random, world=self)
+        self.enemy_options_raw = self._enemy_option_values()
+        self.enemies = normalize_enemy_options(self.enemy_options_raw)
+        from .killsanity_plan import build_killsanity_plan
+        self.killsanity_plan = build_killsanity_plan({
+            "enabled": bool(self.options.killsanity.value),
+            "interval": self.options.kills_per_check.value,
+            "maximum_milestones": ("auto" if self.options.killsanity_maximum_milestones.value == -1
+                                   else self.options.killsanity_maximum_milestones.value),
+        }, len(self.campaign_plan["stage_ids"]))
         self.starting_weapon_name = self.campaign_plan.get("starting_weapon")
-        # Physical-ownership policy: every item materialized before normal AP
-        # receipt delivery is logically owned even when its pool classification
-        # is useful (R03). Computed before any push_precollected call.
         initial_logical_items = set(self.options.start_inventory.value)
         if self.starting_weapon_name:
             initial_logical_items.add(self.starting_weapon_name)
@@ -209,6 +226,23 @@ class DoomEternalWorld(World):
     item_name_to_id = item_name_to_id
     location_name_to_id = location_name_to_id
 
+    @classmethod
+    def stage_modify_multidata(cls, multiworld, multidata):
+        from worlds.AutoWorld import data_package_checksum
+        from .killsanity_plan import milestone_names
+
+        names = {}
+        for player in multiworld.get_game_players(cls.game):
+            names.update(milestone_names(multiworld.worlds[player].killsanity_plan))
+        if names:
+            package = dict(multidata["datapackage"][cls.game])
+            package["location_name_to_id"] = {**package["location_name_to_id"], **names}
+            package["location_name_groups"] = {**package["location_name_groups"],
+                                               "Everywhere": sorted(package["location_name_to_id"])}
+            package.pop("checksum")
+            package["checksum"] = data_package_checksum(package)
+            multidata["datapackage"] = {**multidata["datapackage"], cls.game: package}
+
     def _campaign_entrance_access(self, event_name, requirement, state) -> bool:
         if event_name and not state.has(event_name, self.player):
             return False
@@ -236,7 +270,7 @@ class DoomEternalWorld(World):
         from .combat_readiness import MISSION_SKULL_TIERS
         return {stage_id: {
             "base_cr": get_mission_base_cr(stage_id),
-            "skill_allowance": get_skill_allowance(self.options.campaign_difficulty.value),
+            "skill_allowance": get_skill_allowance(self.options.logic_difficulty.value),
             "skull_tier": MISSION_SKULL_TIERS[stage_id],
         } for stage_id in self.campaign_plan["sequence"]}
 
@@ -253,7 +287,7 @@ class DoomEternalWorld(World):
             goal=self.options.goal.current_option_name,
         )
         capabilities = [
-            "room_mod_v2", "slot_data_v5", "goal_events_v1", "goal_endpoint_events_v1",
+            "room_mod_v2", "slot_data_v6", "goal_events_v1", "goal_endpoint_events_v1",
             "dlc_missions_v1", "physical_options_v1",
         ]
         if start_inventory:
@@ -278,6 +312,7 @@ class DoomEternalWorld(World):
             "randomize_first_battery": True,
             "include_slayer_gates": bool(self.options.include_slayer_gates.value),
             "include_secret_encounters": bool(self.options.include_secret_encounters.value),
+            "easier_secret_encounters": bool(self.options.easier_secret_encounters.value),
             "include_weapon_mastery_challenges": bool(self.options.include_weapon_mastery_challenges.value),
             "reveal_ap_locations_on_automap": bool(self.options.reveal_ap_locations_on_automap.value),
             "trap_percentage": int(self.options.trap_percentage.value),
@@ -300,7 +335,13 @@ class DoomEternalWorld(World):
             "active_fortress_spend_group_ids": [sg["id"] for sg in active_sg],
             "active_location_count": len([loc for loc in self.multiworld.get_locations(self.player) if loc.address is not None]),
             "cr_dataset_version": "0.1",
-            "dlc_logic_timing": self.options.dlc_logic_timing.current_option_name,
+            "logic_difficulty": self.options.logic_difficulty.current_option_name,
+            "mastery_requirements": self.options.mastery_requirements.current_option_name,
+            "mastery_requirement_counts": MASTERY_REQUIREMENT_COUNTS[self.options.mastery_requirements.current_option_name],
+            "resource_profile": self.options.resource_profile.current_option_name,
+            "item_pool_counts": dict(self.options.item_pool_counts.value),
+            "filler_weights": dict(self.options.filler_weights.value),
+            "trap_weights": dict(self.options.trap_weights.value),
             "goal": self.options.goal.current_option_name,
             "goal_endpoint_event": goal_endpoint_event_name(self.options.goal.current_option_name),
             "goal_endpoint_available": goal_endpoint_available(
@@ -318,13 +359,24 @@ class DoomEternalWorld(World):
             "bridge_protocol": BRIDGE_PROTOCOL,
             "compiler_revision": COMPILER_REVISION,
             "manifest_schema_version": MANIFEST_SCHEMA_VERSION,
+            "slot_data_schema_version": SLOT_DATA_SCHEMA_VERSION,
             "slot_data_revision": SLOT_DATA_REVISION,
             "mod_contract_revision": ROOM_CONTRACT_REVISION,
             "required_capabilities": capabilities,
             "starting_inventory": start_inventory,
             "starting_weapon": self.starting_weapon_name,
+            "enemies": self.enemies,
+            "killsanity_options": {
+                "enabled": bool(self.options.killsanity.value),
+                "interval": self.options.kills_per_check.value,
+                "maximum_milestones": self.killsanity_plan["maximum_milestones"] or "auto",
+            },
+            "killsanity": self.killsanity_plan,
         }
-        identity = {"slot_data": data, "placements": sorted(
+        data.update(self.enemy_options_raw)
+        validate_frozen_enemy_plan(data.get("enemy_plan"), data["enemies"])
+        identity = {"slot_data": {key: value for key, value in data.items()
+                                 if not key.startswith("enemy_") and key != "progressive_difficulty"}, "placements": sorted(
             (location.address, location.item.code, location.item.player)
             for location in self.multiworld.get_locations(self.player)
             if location.address is not None and location.item is not None)}
@@ -532,6 +584,9 @@ class DoomEternalWorld(World):
                 state.has(completion_event(key), player) for key in ordinary
             ) >= count
 
+        from .killsanity_logic import create_killsanity_locations
+        create_killsanity_locations(self)
+
     def create_items(self) -> None:
         """Instantiate the canonical semantic multiset exactly once."""
         start_inventory = self.effective_starting_inventory()
@@ -609,15 +664,24 @@ class DoomEternalWorld(World):
                 "Large Armor": 10,
                 "Armor Shard": 5,
             }
+            profile = self.options.resource_profile.current_option_name
+            for name in ("Full Heal", "Full Armor", "Soulsphere"):
+                filler_weights[name] = (filler_weights[name] * 2 if profile == "Generous"
+                                        else max(1, filler_weights[name] // 2) if profile == "Lean"
+                                        else filler_weights[name])
+            filler_weights.update(self.options.filler_weights.value)
             enabled_traps = sorted(self.options.enabled_traps.value)
+            trap_weights = {name: self.options.trap_weights.value.get(name, 1) for name in enabled_traps}
+            enabled_traps = [name for name in enabled_traps if trap_weights[name] > 0]
             trap_count = amount_needed * self.options.trap_percentage.value // 100 if enabled_traps else 0
-            fillers = self.multiworld.random.choices(
-                list(filler_weights),
-                weights=list(filler_weights.values()),
-                k=amount_needed - trap_count,
-            )
-            pool_names.extend(fillers)
-            pool_names.extend(self.multiworld.random.choices(enabled_traps, k=trap_count))
+            if amount_needed > trap_count and not any(filler_weights.values()):
+                raise ValueError("Filler Weights must leave a positive weight for residual locations")
+            if amount_needed > trap_count:
+                pool_names.extend(self.multiworld.random.choices(
+                    list(filler_weights), weights=list(filler_weights.values()), k=amount_needed - trap_count))
+            if trap_count:
+                pool_names.extend(self.multiworld.random.choices(enabled_traps,
+                                  weights=[trap_weights[name] for name in enabled_traps], k=trap_count))
 
         pool = [self.create_item(name) for name in pool_names]
         self.multiworld.itempool += pool
@@ -643,7 +707,7 @@ class DoomEternalWorld(World):
                 else self.options.special_weapon.current_option_name
             ),
             active_battery_cost=active_battery_cost,
-            campaign_difficulty=self.options.campaign_difficulty.value,
+            logic_difficulty=self.options.logic_difficulty.value,
             active_spend_groups=getattr(self, "active_spend_groups", None),
         )
         validate_location_prerequisites(
