@@ -148,6 +148,24 @@ def _phase_needs_supply(phase, profile, species):
         return False
     native = next((row for row in profile.get("native_phase_supply", [])
                    if (row["manager"], row["script_index"], row["barrier_index"]) == tuple(phase)), {})
+    supply = native.get("native_ammunition")
+    if supply is not None:
+        sources = [row for row in profile["encounters"] if row["operation"]["manager"]["entity"] == phase[0]
+                   and row["operation"]["script_index"] == phase[1]]
+        if (not isinstance(supply, dict) or set(supply) != {"event_index", "event_sha256", "event_def", "spawn_type", "label"}
+                or type(supply["event_index"]) is not int or not 0 <= supply["event_index"] < min(row["operation"]["event_index"] for row in sources)
+                or supply["event_def"] not in {"spawnSingleAI", "spawnAI", "staggeredAISpawn", "maintainAICount"}
+                or not isinstance(supply["label"], str) or not isinstance(supply["event_sha256"], str)
+                or not re.fullmatch("[0-9a-f]{64}", supply["event_sha256"])):
+            raise ValueError("Preserved native ammunition source is invalid")
+        mask = enemy_species.enemy_spawn_mask(supply["spawn_type"])
+        reliable = enemy_species.enemy_spawn_mask("ENCOUNTER_SPAWN_IMP ENCOUNTER_SPAWN_HELL_SOLDIER ENCOUNTER_SPAWN_ZOMBIE_TIER_1 ENCOUNTER_SPAWN_ZOMBIE_TIER_3")
+        if mask & ~reliable or any((row["operation"]["event_index"] == supply["event_index"] or
+                supply["event_def"] == "maintainAICount" and enemy_species.enemy_spawn_mask(enemy_species.selected_spawn_type(row["operation"]["from"])) & mask)
+                for row in profile["encounters"] if row["operation"]["manager"]["entity"] == phase[0]
+                and row["operation"]["script_index"] == phase[1]):
+            raise ValueError("Generated enemies overlap native ammunition replenishment")
+        return Fraction(0)
     needed = native.get("needs_ammunition") or any(
         value not in ("imp", "hell_soldier", "zombie_tier_1", "zombie_tier_3") for value in species)
     return BASE_COMBAT_COST[_phase_supplier(phase, profile)[1]] if needed else Fraction(0)
@@ -430,7 +448,8 @@ def validate_frozen_enemy_plan(plan, enemies):
         stage = progression[key]
         if not isinstance(stage, list) or len(stage) != 2:
             raise ValueError("Enemy limit progression fields are invalid")
-        enemies = {**base_enemies, "special_limits": effective_special_limits(base_enemies, *stage)}
+        enemies = ({**base_enemies, "special_limits": effective_special_limits(base_enemies, *stage)}
+                   if "special_limits" in base_enemies else base_enemies)
         if not isinstance(key, str) or re.fullmatch(r"[a-z0-9_]+", key) is None:
             raise ValueError("Enemy generation plan map key is invalid")
         if not isinstance(row, dict) or set(row) != {"schema", "map_key", "source_sha256", "operations"}:

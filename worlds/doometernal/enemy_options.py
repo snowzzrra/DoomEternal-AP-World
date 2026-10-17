@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from math import gcd
 
 
-ENEMY_OPTIONS_REVISION = 1
+ENEMY_OPTIONS_REVISION = 2
 SPECIES_GROUPS = {
     "fodder": ("chaingun_soldier", "demonic_trooper", "gargoyle", "hell_soldier", "imp", "lost_soul",
                "maykr_angel", "shotgun_soldier", "stone_imp", "zombie_maykr", "zombie_t1_screecher",
