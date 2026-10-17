@@ -184,7 +184,8 @@ class Goal(_ExactLabelChoice):
     Acquire the Unmaykr: Beat the six base game Slayer Gates and collect the Unmaykr in the Fortress.
     Kill the Icon of Sin: Defeat the base game's final boss.
     Kill the Dark Lord: Defeat Davoth, the final boss of The Ancient Gods Part Two.
-    Complete the Full Saga: Finish every included mission, collect the Unmaykr, and defeat both the Icon of Sin and Davoth."""
+    Complete the Full Saga: Include the base game and both DLC campaigns, with your chosen boss as the finale.
+    Victory Requirements adds extra objectives to your goal."""
 
     display_name = "Goal"
     option_acquire_the_unmaykr = 0
@@ -402,18 +403,18 @@ class _EnemyRecipeRange(NamedRange):
 
 
 class EnemyIntensityEarly(_EnemyRecipeRange):
-    """Choose the combat budget near the start when Enemy Count is Auto.
+    """Choose how tough randomized fights should be near the start when Enemy Count is Auto.
 
-    100%: Aim for the original combat budget. Lower values reduce pressure; higher values raise it.
+    100%: Aim for normal enemy strength. Lower values make fights easier; higher values make them harder.
     Auto: Use the selected enemy preset."""
 
     display_name = "Early Intensity"
 
 
 class EnemyIntensityLate(_EnemyRecipeRange):
-    """Choose the combat budget near the end when Enemy Count is Auto.
+    """Choose how tough randomized fights should become near the end when Enemy Count is Auto.
 
-    100%: Aim for the original combat budget. Lower values reduce pressure; higher values raise it.
+    100%: Aim for normal enemy strength. Lower values make fights easier; higher values make them harder.
     Auto: Use the selected enemy preset."""
 
     display_name = "Late Intensity"
@@ -444,7 +445,7 @@ class EnemyCountMode(_ExactLabelChoice):
     """Choose how to decide the number of randomized enemies in a fight.
 
     Preset: Use the selected enemy preset's count setting.
-    Auto: Spend the Intensity budget on a mix shaped by Density, using each enemy's type and rolled attributes.
+    Auto: Use Intensity and Density to choose between more weak enemies and fewer strong enemies.
     Multiplier: Multiply the fight's original enemy count using Enemy Count Multiplier.
     Crowded fights can split into extra waves."""
 
@@ -500,8 +501,7 @@ class KillsPerCheck(Range):
 class KillsanityMaximumMilestones(NamedRange):
     """Choose how many kill rewards to add to your campaign.
 
-    Auto: Divide the campaign's finite enemy total plus a fixed 10% allowance by Kills per Check.
-    Rewards above the finite total use replayed fights and cannot contain required progression.
+    Auto: Divide estimated campaign kills plus 10% by Kills per Check, up to 50 rewards.
     1..65,535: Add that many kill rewards. Kills per Check sets the gap between rewards."""
 
     display_name = "Kill Rewards"
@@ -662,11 +662,10 @@ class EnemyDamage(_EnemyAttributeRanges):
 
 
 class EnemySpeed(_EnemyAttributeRanges):
-    """Choose enemy movement speed as a percentage: 100% is normal speed.
+    """Choose how fast enemies move and attack: 100% is normal speed.
 
     Minimum and Maximum set a range. Early and Late values change the range as you progress.
-    Choose an enemy type to give it its own range. Empty entries use the selected preset.
-    Speed changes are unavailable in this build. Enemies use normal speed, and your chosen values stay saved in YAML."""
+    Choose an enemy type to give it its own range. Empty entries use the selected preset."""
 
     display_name = "Speed Ranges"
 
@@ -686,7 +685,8 @@ class EnemySpecialLimits(_BoundedItemDict):
 
     Marauder, Arch-vile and Spirit: Set the limit for that enemy type.
     Combined Specials: Set the total limit for those three types together.
-    Zero blocks random additions of that type. Empty entries use the selected preset.
+    Numbers stay fixed throughout the campaign. Empty entries use the preset and grow with Progressive Difficulty.
+    Zero blocks random additions of that type.
     Some fights keep their special enemies."""
 
     display_name = "Special Enemy Limits"

@@ -119,6 +119,20 @@ def test_disabling_mastery_locations_preserves_items_hosts_and_upgrade_currency(
     assert not mw.worlds[1].campaign_plan["semantic_counts"].get("Sticky Bombs Mastery", 0)
 
 
+def test_mastery_currency_supports_progression_without_a_mastery_victory():
+    name = "Weapon Upgrade Points (3)"
+    mw = setup_multiworld(DoomEternalWorld, seed=707, options={
+        "mission_pool": "full_saga", "mission_count": "all",
+        "additional_victory_requirements": set(),
+    })
+    active = sum(location.address is not None and location.name.endswith(logic.MASTERY_SUFFIX)
+                 for location in mw.get_locations(1))
+    assert active == 13
+    available = sum(item.name == name and item.advancement for item in mw.itempool)
+    available += sum(item.name == name for item in mw.precollected_items[1])
+    assert available >= 3 * active
+
+
 def test_full_trap_padding_accepts_zero_filler_weights():
     trap = sorted(SAFE_TRAP_NAMES)[0]
     mw = setup_multiworld(DoomEternalWorld, seed=703, options={

@@ -451,8 +451,30 @@ def build_location_prerequisites(
     active_battery_cost: int | None = None,
     logic_difficulty: int = 1,
     active_spend_groups: Sequence[Mapping[str, Any]] | None = None,
+    enemy_plan: Mapping[str, Any] | None = None,
 ) -> dict[str, LocationRequirement]:
     mastery_locations = sorted(name for name in location_names if name.endswith(MASTERY_SUFFIX))
+    generated_targets: dict[str, set[tuple[str, str]]] = {}
+    if enemy_plan:
+        from .enemy_plan import _composition_catalog
+        from .generated_content import CHALLENGE_ENEMY_TARGETS
+        from .secret_encounter_timers import load_secret_encounter_timers
+        composition = _composition_catalog()
+        secrets = load_secret_encounter_timers()["maps"]
+        for key, plan in enemy_plan.get("maps", {}).items():
+            managers = {timer["manager"] for timer in secrets.get(key, {}).get("timers", [])}
+            sources = {(row["operation"]["manager"]["entity"], row["operation"]["script_index"],
+                        row["operation"]["event_index"]): row["location"]
+                       for row in composition["maps"][key]["encounters"]}
+            for operation in plan["operations"]:
+                manager = operation["manager"]["entity"]
+                if manager not in managers:
+                    continue
+                location = sources[manager, operation["script_index"], operation["event_index"]]
+                species = {actor["species"] for wave in operation["waves"] for actor in wave["instances"]}
+                for target in CHALLENGE_ENEMY_TARGETS:
+                    if target["map_key"] is None and species.intersection(target["species"]):
+                        generated_targets.setdefault(target["name"], set()).add(("Location", location))
     challenge_rules = {
         CRUCIBLE_CHALLENGE: LocationRequirement(
             all_of=("Progressive Special Weapon",) if special_weapon == "Progressive Special Weapon" else ("The Crucible",),
@@ -460,11 +482,20 @@ def build_location_prerequisites(
         "Cultist Base - Mission Challenge - Armored Rain": LocationRequirement(
             combat_all_of=("flame_belch",)
         ),
+        "Cultist Base - Mission Challenge - Master of Turrets": LocationRequirement(
+            combat_all_of=("weak_point",)
+        ),
         "Doom Hunter Base - Mission Challenge - Fire in the Hole": LocationRequirement(
             combat_all_of=("frag_grenade",)
         ),
         "ARC Complex - Mission Challenge - External Combustion": LocationRequirement(
             combat_all_of=("plasma_rifle",)
+        ),
+        "ARC Complex - Mission Challenge - Solitary Confinement": LocationRequirement(
+            combat_all_of=("weak_point",)
+        ),
+        "Mars Core - Mission Challenge - Disarmament": LocationRequirement(
+            combat_all_of=("weak_point",)
         ),
         "Taras Nabad - Mission Challenge - Keeping Cool": LocationRequirement(
             combat_all_of=("ice_bomb",)
@@ -576,6 +607,8 @@ def build_location_prerequisites(
                 ("Location", "Cultist Base - Slayer Key - Giant Yellow Wall Route"),
                 ("Region", "Doom Hunter Base - Station of Redemption"),
             )
+        if candidates:
+            candidates += tuple(sorted(generated_targets.get(location_name, ())))
         reachable_any_of = tuple(
             (kind, name)
             for kind, name in candidates
@@ -596,6 +629,9 @@ def build_location_prerequisites(
         table[location_name] = LocationRequirement(
             combat_all_of=(f"mod:{mod_name}",),
             reachable_any_of=reachable_any_of,
+            # reserve the points for every active mod so purchases cannot lock another challenge.
+            custom_rule=lambda state, player, bundles=3 * len(mastery_locations):
+                state.count("Weapon Upgrade Points (3)", player) >= bundles,
         )
     return table
 

@@ -789,6 +789,7 @@ def build_semantic_counts(
             randomize_dash=bool(_option_value(options, "randomize_dash")),
             special_weapon=special_name, logic_difficulty=_option_value(options, "logic_difficulty", 1),
             active_spend_groups=active_sg,
+            enemy_plan=getattr(world_context, "enemy_plan", None),
         )
         hard_items = set().union(*(required_item_names(req) for req in requirements.values()))
         for source, destination, _, condition in CAMPAIGN_CONNECTIONS:

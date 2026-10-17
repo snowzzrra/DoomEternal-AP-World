@@ -41,8 +41,6 @@ WEAPON_UPGRADE_POINTS_ID = 7770903
 WEAPON_UPGRADE_POINTS_NAME = "Weapon Upgrade Points (3)"
 WEAPON_UPGRADE_POINTS_PER_ITEM = 3
 WEAPON_UPGRADE_POINTS_ITEM_COUNT = 39
-# 13 normal mod families cost 9 each (28 nodes, 117 points). Finite useful
-# currency replaces padding; no current access rule depends on weapon upgrades.
 WEAPON_UPGRADE_POINTS_TOTAL = 117
 SPECIAL_WEAPON_ITEM_NAMES = frozenset({
     "Progressive Special Weapon",

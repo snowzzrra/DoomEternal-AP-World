@@ -95,6 +95,14 @@ def enemy_spawn_mask(spawn_type):
     return value
 
 
+def selected_spawn_type(source):
+    selected = source.get("selected_spawn_type", source["spawn_type"])
+    mask = enemy_spawn_mask(selected)
+    if mask & (mask - 1) or mask & ~enemy_spawn_mask(source["spawn_type"]):
+        raise ValueError("Selected source type must be one member of the native request")
+    return selected
+
+
 def enemy_tracking_suffix(source_type, physical_type):
     """Bind a physical body to one qualified native tracking slot."""
     source, physical = enemy_spawn_mask(source_type), enemy_spawn_mask(physical_type)

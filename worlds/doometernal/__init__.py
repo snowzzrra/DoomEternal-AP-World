@@ -1,6 +1,7 @@
 from collections import Counter
 import hashlib
 import json
+import logging
 from functools import partial
 from typing import ClassVar
 
@@ -21,6 +22,7 @@ from .generated_content import (
     CAMPAIGN_CONNECTIONS,
     CAMPAIGN_REGIONS,
     MISSION_DIFFICULTY,
+    CHALLENGE_ENEMY_TARGETS,
 )
 from .identity import GAME_NAME
 from .enemy_options import normalize_enemy_options
@@ -140,18 +142,35 @@ class DoomEternalWorld(World):
         self.enemy_plan = None
         planning_state = self.random.getstate()
         self.campaign_plan = make_plan(self.options, self.random, world=self)
-        self.enemy_plan = build_enemy_plan(self.enemies, self.campaign_plan, seed=self.random.getrandbits(128))
+        active_masteries = {name for _, name in ORDERED_MASTERY_CHALLENGES[
+            :self.campaign_plan["active_masteries_count"]]}
+        challenge_targets = [target for target in CHALLENGE_ENEMY_TARGETS
+            if optional_location_enabled(target["name"], self.options)
+            and (target["map_key"] is not None or target["name"] in active_masteries)]
+        self.enemy_plan = build_enemy_plan(self.enemies, self.campaign_plan, seed=self.random.getrandbits(128),
+                                          challenge_targets=challenge_targets)
+        for key, stage in (self.enemy_plan or {}).get("maps", {}).items():
+            reductions = sum("reduction" in operation for operation in stage["operations"])
+            if reductions:
+                logging.warning("DOOM Eternal: %s has %s small fights skipped because your chosen enemies cannot spawn there.",
+                                STAGE_BY_ID[key]["name"], reductions)
         if self.enemy_plan is not None:
             candidate = self.campaign_plan
             self.random.setstate(planning_state)
             self.campaign_plan = make_plan(self.options, self.random, world=self, candidate=candidate)
-        from .killsanity_plan import build_killsanity_plan
+        from .killsanity_plan import build_campaign_kill_budget, build_killsanity_plan
+        kill_budget = dict(estimated_kills=0, finite_sources=[])
+        if self.options.killsanity.value:
+            kill_budget = build_campaign_kill_budget(
+                self.campaign_plan, self.enemy_plan)
+            self.campaign_plan['finite_kill_sources'] = kill_budget['finite_sources']
+            self.campaign_plan['estimated_kills'] = kill_budget['estimated_kills']
         self.killsanity_plan = build_killsanity_plan({
             "enabled": bool(self.options.killsanity.value),
             "interval": self.options.kills_per_check.value,
             "maximum_milestones": ("auto" if self.options.killsanity_maximum_milestones.value == -1
                                    else self.options.killsanity_maximum_milestones.value),
-        }, self.campaign_plan.get("finite_kill_sources"))
+        }, kill_budget['finite_sources'], estimated_kills=kill_budget['estimated_kills'])
         self.starting_weapon_name = self.campaign_plan.get("starting_weapon")
         initial_logical_items = set(self.options.start_inventory.value)
         if self.starting_weapon_name:
@@ -377,7 +396,8 @@ class DoomEternalWorld(World):
             "killsanity_options": {
                 "enabled": bool(self.options.killsanity.value),
                 "interval": self.options.kills_per_check.value,
-                "maximum_milestones": self.killsanity_plan["maximum_milestones"] or "auto",
+                "maximum_milestones": ("auto" if self.options.killsanity_maximum_milestones.value == -1
+                                       else self.options.killsanity_maximum_milestones.value),
             },
             "killsanity": self.killsanity_plan,
         }
@@ -720,6 +740,7 @@ class DoomEternalWorld(World):
             active_battery_cost=active_battery_cost,
             logic_difficulty=self.options.logic_difficulty.value,
             active_spend_groups=getattr(self, "active_spend_groups", None),
+            enemy_plan=self.enemy_plan,
         )
         validate_location_prerequisites(
             prerequisite_table,
