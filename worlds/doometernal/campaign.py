@@ -173,7 +173,7 @@ def solve_stage_bootstrap(
         }
 
     if stage_id in ENDURANCE_STAGES:
-        # ponytail: greedy package pruning; exact search if a constrained pool rejects a legal start.
+        # shortcut: greedy pruning can reject a legal package in a constrained pool.
         targets = [ReadinessTarget(stage_id, "base", "Starting endurance mission")]
         if stage_id in SPIRIT_STAGE_IDS:
             targets.append(ReadinessTarget(stage_id, "spirit_breakpoint", "Starting Spirit breakpoint"))
@@ -210,7 +210,7 @@ def solve_stage_bootstrap(
             "initial_cr": res_0.player_cr, "final_cr": 0.0, "effective_cr": 0.0, "overshoot": 0.0,
         }
 
-    # Available items in pool that contribute to CR or capacity
+    # Available items that contribute to preparation or a required capability.
     combat_pool = {
         name: cnt for name, cnt in pool_counts.items()
         if cnt > 0 and (
@@ -219,7 +219,7 @@ def solve_stage_bootstrap(
             or name in ITEM_CONTRIBUTIONS
             or name in NORMAL_RUNE_NAMES
             or name in SUPPORT_RUNE_NAMES
-            or name in {"The Crucible", "Sentinel Hammer", "Progressive Special Weapon"}
+            or name in {"Chainsaw", "The Crucible", "Sentinel Hammer", "Progressive Special Weapon"}
         )
     }
 
@@ -415,7 +415,7 @@ def build_pool_candidate_counts(
     )
 
 
-def make_plan(options, rng, world=None):
+def make_plan(options, rng, world=None, *, candidate=None):
     pool_name = options.mission_pool.current_option_name
     goal_name = options.goal.current_option_name
     order_mode = options.mission_order.value  # 0: Vanilla, 1: RMO, 2: MAI
@@ -650,7 +650,14 @@ def make_plan(options, rng, world=None):
             s_id, world_context, get_candidate_base_state(s_id), pool_counts
         )
 
-    if order_mode == 0:
+    if candidate is not None:
+        sequence = list(candidate["sequence"])
+        starts = list(candidate["starting_stages"])
+        chosen_start = candidate["bootstrap_stage"]
+        chosen_result = evaluate_start_stage(chosen_start)
+        access = list(candidate["access_items"].values())
+        goal_as_item = candidate["goal_as_item"]
+    elif order_mode == 0:
         # Vanilla Order: the start is fixed, so only that start is solved.
         sequence = provisional_sequence
         starts = [sequence[0]]
@@ -728,12 +735,22 @@ def make_plan(options, rng, world=None):
         semantic_counts[access_name] = semantic_counts.get(access_name, 0) + 1
         semantic_placement_counts[access_name] = semantic_placement_counts.get(access_name, 0) + 1
 
+    if order_mode == 2:
+        ranked = sorted((stage for stage in sequence if stage not in starts),
+                        key=lambda stage: (MISSION_BASE_CR[stage], stage))
+        enemy_bands = {stage: 0 for stage in starts}
+        enemy_bands.update({stage: (4 if len(ranked) == 1 else 1 + index * 3 // (len(ranked) - 1))
+                            for index, stage in enumerate(ranked)})
+    else:
+        enemy_bands = {stage: index for index, stage in enumerate(sequence)}
+
     return {
         "schema": 1,
         "mode": options.mission_order.current_option_name,
         "difficulty": options.campaign_difficulty.value,
         "logic_difficulty": options.logic_difficulty.current_option_name,
         "sequence": sequence,
+        "enemy_progression_bands": enemy_bands,
         "starting_stages": starts,
         "starting_weapon": starting_weapon,
         "goal_stage": goal_stage,

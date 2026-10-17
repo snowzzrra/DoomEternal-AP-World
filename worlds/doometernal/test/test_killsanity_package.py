@@ -13,8 +13,8 @@ from worlds.doometernal.killsanity_plan import KILLSANITY_ADDRESS_BASE, build_ki
 
 def test_room_package_unites_thresholds_without_mutating_other_rooms():
     original = deepcopy(network_data_package["games"][DoomEternalWorld.game])
-    first = SimpleNamespace(killsanity_plan=build_killsanity_plan({"enabled": True}, 13))
-    second = SimpleNamespace(killsanity_plan=build_killsanity_plan({"enabled": True, "interval": 75}, 2))
+    first = SimpleNamespace(killsanity_plan=build_killsanity_plan({"enabled": True}, [{"source_id": "intro", "map_key": "e1m1_intro", "count": 1000, "repeatable": True}]))
+    second = SimpleNamespace(killsanity_plan=build_killsanity_plan({"enabled": True, "interval": 75}, [{"source_id": "intro", "map_key": "e1m1_intro", "count": 150, "repeatable": True}]))
     room = SimpleNamespace(worlds={1: first, 2: second}, get_game_players=lambda game: (1, 2))
     multidata = {"datapackage": {DoomEternalWorld.game: original}}
     DoomEternalWorld.stage_modify_multidata(room, multidata)

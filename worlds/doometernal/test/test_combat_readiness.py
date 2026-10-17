@@ -1,7 +1,7 @@
 """DOOM Eternal combat readiness integration tests.
 
 Tests cover:
-- Base readiness matrix against frozen P7.1 anchors and P7.5 allowances
+- Base readiness across the three preparation allowances
 - Spirit breakpoints across all 5 mandatory Spirit stages
 - The Dark Lord Sentinel Hammer soft penalty and progressive special modes
 - Structural vs logical reachability separation (RMO & MAI)
@@ -50,6 +50,7 @@ def make_mock_world(
     world.player = player
     world.game = "DOOM Eternal"
     world.starting_weapon_name = "Combat Shotgun"
+    world.enemy_plan = None
     world.options = MagicMock()
     world.options.campaign_difficulty = MagicMock(value=difficulty)
     world.options.logic_difficulty = MagicMock(value=logic_difficulty)
@@ -392,8 +393,8 @@ class TestDashBootstrapAndSphereZero:
         res = evaluate_player_loadout_cr(state, 1, world)
         assert res.categories["Mobility"] >= 4.0
 
-    def test_sphere_zero_base_rmo(self):
-        """Base RMO: Hell on Earth starts ready at frame zero on all difficulties."""
+    def test_intro_preparation_is_reachable_before_starting_the_mission(self):
+        """Generated supply can be prepared through the real Fortress checks."""
         for diff in (0, 1, 2, 3):
             mw = setup_multiworld(
                 DoomEternalWorld,
@@ -408,5 +409,95 @@ class TestDashBootstrapAndSphereZero:
             state = CollectionState(mw)
             start_stage = world.campaign_plan["starting_stages"][0]
             if start_stage == "e1m1_intro":
+                from Fill import distribute_items_restrictive
+                distribute_items_restrictive(mw)
                 res = evaluate_mission_readiness(state, 1, "e1m1_intro", world)
-                assert res.ready is True, f"HoE must be ready at sphere zero on diff {diff}"
+                from worlds.doometernal.campaign import FORTRESS_BOOTSTRAP_LOCATIONS
+                collected = set()
+                while not res.ready:
+                    reachable = [location for location in mw.get_filled_locations(1)
+                                 if location.name in FORTRESS_BOOTSTRAP_LOCATIONS
+                                 and location.name not in collected and location.can_reach(state)]
+                    assert reachable, f"No physical preparation remains reachable on difficulty {diff}"
+                    for location in reachable:
+                        state.collect(location.item)
+                        collected.add(location.name)
+                    res = evaluate_mission_readiness(state, 1, "e1m1_intro", world)
+                assert res.ready
+
+
+def test_frozen_combat_cost_changes_readiness_and_seed_skulls():
+    from worlds.doometernal.combat_readiness import get_mission_skull_tier
+
+    world = make_mock_world()
+    state = create_state_with_items({"Combat Shotgun"}, world=world)
+    original = evaluate_mission_readiness(state, 1, "e1m1_intro", world, player_cr=5)
+    world.enemy_plan = {"combat_costs": {"e1m1_intro": {"original": 0, "actual": 120}}}
+    generated = evaluate_mission_readiness(state, 1, "e1m1_intro", world, player_cr=5)
+    assert original.ready and not generated.ready
+    assert generated.mission_base_cr == original.mission_base_cr + 12
+    tier = get_mission_skull_tier("e1m1_intro", world)
+    assert tier > get_mission_skull_tier("e1m1_intro")
+    world.options.logic_difficulty.value = 0
+    world.options.campaign_difficulty.value = 3
+    assert get_mission_skull_tier("e1m1_intro", world) == tier
+    world.enemy_plan["combat_costs"]["e1m1_intro"]["actual"] = 0
+    assert get_mission_base_cr("e1m1_intro", world) == original.mission_base_cr
+
+
+def test_cost_reduction_preserves_protected_boss_preparation():
+    world = make_mock_world()
+    world.enemy_plan = {"combat_costs": {"e3m3_maykr": {"original": 10000, "actual": 0}}}
+    assert get_mission_base_cr("e3m3_maykr", world) == MISSION_BASE_CR["e3m3_maykr"]
+
+
+def test_generated_combat_is_available_to_pool_and_physical_start_solver():
+    from collections import Counter
+    from Fill import distribute_items_restrictive
+    from worlds.doometernal.enemy_options import SPECIES_IDS
+
+    mw = setup_multiworld(DoomEternalWorld, seed=71412, options={
+        "goal": "complete_the_full_saga",
+        "mission_order": "mission_access_as_items",
+        "enemy_count_mode": "multiplier", "enemy_count_multiplier": 500,
+        "enemy_weights": {species: int(species == "stone_imp") for species in SPECIES_IDS},
+        "enemy_health": {"minimum": 200, "maximum": 200},
+    })
+    world = mw.worlds[1]
+    plan = world.campaign_plan
+    assert plan["bootstrap_cost"] < 999
+    bands = plan["enemy_progression_bands"]
+    assert all(bands[stage] == 0 for stage in plan["starting_stages"])
+    later = sorted((stage for stage in plan["sequence"] if stage not in plan["starting_stages"]),
+                   key=lambda stage: (MISSION_BASE_CR[stage], stage))
+    assert [bands[stage] for stage in later] == sorted(bands[stage] for stage in later)
+    assert bands[later[-1]] == 4
+    assert get_mission_base_cr("e1m1_intro", world) > MISSION_BASE_CR["e1m1_intro"]
+    assert len(mw.itempool) == len(mw.get_unfilled_locations(1))
+    counts = Counter(item.name for item in mw.itempool + mw.precollected_items[1])
+    for name, quantity in plan["semantic_counts"].items():
+        assert counts[name] == quantity
+    distribute_items_restrictive(mw)
+    assert mw.can_beat_game()
+
+
+def test_generated_supply_preserves_the_inventory_requirement_for_ammunition():
+    world = make_mock_world()
+    world.options.randomize_chainsaw.value = 1
+    world.enemy_plan = {"maps": {"e1m1_intro": {"operations": [{"reserve": {"desired_count": 1}}]}}}
+    state = create_state_with_items({"Combat Shotgun"}, world=world)
+    result = evaluate_mission_readiness(state, 1, "e1m1_intro", world, player_cr=100)
+    assert not result.ready and "Chainsaw for ammunition supply" in result.missing_requirements
+    state = create_state_with_items({"Combat Shotgun", "Chainsaw"}, world=world)
+    assert evaluate_mission_readiness(state, 1, "e1m1_intro", world, player_cr=100).ready
+
+
+def test_generated_supply_does_not_assume_hammer_charge_from_instant_kills():
+    world = make_mock_world(randomize_chainsaw=True)
+    world.enemy_plan = {"maps": {"e1m1_intro": {"operations": [{"reserve": {"desired_count": 1}}]}}}
+    state = create_state_with_items({"Ballista"}, world=world, prog_special=2)
+    assert has_effective_sentinel_hammer(state, 1)
+    result = evaluate_mission_readiness(state, 1, "e1m1_intro", world, player_cr=100)
+    assert not result.ready and "Chainsaw for ammunition supply" in result.missing_requirements
+    state = create_state_with_items({"Ballista", "Chainsaw"}, world=world, prog_special=2)
+    assert evaluate_mission_readiness(state, 1, "e1m1_intro", world, player_cr=100).ready

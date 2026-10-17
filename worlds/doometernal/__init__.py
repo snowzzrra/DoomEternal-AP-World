@@ -24,7 +24,7 @@ from .generated_content import (
 )
 from .identity import GAME_NAME
 from .enemy_options import normalize_enemy_options
-from .enemy_plan import validate_frozen_enemy_plan
+from .enemy_plan import build_enemy_plan, validate_frozen_enemy_plan
 from .campaign import (
     BASE_GATE_STAGE_IDS,
     FORTRESS_NON_CONSUMER_LOCATIONS,
@@ -135,16 +135,23 @@ class DoomEternalWorld(World):
     def generate_early(self) -> None:
         if self.options.start_inventory.value.get("Blood Punch"):
             raise ValueError("Blood Punch belongs to legacy rooms; new seeds require Progressive Blood Punch (0..4)")
-        self.campaign_plan = make_plan(self.options, self.random, world=self)
         self.enemy_options_raw = self._enemy_option_values()
         self.enemies = normalize_enemy_options(self.enemy_options_raw)
+        self.enemy_plan = None
+        planning_state = self.random.getstate()
+        self.campaign_plan = make_plan(self.options, self.random, world=self)
+        self.enemy_plan = build_enemy_plan(self.enemies, self.campaign_plan, seed=self.random.getrandbits(128))
+        if self.enemy_plan is not None:
+            candidate = self.campaign_plan
+            self.random.setstate(planning_state)
+            self.campaign_plan = make_plan(self.options, self.random, world=self, candidate=candidate)
         from .killsanity_plan import build_killsanity_plan
         self.killsanity_plan = build_killsanity_plan({
             "enabled": bool(self.options.killsanity.value),
             "interval": self.options.kills_per_check.value,
             "maximum_milestones": ("auto" if self.options.killsanity_maximum_milestones.value == -1
                                    else self.options.killsanity_maximum_milestones.value),
-        }, len(self.campaign_plan["stage_ids"]))
+        }, self.campaign_plan.get("finite_kill_sources"))
         self.starting_weapon_name = self.campaign_plan.get("starting_weapon")
         initial_logical_items = set(self.options.start_inventory.value)
         if self.starting_weapon_name:
@@ -267,11 +274,11 @@ class DoomEternalWorld(World):
         return None
 
     def _mission_presentation(self) -> dict[str, dict[str, int | float]]:
-        from .combat_readiness import MISSION_SKULL_TIERS
+        from .combat_readiness import get_mission_skull_tier
         return {stage_id: {
-            "base_cr": get_mission_base_cr(stage_id),
+            "base_cr": get_mission_base_cr(stage_id, self),
             "skill_allowance": get_skill_allowance(self.options.logic_difficulty.value),
-            "skull_tier": MISSION_SKULL_TIERS[stage_id],
+            "skull_tier": get_mission_skull_tier(stage_id, self),
         } for stage_id in self.campaign_plan["sequence"]}
 
     def fill_slot_data(self) -> dict[str, object]:
@@ -366,6 +373,7 @@ class DoomEternalWorld(World):
             "starting_inventory": start_inventory,
             "starting_weapon": self.starting_weapon_name,
             "enemies": self.enemies,
+            "enemy_plan": self.enemy_plan,
             "killsanity_options": {
                 "enabled": bool(self.options.killsanity.value),
                 "interval": self.options.kills_per_check.value,

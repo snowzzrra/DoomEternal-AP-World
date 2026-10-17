@@ -402,18 +402,18 @@ class _EnemyRecipeRange(NamedRange):
 
 
 class EnemyIntensityEarly(_EnemyRecipeRange):
-    """Choose how tough randomized fights should be near the start.
+    """Choose the combat budget near the start when Enemy Count is Auto.
 
-    100%: Aim for normal enemy strength. Lower values make fights easier; higher values make them harder.
+    100%: Aim for the original combat budget. Lower values reduce pressure; higher values raise it.
     Auto: Use the selected enemy preset."""
 
     display_name = "Early Intensity"
 
 
 class EnemyIntensityLate(_EnemyRecipeRange):
-    """Choose how tough randomized fights should become near the end.
+    """Choose the combat budget near the end when Enemy Count is Auto.
 
-    100%: Aim for normal enemy strength. Lower values make fights easier; higher values make them harder.
+    100%: Aim for the original combat budget. Lower values reduce pressure; higher values raise it.
     Auto: Use the selected enemy preset."""
 
     display_name = "Late Intensity"
@@ -444,7 +444,7 @@ class EnemyCountMode(_ExactLabelChoice):
     """Choose how to decide the number of randomized enemies in a fight.
 
     Preset: Use the selected enemy preset's count setting.
-    Auto: Choose the number using Intensity and Density.
+    Auto: Spend the Intensity budget on a mix shaped by Density, using each enemy's type and rolled attributes.
     Multiplier: Multiply the fight's original enemy count using Enemy Count Multiplier.
     Crowded fights can split into extra waves."""
 
@@ -500,7 +500,8 @@ class KillsPerCheck(Range):
 class KillsanityMaximumMilestones(NamedRange):
     """Choose how many kill rewards to add to your campaign.
 
-    Auto: Add one kill reward per selected mission, including the final boss stage.
+    Auto: Divide the campaign's finite enemy total plus a fixed 10% allowance by Kills per Check.
+    Rewards above the finite total use replayed fights and cannot contain required progression.
     1..65,535: Add that many kill rewards. Kills per Check sets the gap between rewards."""
 
     display_name = "Kill Rewards"

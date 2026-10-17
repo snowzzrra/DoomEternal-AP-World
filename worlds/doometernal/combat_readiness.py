@@ -51,7 +51,7 @@ SPIRIT_PENALTY: int = 15
 DARK_LORD_HAMMER_PENALTY: int = 15
 MAX_EFFECTIVE_CR: int = 100
 
-# Authored presentation, independent of inventory, difficulty and campaign order.
+# Vanilla tiers anchor each seed's presentation independently of the player's inventory.
 MISSION_SKULL_TIERS = {
     "e1m1_intro": 1, "e1m2_war": 1, "e1m3_cult": 2, "e1m4_boss": 2,
     "e2m1_nest": 2, "e2m2_base": 2, "e2m3_core": 2, "e2m4_boss": 2,
@@ -101,11 +101,25 @@ class ReadinessResult:
         return self.ready
 
 
-def get_mission_base_cr(stage_id: str) -> int:
-    """Return the frozen Base CR for a canonical stage ID."""
+def get_mission_base_cr(stage_id: str, world: Any | None = None) -> int:
+    """Apply the frozen change in combat cost to the mission's preparation rating."""
     if stage_id not in MISSION_BASE_CR:
         raise KeyError(f"Unknown stage ID for Base CR: {stage_id}")
-    return MISSION_BASE_CR[stage_id]
+    base = MISSION_BASE_CR[stage_id]
+    costs = (getattr(world, "enemy_plan", None) or {}).get("combat_costs", {}).get(stage_id)
+    if costs is None:
+        return base
+    import math
+    # Ten cost units per reference CR; doubling that budget adds twelve CR.
+    factor = max(.25, 1 + (costs["actual"] - costs["original"]) / (10 * base))
+    floor = base if stage_id in {"e1m4_boss", "e2m2_base", "e2m4_boss",
+                                "e3m3_maykr", "e3m4_boss", "e4m3_mcity", "e5m4_boss"} else 1
+    return max(floor, min(MAX_EFFECTIVE_CR, round(base + 12 * math.log2(factor))))
+
+
+def get_mission_skull_tier(stage_id: str, world: Any | None = None) -> int:
+    change = get_mission_base_cr(stage_id, world) - MISSION_BASE_CR[stage_id]
+    return max(1, min(4, MISSION_SKULL_TIERS[stage_id] + round(change / 15)))
 
 
 def get_skill_allowance(logic_difficulty: int) -> int:
@@ -178,7 +192,7 @@ def evaluate_mission_readiness(
     allowance = get_skill_allowance(diff)
     if stage_id == DARK_LORD_STAGE_ID and context == "base":
         context = "darklord"
-    base_cr = get_mission_base_cr(stage_id)
+    base_cr = get_mission_base_cr(stage_id, world)
     if player_cr is None:
         cr_result = evaluate_player_loadout_cr(state, player, world)
         player_cr = float(cr_result.total)
@@ -205,13 +219,23 @@ def evaluate_mission_readiness(
         missing.append("Dash")
     if stage_id in HOOK_TRAVERSAL_STAGES:
         missing.extend(name for name in ("Super Shotgun", "Meat Hook") if not state.has(name, player))
+    enemy_plan = getattr(world, "enemy_plan", None) or {}
+    has_supply = any(operation.get("reserve") for operation in
+                     enemy_plan.get("maps", {}).get(stage_id, {}).get("operations", []))
+    randomize_chainsaw = bool(getattr(getattr(options, "randomize_chainsaw", None), "value", 0))
+    # The fixed Chainsaw pickup precedes the profiled Hell on Earth fights.
+    if has_supply and randomize_chainsaw:
+        from .logic import chainsaw_available
+        if not chainsaw_available(state, player, randomize_chainsaw=True):
+            missing.append("Chainsaw for ammunition supply")
+    if stage_id in HOOK_TRAVERSAL_STAGES:
         from .logic import ammo_resource_producer
         if not ammo_resource_producer(state, player,
                 randomize_chainsaw=bool(getattr(getattr(options, "randomize_chainsaw", None), "value", 0)), special_weapon=sw):
             missing.append("Ammo resource producer")
     preparation_deficit = float(len(missing))
     if stage_id in ENDURANCE_STAGES:
-        # ponytail: provisional family/dimensional floors; revise with comparative playtest evidence.
+        # shortcut: capacity floors need comparative gameplay calibration.
         capacities = ("Progressive Health Upgrade", "Progressive Armor Upgrade", "Progressive Ammo Upgrade")
         preparation_deficit += sum(not state.has(name, player) for name in capacities)
         preparation_deficit += not any(state.has(name, player) for name in NORMAL_RUNE_NAMES)
