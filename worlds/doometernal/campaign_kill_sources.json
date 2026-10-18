@@ -214,7 +214,7 @@
     },
     "e1m2_war": {
       "source_sha256": "c83069ae8c2094ec4aee99ed331f1c30568e6b71cda12b81ce7e5933837dfe65",
-      "estimated_kills": 42,
+      "estimated_kills": 54,
       "coverage": "partial",
       "basis": "Reviewed original enemy groups, including the Blood Punch tutorial; checkpoint and maintenance alternatives are counted separately.",
       "sources": [
@@ -511,9 +511,110 @@
           "count": 1,
           "repeatable": true,
           "location": "Exultia - Mission Complete"
+        },
+        {
+          "source_id": "capitol_encounter_manager_capitol_start1/0/0",
+          "map_key": "e1m2_war",
+          "count": 1,
+          "repeatable": true,
+          "location": "Exultia - Mission Complete"
+        },
+        {
+          "source_id": "capitol_encounter_manager_capitol_start1/0/2",
+          "map_key": "e1m2_war",
+          "count": 1,
+          "repeatable": true,
+          "location": "Exultia - Mission Complete"
+        },
+        {
+          "source_id": "capitol_encounter_manager_capitol_start1/0/5",
+          "map_key": "e1m2_war",
+          "count": 1,
+          "repeatable": true,
+          "location": "Exultia - Mission Complete"
+        },
+        {
+          "source_id": "capitol_encounter_manager_capitol_start1/0/6",
+          "map_key": "e1m2_war",
+          "count": 1,
+          "repeatable": true,
+          "location": "Exultia - Mission Complete"
+        },
+        {
+          "source_id": "capitol_encounter_manager_capitol_start1/0/7",
+          "map_key": "e1m2_war",
+          "count": 1,
+          "repeatable": true,
+          "location": "Exultia - Mission Complete"
+        },
+        {
+          "source_id": "capitol_encounter_manager_capitol_start1/0/9",
+          "map_key": "e1m2_war",
+          "count": 1,
+          "repeatable": true,
+          "location": "Exultia - Mission Complete"
+        },
+        {
+          "source_id": "battle_encounter_manager_2/0/0",
+          "map_key": "e1m2_war",
+          "count": 1,
+          "repeatable": true,
+          "location": "Exultia - Mission Complete"
+        },
+        {
+          "source_id": "battle_encounter_manager_2/0/3",
+          "map_key": "e1m2_war",
+          "count": 1,
+          "repeatable": true,
+          "location": "Exultia - Mission Complete"
+        },
+        {
+          "source_id": "battle_encounter_manager_2/0/5",
+          "map_key": "e1m2_war",
+          "count": 1,
+          "repeatable": true,
+          "location": "Exultia - Mission Complete"
+        },
+        {
+          "source_id": "slaughterpit_encounter_manager_2/0/1",
+          "map_key": "e1m2_war",
+          "count": 1,
+          "repeatable": true,
+          "location": "Exultia - Mission Complete"
+        },
+        {
+          "source_id": "slaughterpit_encounter_manager_2/0/2",
+          "map_key": "e1m2_war",
+          "count": 1,
+          "repeatable": true,
+          "location": "Exultia - Mission Complete"
+        },
+        {
+          "source_id": "slaughterpit_encounter_manager_2/0/3",
+          "map_key": "e1m2_war",
+          "count": 1,
+          "repeatable": true,
+          "location": "Exultia - Mission Complete"
+        },
+        {
+          "source_id": "gameplay_slayergate_ds_encounter_manager_2/0/11",
+          "map_key": "e1m2_war",
+          "count": 4,
+          "repeatable": true,
+          "location": "Exultia - Mission Complete"
+        },
+        {
+          "source_id": "gameplay_slayergate_ds_encounter_manager_2/0/13",
+          "map_key": "e1m2_war",
+          "count": 2,
+          "repeatable": true,
+          "location": "Exultia - Mission Complete"
         }
       ],
-      "progression_source_ids": []
+      "progression_source_ids": [],
+      "conditional_managers": [
+        "gameplay_slayergate_ds_encounter_manager_2"
+      ]
     },
     "e1m3_cult": {
       "source_sha256": "ca83b98a7a533ec608b3ea3a4207814eb56bdb283a3d0c27b7a5ad744efa7866",
@@ -674,16 +775,180 @@
           "count": 1,
           "repeatable": true,
           "location": "Cultist Base - Mission Complete"
+        },
+        {
+          "source_id": "game_encounter_manager_traindepot_1/0/22",
+          "map_key": "e1m3_cult",
+          "count": 1,
+          "repeatable": true,
+          "location": "Cultist Base - Mission Complete"
+        },
+        {
+          "source_id": "game_encounter_manager_traindepot_1/0/24",
+          "map_key": "e1m3_cult",
+          "count": 1,
+          "repeatable": true,
+          "location": "Cultist Base - Mission Complete"
+        },
+        {
+          "source_id": "game_encounter_manager_traindepot_1/0/27",
+          "map_key": "e1m3_cult",
+          "count": 1,
+          "repeatable": true,
+          "location": "Cultist Base - Mission Complete"
+        },
+        {
+          "source_id": "game_encounter_manager_traindepot_1/0/29",
+          "map_key": "e1m3_cult",
+          "count": 1,
+          "repeatable": true,
+          "location": "Cultist Base - Mission Complete"
+        },
+        {
+          "source_id": "game_encounter_manager_traindepot_1/0/30",
+          "map_key": "e1m3_cult",
+          "count": 1,
+          "repeatable": true,
+          "location": "Cultist Base - Mission Complete"
+        },
+        {
+          "source_id": "game_encounter_manager_traindepot_1/0/31",
+          "map_key": "e1m3_cult",
+          "count": 1,
+          "repeatable": true,
+          "location": "Cultist Base - Mission Complete"
+        },
+        {
+          "source_id": "game_encounter_manager_traindepot_1/0/34",
+          "map_key": "e1m3_cult",
+          "count": 1,
+          "repeatable": true,
+          "location": "Cultist Base - Mission Complete"
+        },
+        {
+          "source_id": "game_encounter_manager_traindepot_1/0/36",
+          "map_key": "e1m3_cult",
+          "count": 1,
+          "repeatable": true,
+          "location": "Cultist Base - Mission Complete"
+        },
+        {
+          "source_id": "game_encounter_manager_traindepot_1/0/38",
+          "map_key": "e1m3_cult",
+          "count": 1,
+          "repeatable": true,
+          "location": "Cultist Base - Mission Complete"
+        },
+        {
+          "source_id": "game_encounter_manager_traindepot_1/0/40",
+          "map_key": "e1m3_cult",
+          "count": 1,
+          "repeatable": true,
+          "location": "Cultist Base - Mission Complete"
+        },
+        {
+          "source_id": "game_encounter_manager_revenant/0/15",
+          "map_key": "e1m3_cult",
+          "count": 1,
+          "repeatable": true,
+          "location": "Cultist Base - Mission Complete"
+        },
+        {
+          "source_id": "game_encounter_manager_revenant/0/17",
+          "map_key": "e1m3_cult",
+          "count": 1,
+          "repeatable": true,
+          "location": "Cultist Base - Mission Complete"
+        },
+        {
+          "source_id": "game_encounter_manager_revenant/0/22",
+          "map_key": "e1m3_cult",
+          "count": 1,
+          "repeatable": true,
+          "location": "Cultist Base - Mission Complete"
+        },
+        {
+          "source_id": "game_encounter_manager_revenant/0/24",
+          "map_key": "e1m3_cult",
+          "count": 1,
+          "repeatable": true,
+          "location": "Cultist Base - Mission Complete"
+        },
+        {
+          "source_id": "game_encounter_manager_revenant/0/26",
+          "map_key": "e1m3_cult",
+          "count": 2,
+          "repeatable": true,
+          "location": "Cultist Base - Mission Complete"
+        },
+        {
+          "source_id": "game_encounter_manager_zombie17/0/15",
+          "map_key": "e1m3_cult",
+          "count": 1,
+          "repeatable": true,
+          "location": "Cultist Base - Mission Complete"
+        },
+        {
+          "source_id": "game_encounter_manager_zombie17/0/17",
+          "map_key": "e1m3_cult",
+          "count": 1,
+          "repeatable": true,
+          "location": "Cultist Base - Mission Complete"
+        },
+        {
+          "source_id": "gameplay_slayergate_e1m3_encounter_manager/0/28",
+          "map_key": "e1m3_cult",
+          "count": 1,
+          "repeatable": true,
+          "location": "Cultist Base - Mission Complete"
+        },
+        {
+          "source_id": "gameplay_slayergate_e1m3_encounter_manager/0/30",
+          "map_key": "e1m3_cult",
+          "count": 1,
+          "repeatable": true,
+          "location": "Cultist Base - Mission Complete"
+        },
+        {
+          "source_id": "gameplay_slayergate_e1m3_encounter_manager/0/32",
+          "map_key": "e1m3_cult",
+          "count": 1,
+          "repeatable": true,
+          "location": "Cultist Base - Mission Complete"
+        },
+        {
+          "source_id": "game_encounter_manager_zombie17/0/0",
+          "map_key": "e1m3_cult",
+          "count": 2,
+          "repeatable": true,
+          "location": "Cultist Base - Mission Complete"
+        },
+        {
+          "source_id": "game_encounter_manager_zombie17/0/1",
+          "map_key": "e1m3_cult",
+          "count": 2,
+          "repeatable": true,
+          "location": "Cultist Base - Mission Complete"
+        },
+        {
+          "source_id": "game_encounter_manager_zombie17/0/2",
+          "map_key": "e1m3_cult",
+          "count": 2,
+          "repeatable": true,
+          "location": "Cultist Base - Mission Complete"
         }
       ],
       "progression_source_ids": [],
       "conditional_managers": [
-        "game_encounter_manager_zombie17"
+        "game_encounter_manager_revenant",
+        "game_encounter_manager_traindepot_1",
+        "game_encounter_manager_zombie17",
+        "gameplay_slayergate_e1m3_encounter_manager"
       ]
     },
     "e1m4_boss": {
       "source_sha256": "d5579ccb320228eaca9a18f44513ccae297d9371cc7138e0c8ef2acc0088c0f8",
-      "estimated_kills": 3,
+      "estimated_kills": 12,
       "coverage": "partial",
       "basis": "Reviewed finite opportunities and original composition calls, with initial checkpoint cohorts counted once; tutorials off.",
       "sources": [
@@ -707,13 +972,135 @@
           "count": 1,
           "repeatable": true,
           "location": "Doom Hunter Base - Mission Complete"
+        },
+        {
+          "source_id": "intro_encounter_manager_intro_arena_1/0/10",
+          "map_key": "e1m4_boss",
+          "count": 1,
+          "repeatable": true,
+          "location": "Doom Hunter Base - Mission Complete"
+        },
+        {
+          "source_id": "intro_encounter_manager_intro_arena_1/0/22",
+          "map_key": "e1m4_boss",
+          "count": 1,
+          "repeatable": true,
+          "location": "Doom Hunter Base - Mission Complete"
+        },
+        {
+          "source_id": "intro_encounter_manager_intro_arena_1/0/24",
+          "map_key": "e1m4_boss",
+          "count": 1,
+          "repeatable": true,
+          "location": "Doom Hunter Base - Mission Complete"
+        },
+        {
+          "source_id": "intro_encounter_manager_intro_arena_1/0/25",
+          "map_key": "e1m4_boss",
+          "count": 1,
+          "repeatable": true,
+          "location": "Doom Hunter Base - Mission Complete"
+        },
+        {
+          "source_id": "intro_encounter_manager_intro_arena_1/0/9",
+          "map_key": "e1m4_boss",
+          "count": 1,
+          "repeatable": true,
+          "location": "Doom Hunter Base - Mission Complete"
+        },
+        {
+          "source_id": "intro_encounter_manager_intro_arena_1/0/29",
+          "map_key": "e1m4_boss",
+          "count": 1,
+          "repeatable": true,
+          "location": "Doom Hunter Base - Mission Complete"
+        },
+        {
+          "source_id": "intro_encounter_manager_intro_arena_1/0/31",
+          "map_key": "e1m4_boss",
+          "count": 1,
+          "repeatable": true,
+          "location": "Doom Hunter Base - Mission Complete"
+        },
+        {
+          "source_id": "intro_encounter_manager_intro_arena_1/0/32",
+          "map_key": "e1m4_boss",
+          "count": 1,
+          "repeatable": true,
+          "location": "Doom Hunter Base - Mission Complete"
+        },
+        {
+          "source_id": "train_encounter_manager_intro_train_1/0/6",
+          "map_key": "e1m4_boss",
+          "count": 1,
+          "repeatable": true,
+          "location": "Doom Hunter Base - Mission Complete"
+        },
+        {
+          "source_id": "train_encounter_manager_intro_train_1/0/7",
+          "map_key": "e1m4_boss",
+          "count": 1,
+          "repeatable": true,
+          "location": "Doom Hunter Base - Mission Complete"
+        },
+        {
+          "source_id": "train_encounter_manager_intro_train_1/0/8",
+          "map_key": "e1m4_boss",
+          "count": 1,
+          "repeatable": true,
+          "location": "Doom Hunter Base - Mission Complete"
+        },
+        {
+          "source_id": "train_encounter_manager_intro_train_1/0/10",
+          "map_key": "e1m4_boss",
+          "count": 1,
+          "repeatable": true,
+          "location": "Doom Hunter Base - Mission Complete"
+        },
+        {
+          "source_id": "train_encounter_manager_intro_train_1/0/11",
+          "map_key": "e1m4_boss",
+          "count": 1,
+          "repeatable": true,
+          "location": "Doom Hunter Base - Mission Complete"
+        },
+        {
+          "source_id": "train_encounter_manager_intro_train_1/0/13",
+          "map_key": "e1m4_boss",
+          "count": 1,
+          "repeatable": true,
+          "location": "Doom Hunter Base - Mission Complete"
+        },
+        {
+          "source_id": "train_encounter_manager_intro_train_1/0/14",
+          "map_key": "e1m4_boss",
+          "count": 1,
+          "repeatable": true,
+          "location": "Doom Hunter Base - Mission Complete"
+        },
+        {
+          "source_id": "train_encounter_manager_intro_train_1/0/15",
+          "map_key": "e1m4_boss",
+          "count": 1,
+          "repeatable": true,
+          "location": "Doom Hunter Base - Mission Complete"
+        },
+        {
+          "source_id": "train_encounter_manager_intro_train_1/0/16",
+          "map_key": "e1m4_boss",
+          "count": 1,
+          "repeatable": true,
+          "location": "Doom Hunter Base - Mission Complete"
         }
       ],
-      "progression_source_ids": []
+      "progression_source_ids": [],
+      "conditional_managers": [
+        "intro_encounter_manager_intro_arena_1"
+      ]
     },
     "e2m1_nest": {
       "source_sha256": "80f60fc5ae45d7e9ae51940d79a1427e4936ab647dc29b530c400c0f6a89a8c7",
-      "estimated_kills": 83,
+      "estimated_kills": 87,
       "coverage": "partial",
       "basis": "Conservative partial count covering the pinned finite composition sources; checkpoint and maintenance alternatives are separate.",
       "sources": [
@@ -1297,13 +1684,86 @@
           "count": 1,
           "repeatable": true,
           "location": "Super Gore Nest - Mission Complete"
+        },
+        {
+          "source_id": "game_encounter_manager_44/0/1",
+          "map_key": "e2m1_nest",
+          "count": 1,
+          "repeatable": true,
+          "location": "Super Gore Nest - Mission Complete"
+        },
+        {
+          "source_id": "game_encounter_manager_44/0/2",
+          "map_key": "e2m1_nest",
+          "count": 1,
+          "repeatable": true,
+          "location": "Super Gore Nest - Mission Complete"
+        },
+        {
+          "source_id": "game_encounter_manager_44/0/3",
+          "map_key": "e2m1_nest",
+          "count": 1,
+          "repeatable": true,
+          "location": "Super Gore Nest - Mission Complete"
+        },
+        {
+          "source_id": "game_encounter_manager_44/0/4",
+          "map_key": "e2m1_nest",
+          "count": 1,
+          "repeatable": true,
+          "location": "Super Gore Nest - Mission Complete"
+        },
+        {
+          "source_id": "slayergate_e2m1_encounter_manager_1/0/3",
+          "map_key": "e2m1_nest",
+          "count": 2,
+          "repeatable": true,
+          "location": "Super Gore Nest - Mission Complete"
+        },
+        {
+          "source_id": "slayergate_e2m1_encounter_manager_1/0/6",
+          "map_key": "e2m1_nest",
+          "count": 3,
+          "repeatable": true,
+          "location": "Super Gore Nest - Mission Complete"
+        },
+        {
+          "source_id": "slayergate_e2m1_encounter_manager_1/0/12",
+          "map_key": "e2m1_nest",
+          "count": 3,
+          "repeatable": true,
+          "location": "Super Gore Nest - Mission Complete"
+        },
+        {
+          "source_id": "slayergate_e2m1_encounter_manager_1/0/13",
+          "map_key": "e2m1_nest",
+          "count": 2,
+          "repeatable": true,
+          "location": "Super Gore Nest - Mission Complete"
+        },
+        {
+          "source_id": "slayergate_e2m1_encounter_manager_1/0/15",
+          "map_key": "e2m1_nest",
+          "count": 1,
+          "repeatable": true,
+          "location": "Super Gore Nest - Mission Complete"
+        },
+        {
+          "source_id": "slayergate_e2m1_encounter_manager_1/0/18",
+          "map_key": "e2m1_nest",
+          "count": 3,
+          "repeatable": true,
+          "location": "Super Gore Nest - Mission Complete"
         }
       ],
-      "progression_source_ids": []
+      "progression_source_ids": [],
+      "conditional_managers": [
+        "slayergate_e2m1_encounter_manager_1"
+      ]
     },
     "e2m2_base": {
       "source_sha256": "984c863bc97105a998b3b8bb06022df698811852bec895658b22140d5713f71f",
-      "estimated_kills": 104,
+      "estimated_kills": 131,
       "coverage": "partial",
       "basis": "Conservative partial count covering the pinned finite composition sources; checkpoint and maintenance alternatives are separate.",
       "sources": [
@@ -2076,10 +2536,214 @@
           "count": 1,
           "repeatable": true,
           "location": "ARC Complex - Mission Complete"
+        },
+        {
+          "source_id": "slum_hall_encounter_manager_secret_encounter_1/0/0",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Secret Encounter - Generator Room"
+        },
+        {
+          "source_id": "slum_hall_encounter_manager_secret_encounter_1/0/1",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Secret Encounter - Generator Room"
+        },
+        {
+          "source_id": "slum_hall_encounter_manager_secret_encounter_1/0/2",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Secret Encounter - Generator Room"
+        },
+        {
+          "source_id": "slum_hall_encounter_manager_secret_encounter_1/0/4",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Secret Encounter - Generator Room"
+        },
+        {
+          "source_id": "hub_encounter_manager_hub_2/0/0",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Mission Complete"
+        },
+        {
+          "source_id": "hub_encounter_manager_hub_2/0/1",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Mission Complete"
+        },
+        {
+          "source_id": "hub_encounter_manager_hub_2/0/4",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Mission Complete"
+        },
+        {
+          "source_id": "hub_encounter_manager_hub_2/0/5",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Mission Complete"
+        },
+        {
+          "source_id": "hub_encounter_manager_hub_2/0/7",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Mission Complete"
+        },
+        {
+          "source_id": "hub_encounter_manager_hub_2/0/9",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Mission Complete"
+        },
+        {
+          "source_id": "hub_encounter_manager_hub_2/0/11",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Mission Complete"
+        },
+        {
+          "source_id": "hub_encounter_manager_hub_1/0/18",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Mission Complete"
+        },
+        {
+          "source_id": "hub_encounter_manager_hub_1/0/20",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Mission Complete"
+        },
+        {
+          "source_id": "hub_encounter_manager_hub_1/0/22",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Mission Complete"
+        },
+        {
+          "source_id": "intro_encounter_manager_intro_1/0/20",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Mission Complete"
+        },
+        {
+          "source_id": "intro_encounter_manager_intro_1/0/21",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Mission Complete"
+        },
+        {
+          "source_id": "intro_encounter_manager_intro_1/0/22",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Mission Complete"
+        },
+        {
+          "source_id": "intro_encounter_manager_intro_1/0/24",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Mission Complete"
+        },
+        {
+          "source_id": "intro_encounter_manager_intro_1/0/26",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Mission Complete"
+        },
+        {
+          "source_id": "intro_encounter_manager_intro_1/0/31",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Mission Complete"
+        },
+        {
+          "source_id": "intro_encounter_manager_intro_1/0/32",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Mission Complete"
+        },
+        {
+          "source_id": "intro_encounter_manager_intro_1/0/33",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Mission Complete"
+        },
+        {
+          "source_id": "gameplay_slayergate_ds_encounter_manager_2/0/11",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Mission Complete"
+        },
+        {
+          "source_id": "gameplay_slayergate_ds_encounter_manager_2/0/16",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Mission Complete"
+        },
+        {
+          "source_id": "precombat_encounter_manager_elevator12/0/10",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Mission Complete"
+        },
+        {
+          "source_id": "precombat_encounter_manager_elevator12/0/11",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Mission Complete"
+        },
+        {
+          "source_id": "precombat_encounter_manager_elevator12/0/12",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Mission Complete"
+        },
+        {
+          "source_id": "precombat_encounter_manager_elevator12/0/13",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Mission Complete"
+        },
+        {
+          "source_id": "precombat_encounter_manager_elevator12/0/14",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Mission Complete"
         }
       ],
       "progression_source_ids": [],
       "conditional_managers": [
+        "gameplay_slayergate_ds_encounter_manager_2",
         "rooftop_encounter_manager_inner1"
       ]
     },
@@ -2305,12 +2969,126 @@
           "count": 1,
           "repeatable": true,
           "location": "Mars Core - Secret Encounter - Tentacle Portal Arena"
+        },
+        {
+          "source_id": "slayer_gate_encounter_manager_slayer_lobby/0/1",
+          "map_key": "e2m3_core",
+          "count": 1,
+          "repeatable": true,
+          "location": "Mars Core - Mission Complete"
+        },
+        {
+          "source_id": "slayer_gate_encounter_manager_slayer_lobby/0/2",
+          "map_key": "e2m3_core",
+          "count": 1,
+          "repeatable": true,
+          "location": "Mars Core - Mission Complete"
+        },
+        {
+          "source_id": "slayer_gate_encounter_manager_slayer_lobby/0/3",
+          "map_key": "e2m3_core",
+          "count": 1,
+          "repeatable": true,
+          "location": "Mars Core - Mission Complete"
+        },
+        {
+          "source_id": "slayer_gate_encounter_manager_slayer_lobby/0/5",
+          "map_key": "e2m3_core",
+          "count": 1,
+          "repeatable": true,
+          "location": "Mars Core - Mission Complete"
+        },
+        {
+          "source_id": "slayer_gate_encounter_manager_slayer_lobby/0/7",
+          "map_key": "e2m3_core",
+          "count": 1,
+          "repeatable": true,
+          "location": "Mars Core - Mission Complete"
+        },
+        {
+          "source_id": "phobos_encounter_manager_2/0/6",
+          "map_key": "e2m3_core",
+          "count": 1,
+          "repeatable": true,
+          "location": "Mars Core - Mission Complete"
+        },
+        {
+          "source_id": "phobos_encounter_manager_2/0/3",
+          "map_key": "e2m3_core",
+          "count": 1,
+          "repeatable": true,
+          "location": "Mars Core - Mission Complete"
+        },
+        {
+          "source_id": "gameplay_slayergate_mc_encounter_manager_2/0/2",
+          "map_key": "e2m3_core",
+          "count": 1,
+          "repeatable": true,
+          "location": "Mars Core - Mission Complete"
+        },
+        {
+          "source_id": "gameplay_slayergate_mc_encounter_manager_2/0/4",
+          "map_key": "e2m3_core",
+          "count": 1,
+          "repeatable": true,
+          "location": "Mars Core - Mission Complete"
+        },
+        {
+          "source_id": "gameplay_slayergate_mc_encounter_manager_2/0/8",
+          "map_key": "e2m3_core",
+          "count": 1,
+          "repeatable": true,
+          "location": "Mars Core - Mission Complete"
+        },
+        {
+          "source_id": "gameplay_slayergate_mc_encounter_manager_2/0/22",
+          "map_key": "e2m3_core",
+          "count": 1,
+          "repeatable": true,
+          "location": "Mars Core - Mission Complete"
+        },
+        {
+          "source_id": "gameplay_slayergate_mc_encounter_manager_2/0/24",
+          "map_key": "e2m3_core",
+          "count": 1,
+          "repeatable": true,
+          "location": "Mars Core - Mission Complete"
+        },
+        {
+          "source_id": "gameplay_slayergate_mc_encounter_manager_2/0/26",
+          "map_key": "e2m3_core",
+          "count": 1,
+          "repeatable": true,
+          "location": "Mars Core - Mission Complete"
+        },
+        {
+          "source_id": "gameplay_slayergate_mc_encounter_manager_2/0/28",
+          "map_key": "e2m3_core",
+          "count": 1,
+          "repeatable": true,
+          "location": "Mars Core - Mission Complete"
+        },
+        {
+          "source_id": "gameplay_slayergate_mc_encounter_manager_2/0/33",
+          "map_key": "e2m3_core",
+          "count": 1,
+          "repeatable": true,
+          "location": "Mars Core - Mission Complete"
+        },
+        {
+          "source_id": "gameplay_slayergate_mc_encounter_manager_2/0/35",
+          "map_key": "e2m3_core",
+          "count": 1,
+          "repeatable": true,
+          "location": "Mars Core - Mission Complete"
         }
       ],
       "progression_source_ids": [],
       "conditional_managers": [
+        "gameplay_slayergate_mc_encounter_manager_2",
         "meteors_encounter_manager_secret_enc_01",
-        "phobos_encounter_manager_2"
+        "phobos_encounter_manager_2",
+        "slayer_gate_encounter_manager_slayer_lobby"
       ]
     },
     "e2m4_boss": {
@@ -2375,16 +3153,38 @@
           "count": 2,
           "repeatable": true,
           "location": "Taras Nabad - Mission Complete"
+        },
+        {
+          "source_id": "slayergate_sb_encounter_manager_1/0/5",
+          "map_key": "e3m1_slayer",
+          "count": 1,
+          "repeatable": true,
+          "location": "Taras Nabad - Mission Complete"
+        },
+        {
+          "source_id": "slayergate_sb_encounter_manager_1/0/31",
+          "map_key": "e3m1_slayer",
+          "count": 1,
+          "repeatable": true,
+          "location": "Taras Nabad - Mission Complete"
+        },
+        {
+          "source_id": "slayergate_sb_encounter_manager_1/0/33",
+          "map_key": "e3m1_slayer",
+          "count": 1,
+          "repeatable": true,
+          "location": "Taras Nabad - Mission Complete"
         }
       ],
       "progression_source_ids": [],
       "conditional_managers": [
-        "ai_encounter_manager_flooded_2"
+        "ai_encounter_manager_flooded_2",
+        "slayergate_sb_encounter_manager_1"
       ]
     },
     "e3m2_hell": {
       "source_sha256": "279676cbe9781f5c569d275ca3044f040a395a79735ce555a8e029ccff7f20f8",
-      "estimated_kills": 11,
+      "estimated_kills": 16,
       "coverage": "partial",
       "basis": "Conservative partial count covering the pinned finite composition sources; checkpoint and maintenance alternatives are separate.",
       "sources": [
@@ -2464,9 +3264,105 @@
           "count": 1,
           "repeatable": true,
           "location": "Nekravol - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_intro_01b/0/1",
+          "map_key": "e3m2_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Nekravol - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_intro_01b/0/2",
+          "map_key": "e3m2_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Nekravol - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_intro_01b/0/3",
+          "map_key": "e3m2_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Nekravol - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_intro_01b/0/4",
+          "map_key": "e3m2_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Nekravol - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_intro_01b/0/5",
+          "map_key": "e3m2_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Nekravol - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_torture_02b/0/9",
+          "map_key": "e3m2_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Nekravol - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_torture_02a/0/3",
+          "map_key": "e3m2_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Nekravol - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_torture_02a/0/4",
+          "map_key": "e3m2_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Nekravol - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_torture_02a/0/7",
+          "map_key": "e3m2_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Nekravol - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_intro_01c/0/2",
+          "map_key": "e3m2_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Nekravol - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_intro_01c/0/9",
+          "map_key": "e3m2_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Nekravol - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_intro_01c/0/10",
+          "map_key": "e3m2_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Nekravol - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_intro_01c/0/12",
+          "map_key": "e3m2_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Nekravol - Mission Complete"
         }
       ],
-      "progression_source_ids": []
+      "progression_source_ids": [],
+      "conditional_managers": [
+        "ai_encounter_manager_intro_01c",
+        "ai_encounter_manager_torture_02a",
+        "ai_encounter_manager_torture_02b"
+      ]
     },
     "e3m2_hell_b": {
       "source_sha256": "2f08c1fc45e925563b509a2d8465850f0b83e7efc11cac9bff705d0b4e108adb",
@@ -2487,13 +3383,86 @@
           "count": 1,
           "repeatable": true,
           "location": "Nekravol Part II - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_soulremoval_01b/0/7",
+          "map_key": "e3m2_hell_b",
+          "count": 1,
+          "repeatable": true,
+          "location": "Nekravol Part II - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_soulremoval_01b/0/9",
+          "map_key": "e3m2_hell_b",
+          "count": 1,
+          "repeatable": true,
+          "location": "Nekravol Part II - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_soulremoval_01b/0/11",
+          "map_key": "e3m2_hell_b",
+          "count": 1,
+          "repeatable": true,
+          "location": "Nekravol Part II - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_soulremoval_01b/0/13",
+          "map_key": "e3m2_hell_b",
+          "count": 1,
+          "repeatable": true,
+          "location": "Nekravol Part II - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_soulremoval_01b/0/15",
+          "map_key": "e3m2_hell_b",
+          "count": 1,
+          "repeatable": true,
+          "location": "Nekravol Part II - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_soulremoval_01b/0/17",
+          "map_key": "e3m2_hell_b",
+          "count": 1,
+          "repeatable": true,
+          "location": "Nekravol Part II - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_soulremoval_01b/0/20",
+          "map_key": "e3m2_hell_b",
+          "count": 1,
+          "repeatable": true,
+          "location": "Nekravol Part II - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_soulremoval_01b/0/24",
+          "map_key": "e3m2_hell_b",
+          "count": 1,
+          "repeatable": true,
+          "location": "Nekravol Part II - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_soulremoval_01b/0/25",
+          "map_key": "e3m2_hell_b",
+          "count": 1,
+          "repeatable": true,
+          "location": "Nekravol Part II - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_soulremoval_01b/0/22",
+          "map_key": "e3m2_hell_b",
+          "count": 1,
+          "repeatable": true,
+          "location": "Nekravol Part II - Mission Complete"
         }
       ],
-      "progression_source_ids": []
+      "progression_source_ids": [],
+      "conditional_managers": [
+        "ai_encounter_manager_soulremoval_01b"
+      ]
     },
     "e3m3_maykr": {
       "source_sha256": "29cdee76e07ecdce1cc3b38d47d311c50d06b3b5e8f14ea9e74512a95e577ffb",
-      "estimated_kills": 62,
+      "estimated_kills": 66,
       "coverage": "partial",
       "basis": "Conservative partial count covering the pinned finite composition sources; checkpoint and maintenance alternatives are separate.",
       "sources": [
@@ -2930,6 +3899,34 @@
           "count": 1,
           "repeatable": true,
           "location": "Urdak - Mission Complete"
+        },
+        {
+          "source_id": "hub_exterior_encounter_manager_6/0/11",
+          "map_key": "e3m3_maykr",
+          "count": 1,
+          "repeatable": true,
+          "location": "Urdak - Mission Complete"
+        },
+        {
+          "source_id": "hub_exterior_encounter_manager_6/0/15",
+          "map_key": "e3m3_maykr",
+          "count": 1,
+          "repeatable": true,
+          "location": "Urdak - Mission Complete"
+        },
+        {
+          "source_id": "hub_exterior_encounter_manager_6/0/10",
+          "map_key": "e3m3_maykr",
+          "count": 1,
+          "repeatable": true,
+          "location": "Urdak - Mission Complete"
+        },
+        {
+          "source_id": "temp_all_scripting_encounter_manager_19/0/6",
+          "map_key": "e3m3_maykr",
+          "count": 1,
+          "repeatable": true,
+          "location": "Urdak - Mission Complete"
         }
       ],
       "progression_source_ids": []
@@ -3065,13 +4062,48 @@
           "count": 1,
           "repeatable": true,
           "location": "Final Sin - Mission Complete"
+        },
+        {
+          "source_id": "building_2_encounter_manager_bottom_floor/0/23",
+          "map_key": "e3m4_boss",
+          "count": 1,
+          "repeatable": true,
+          "location": "Final Sin - Mission Complete"
+        },
+        {
+          "source_id": "building_2_encounter_manager_bottom_floor/0/24",
+          "map_key": "e3m4_boss",
+          "count": 1,
+          "repeatable": true,
+          "location": "Final Sin - Mission Complete"
+        },
+        {
+          "source_id": "building_2_encounter_manager_bottom_floor/0/25",
+          "map_key": "e3m4_boss",
+          "count": 1,
+          "repeatable": true,
+          "location": "Final Sin - Mission Complete"
+        },
+        {
+          "source_id": "building_2_encounter_manager_bottom_floor/0/26",
+          "map_key": "e3m4_boss",
+          "count": 1,
+          "repeatable": true,
+          "location": "Final Sin - Mission Complete"
+        },
+        {
+          "source_id": "building_2_encounter_manager_bottom_floor/0/30",
+          "map_key": "e3m4_boss",
+          "count": 1,
+          "repeatable": true,
+          "location": "Final Sin - Mission Complete"
         }
       ],
       "progression_source_ids": []
     },
     "e4m1_rig": {
       "source_sha256": "ca13a5d99a305aa7ba1ed7eee87e56a868289275a7f5c2604ad5042b48d05d62",
-      "estimated_kills": 42,
+      "estimated_kills": 57,
       "coverage": "partial",
       "basis": "Conservative partial count covering the pinned finite composition sources; checkpoint and maintenance alternatives are separate.",
       "sources": [
@@ -3368,13 +4400,834 @@
           "count": 1,
           "repeatable": true,
           "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "starting_platform_encounter_manager_dlc1_4/0/4",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "starting_platform_encounter_manager_dlc1_4/0/5",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "starting_platform_encounter_manager_18/0/16",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "starting_platform_encounter_manager_18/0/17",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "game__encounter_manager_1/0/3",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "game__encounter_manager_1/0/4",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "game__encounter_manager_1/0/6",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "game__encounter_manager_1/0/7",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "game__encounter_manager_1/0/8",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "game__encounter_manager_1/0/13",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "game__encounter_manager_1/0/14",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "game__encounter_manager_1/0/15",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "game__encounter_manager_1/0/19",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "game__encounter_manager_1/0/20",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "game__encounter_manager_1/0/21",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "game__encounter_manager_1/0/23",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "underwater_facility_arena_encounter_manager_dlc1_1/0/5",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "underwater_facility_arena_encounter_manager_dlc1_1/0/7",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "underwater_facility_arena_encounter_manager_dlc1_1/0/9",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "underwater_facility_arena_encounter_manager_dlc1_1/0/14",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "underwater_facility_arena_encounter_manager_dlc1_1/0/16",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "underwater_facility_arena_encounter_manager_dlc1_1/0/18",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "underwater_facility_arena_encounter_manager_dlc1_1/0/20",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "underwater_facility_arena_encounter_manager_dlc1_1/0/22",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "underwater_facility_arena_encounter_manager_dlc1_1/0/24",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "underwater_facility_arena_encounter_manager_dlc1_1/0/27",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "underwater_facility_arena_encounter_manager_dlc1_1/0/29",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "underwater_facility_arena_encounter_manager_dlc1_1/0/31",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "underwater_facility_arena_encounter_manager_dlc1_1/0/33",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "underwater_facility_arena_encounter_manager_dlc1_1/0/35",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "underwater_facility_arena_encounter_manager_dlc1_1/0/37",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "underwater_facility_arena_encounter_manager_dlc1_1/0/46",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "underwater_facility_arena_encounter_manager_dlc1_1/0/48",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "underwater_facility_arena_encounter_manager_dlc1_1/0/50",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "underwater_facility_arena_encounter_manager_dlc1_1/0/52",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "underwater_facility_arena_encounter_manager_dlc1_1/0/54",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "underwater_facility_arena_encounter_manager_dlc1_1/0/56",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "destroyed_rig_encounter_manager_dlc1_2/0/16",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "destroyed_rig_encounter_manager_dlc1_2/0/18",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "destroyed_rig_encounter_manager_dlc1_2/0/20",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "destroyed_rig_encounter_manager_dlc1_2/0/22",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "destroyed_rig_encounter_manager_dlc1_2/0/26",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "destroyed_rig_encounter_manager_dlc1_2/0/28",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "destroyed_rig_encounter_manager_dlc1_2/0/33",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "destroyed_rig_encounter_manager_dlc1_2/0/35",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "destroyed_rig_encounter_manager_dlc1_2/0/37",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "destroyed_rig_encounter_manager_dlc1_2/0/38",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "destroyed_rig_encounter_manager_dlc1_2/0/40",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "destroyed_rig_encounter_manager_dlc1_2/0/42",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "destroyed_rig_encounter_manager_dlc1_4/0/4",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "destroyed_rig_encounter_manager_dlc1_9/0/25",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "destroyed_rig_encounter_manager_dlc1_10/0/18",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "traversal_section_encounter_manager_dlc1_2/0/0",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "traversal_section_encounter_manager_dlc1_2/0/2",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "traversal_section_encounter_manager_dlc1_2/0/4",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "traversal_section_encounter_manager_dlc1_2/0/6",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "traversal_section_encounter_manager_dlc1_3/0/7",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "traversal_section_encounter_manager_dlc1_3/0/10",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "traversal_section_encounter_manager_dlc1_3/0/13",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "traversal_section_encounter_manager_dlc1_4/0/11",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "traversal_section_encounter_manager_dlc1_4/0/17",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "traversal_section_encounter_manager_dlc1_4/0/19",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "traversal_section_encounter_manager_dlc1_4/0/21",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "traversal_section_encounter_manager_dlc1_4/0/24",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "traversal_section_encounter_manager_dlc1_4/0/25",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "traversal_section_encounter_manager_dlc1_4/0/27",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "first_arena_encounter_manager_dlc1_1/0/28",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "first_arena_encounter_manager_dlc1_1/0/29",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "first_arena_encounter_manager_dlc1_1/0/30",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "first_arena_encounter_manager_dlc1_1/0/32",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "first_arena_encounter_manager_dlc1_1/0/33",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "first_arena_encounter_manager_dlc1_2/0/6",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "first_arena_encounter_manager_dlc1_2/0/7",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "first_arena_encounter_manager_dlc1_2/0/9",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "first_arena_encounter_manager_dlc1_2/0/10",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "first_arena_encounter_manager_dlc1_2/0/11",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "first_arena_encounter_manager_dlc1_2/0/15",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "first_arena_encounter_manager_dlc1_2/0/16",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "first_arena_encounter_manager_dlc1_2/0/19",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "first_arena_encounter_manager_dlc1_2/0/21",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "first_arena_encounter_manager_dlc1_2/0/23",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "first_arena_encounter_manager_dlc1_2/0/25",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "first_arena_encounter_manager_dlc1_2/0/27",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "starting_platform_encounter_manager_1/0/22",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "starting_platform_encounter_manager_1/0/23",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "starting_platform_encounter_manager_1/0/25",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "starting_platform_encounter_manager_1/0/26",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "starting_platform_encounter_manager_1/0/28",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "starting_platform_encounter_manager_1/0/29",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "starting_platform_encounter_manager_1/0/31",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "starting_platform_encounter_manager_1/0/32",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "starting_platform_encounter_manager_dlc1_2/0/0",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "starting_platform_encounter_manager_dlc1_2/0/1",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "starting_platform_encounter_manager_dlc1_2/0/2",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "starting_platform_encounter_manager_dlc1_2/0/3",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "starting_platform_encounter_manager_dlc1_2/0/4",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "underwater_facility_encounter_manager_dlc1_2/0/17",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "underwater_facility_encounter_manager_dlc1_2/0/19",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "underwater_facility_encounter_manager_dlc1_2/0/21",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "underwater_facility_encounter_manager_dlc1_3/0/0",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "underwater_facility_encounter_manager_dlc1_3/0/1",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "game__encounter_manager_1/0/38",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "game__encounter_manager_1/0/39",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "game__encounter_manager_1/0/41",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "game__encounter_manager_1/0/42",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "destroyed_rig_encounter_manager_dlc1_9/0/2",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "destroyed_rig_encounter_manager_dlc1_9/0/3",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "destroyed_rig_encounter_manager_dlc1_9/0/5",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "destroyed_rig_encounter_manager_dlc1_9/0/6",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "destroyed_rig_encounter_manager_dlc1_9/0/10",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "destroyed_rig_encounter_manager_dlc1_9/0/12",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "destroyed_rig_encounter_manager_dlc1_9/0/14",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "destroyed_rig_encounter_manager_dlc1_9/0/18",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "destroyed_rig_encounter_manager_dlc1_9/0/20",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "traversal_section_encounter_manager_dlc1_4/0/23",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Mission Complete"
         }
       ],
-      "progression_source_ids": []
+      "progression_source_ids": [],
+      "conditional_managers": [
+        "destroyed_rig_encounter_manager_dlc1_10",
+        "destroyed_rig_encounter_manager_dlc1_2",
+        "destroyed_rig_encounter_manager_dlc1_4",
+        "destroyed_rig_encounter_manager_dlc1_9",
+        "first_arena_encounter_manager_dlc1_1",
+        "first_arena_encounter_manager_dlc1_2",
+        "game__encounter_manager_1",
+        "starting_platform_encounter_manager_18",
+        "traversal_section_encounter_manager_dlc1_2",
+        "traversal_section_encounter_manager_dlc1_3",
+        "traversal_section_encounter_manager_dlc1_4",
+        "underwater_facility_arena_encounter_manager_dlc1_1",
+        "underwater_facility_encounter_manager_dlc1_2",
+        "underwater_facility_encounter_manager_dlc1_3"
+      ]
     },
     "e4m2_swamp": {
       "source_sha256": "2211ff15c44a8bdd1174c477dc46d9942dbc16951cec4c0d55cf884c3c17a690",
-      "estimated_kills": 58,
+      "estimated_kills": 64,
       "coverage": "partial",
       "basis": "Conservative partial count covering the pinned finite composition sources; checkpoint and maintenance alternatives are separate.",
       "sources": [
@@ -3790,16 +5643,83 @@
           "count": 1,
           "repeatable": true,
           "location": "The Blood Swamps - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_1_2015883838/0/0",
+          "map_key": "e4m2_swamp",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Blood Swamps - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_1_2015883838/0/1",
+          "map_key": "e4m2_swamp",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Blood Swamps - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_1_2015883838/0/3",
+          "map_key": "e4m2_swamp",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Blood Swamps - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_1_2015883838/0/5",
+          "map_key": "e4m2_swamp",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Blood Swamps - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_1_2015883838/0/7",
+          "map_key": "e4m2_swamp",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Blood Swamps - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_torch_4/0/16",
+          "map_key": "e4m2_swamp",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Blood Swamps - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_torch_1/0/14",
+          "map_key": "e4m2_swamp",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Blood Swamps - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_sunken_ruins_14/0/7",
+          "map_key": "e4m2_swamp",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Blood Swamps - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_dlc1_4/0/11",
+          "map_key": "e4m2_swamp",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Blood Swamps - Mission Complete"
         }
       ],
       "progression_source_ids": [],
       "conditional_managers": [
-        "ai_encounter_manager_2"
+        "ai_encounter_manager_2",
+        "ai_encounter_manager_sunken_ruins_14",
+        "ai_encounter_manager_torch_1",
+        "ai_encounter_manager_torch_3",
+        "ai_encounter_manager_torch_4"
       ]
     },
     "e4m3_mcity": {
       "source_sha256": "fc3174b2306cd889d17eee49cefe5537661f02eaa7c852a001eea826125d0904",
-      "estimated_kills": 6,
+      "estimated_kills": 10,
       "coverage": "partial",
       "basis": "Reviewed finite opportunities and original composition calls, with initial checkpoint cohorts counted once; tutorials off.",
       "sources": [
@@ -3844,13 +5764,192 @@
           "count": 1,
           "repeatable": true,
           "location": "The Holt - Mission Complete"
+        },
+        {
+          "source_id": "forest_pillars_encounter_manager_forest_pillar_combat/0/24",
+          "map_key": "e4m3_mcity",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Holt - Mission Complete"
+        },
+        {
+          "source_id": "forest_pillars_encounter_manager_forest_pillar_combat/0/30",
+          "map_key": "e4m3_mcity",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Holt - Mission Complete"
+        },
+        {
+          "source_id": "bridge_encounter_manager_ambush_1/0/11",
+          "map_key": "e4m3_mcity",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Holt - Mission Complete"
+        },
+        {
+          "source_id": "forest_forestarena_encounter_manager_forest_arena_1/0/20",
+          "map_key": "e4m3_mcity",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Holt - Mission Complete"
+        },
+        {
+          "source_id": "forest_forestarena_encounter_manager_forest_arena_1/0/21",
+          "map_key": "e4m3_mcity",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Holt - Mission Complete"
+        },
+        {
+          "source_id": "forest_forestarena_encounter_manager_forest_arena_1/0/36",
+          "map_key": "e4m3_mcity",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Holt - Mission Complete"
+        },
+        {
+          "source_id": "bridge_encounter_manager_dlc1_2/0/18",
+          "map_key": "e4m3_mcity",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Holt - Mission Complete"
+        },
+        {
+          "source_id": "bridge_encounter_manager_dlc1_2/0/19",
+          "map_key": "e4m3_mcity",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Holt - Mission Complete"
+        },
+        {
+          "source_id": "bridge_encounter_manager_dlc1_1/0/18",
+          "map_key": "e4m3_mcity",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Holt - Mission Complete"
+        },
+        {
+          "source_id": "bridge_encounter_manager_dlc1_1/0/19",
+          "map_key": "e4m3_mcity",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Holt - Mission Complete"
+        },
+        {
+          "source_id": "bridge_encounter_manager_dlc1_1/0/24",
+          "map_key": "e4m3_mcity",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Holt - Mission Complete"
+        },
+        {
+          "source_id": "arena__encounter_manager_cityarena1/0/49",
+          "map_key": "e4m3_mcity",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Holt - Mission Complete"
+        },
+        {
+          "source_id": "arena__encounter_manager_cityarena1/0/51",
+          "map_key": "e4m3_mcity",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Holt - Mission Complete"
+        },
+        {
+          "source_id": "arena__encounter_manager_cityarena1/0/53",
+          "map_key": "e4m3_mcity",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Holt - Mission Complete"
+        },
+        {
+          "source_id": "forest_glade_encounter_manager_treeambush2/0/13",
+          "map_key": "e4m3_mcity",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Holt - Mission Complete"
+        },
+        {
+          "source_id": "forest_pillars_encounter_manager_forest_turret_combat/0/27",
+          "map_key": "e4m3_mcity",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Holt - Mission Complete"
+        },
+        {
+          "source_id": "forest_pillars_encounter_manager_forest_turret_combat/0/29",
+          "map_key": "e4m3_mcity",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Holt - Mission Complete"
+        },
+        {
+          "source_id": "forest_pillars_encounter_manager_forest_turret_combat/0/31",
+          "map_key": "e4m3_mcity",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Holt - Mission Complete"
+        },
+        {
+          "source_id": "forest_opening_encounter_manager_forest_arenapath1/0/12",
+          "map_key": "e4m3_mcity",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Holt - Mission Complete"
+        },
+        {
+          "source_id": "forest_opening_encounter_manager_forest_arenapath1/0/13",
+          "map_key": "e4m3_mcity",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Holt - Mission Complete"
+        },
+        {
+          "source_id": "forest_opening_encounter_manager_forest_arenapath1/0/14",
+          "map_key": "e4m3_mcity",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Holt - Mission Complete"
+        },
+        {
+          "source_id": "forest_opening_encounter_manager_forest_arenapath1/0/15",
+          "map_key": "e4m3_mcity",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Holt - Mission Complete"
+        },
+        {
+          "source_id": "game__encounter_manager_2/0/28",
+          "map_key": "e4m3_mcity",
+          "count": 2,
+          "repeatable": true,
+          "location": "The Holt - Mission Complete"
+        },
+        {
+          "source_id": "game__encounter_manager_2/0/29",
+          "map_key": "e4m3_mcity",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Holt - Mission Complete"
         }
       ],
-      "progression_source_ids": []
+      "progression_source_ids": [],
+      "conditional_managers": [
+        "arena__encounter_manager_cityarena1",
+        "bridge_encounter_manager_ambush_1",
+        "bridge_encounter_manager_dlc1_1",
+        "bridge_encounter_manager_dlc1_2",
+        "forest_forestarena_encounter_manager_forest_arena_1",
+        "forest_glade_encounter_manager_treeambush2",
+        "forest_pillars_encounter_manager_forest_pillar_combat",
+        "forest_pillars_encounter_manager_forest_turret_combat",
+        "game__encounter_manager_2"
+      ]
     },
     "e5m1_spear": {
       "source_sha256": "c4f1c3aaffea62a164860fee001254888696f7585cb18878e872175864418eb6",
-      "estimated_kills": 49,
+      "estimated_kills": 51,
       "coverage": "partial",
       "basis": "Conservative partial count covering the pinned finite composition sources; checkpoint and maintenance alternatives are separate.",
       "sources": [
@@ -4035,9 +6134,440 @@
           "count": 1,
           "repeatable": true,
           "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc2_4/0/1",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc2_3/0/5",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc2_3/0/6",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc2_3/0/7",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc2_3/0/9",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc2_3/0/11",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc2_3/0/13",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc2_16/0/2",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc2_16/0/4",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc2_16/0/6",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc2_16/0/8",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc2_16/0/10",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc2_14/0/9",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc2_14/0/11",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc2_7/0/9",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc2_7/0/11",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc2_7/0/13",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "_example_encounter_manager_2/0/40",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "_example_encounter_manager_2/0/42",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "_example_encounter_manager_2/0/44",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "_example_encounter_manager_2/0/46",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "_example_encounter_manager_0/0/1",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "_example_encounter_manager_0/0/2",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "_example_encounter_manager_0/0/4",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "_example_encounter_manager_0/0/5",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "_example_encounter_manager_0/0/9",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "_example_encounter_manager_0/0/11",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "_example_encounter_manager_0/0/13",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "_example_encounter_manager_0/0/15",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "_example_encounter_manager_0/0/17",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "_example_encounter_manager_0/0/19",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "_example_encounter_manager_0/0/21",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "_example_encounter_manager_0/0/27",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "_example_encounter_manager_0/0/29",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "_example_encounter_manager_0/0/31",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "_example_encounter_manager_0/0/33",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "_example_encounter_manager_0/0/35",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "_example_encounter_manager_0/0/37",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "_example_encounter_manager_0/0/41",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc1_2/0/4",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc1_2/0/5",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc1_2/0/7",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc1_2/0/9",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc1_2/0/11",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc1_2/0/13",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc1_2/0/15",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc1_6/0/46",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc1_6/0/48",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc2_12/0/4",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc2_12/0/6",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc2_12/0/8",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc2_12/0/10",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc2_12/0/16",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc1_6/0/27",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc1_6/0/29",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc1_6/0/34",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc1_6/0/36",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc1_6/0/38",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc1_6/0/42",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
+        },
+        {
+          "source_id": "ai_combat_encounter_manager_dlc1_5/0/4",
+          "map_key": "e5m1_spear",
+          "count": 1,
+          "repeatable": true,
+          "location": "The World Spear - Mission Complete"
         }
       ],
-      "progression_source_ids": []
+      "progression_source_ids": [],
+      "conditional_managers": [
+        "_example_encounter_manager_0",
+        "_example_encounter_manager_2",
+        "ai_combat_encounter_manager_dlc1_2",
+        "ai_combat_encounter_manager_dlc1_6",
+        "ai_combat_encounter_manager_dlc2_12",
+        "ai_combat_encounter_manager_dlc2_14",
+        "ai_combat_encounter_manager_dlc2_16",
+        "ai_combat_encounter_manager_dlc2_3",
+        "ai_combat_encounter_manager_dlc2_7"
+      ]
     },
     "e5m2_earth": {
       "source_sha256": "623fc517c295fe183b57e90eac35c75f505ee4a913fc19c674c8ecc8944a18c1",
@@ -4051,13 +6581,121 @@
           "count": 1,
           "repeatable": true,
           "location": "Reclaimed Earth - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_dlc1_rooftop_topfloor/0/17",
+          "map_key": "e5m2_earth",
+          "count": 1,
+          "repeatable": true,
+          "location": "Reclaimed Earth - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_dlc1_rooftop_topfloor/0/18",
+          "map_key": "e5m2_earth",
+          "count": 1,
+          "repeatable": true,
+          "location": "Reclaimed Earth - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_dlc1_crane/0/18",
+          "map_key": "e5m2_earth",
+          "count": 1,
+          "repeatable": true,
+          "location": "Reclaimed Earth - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_dlc1_rooftop_bottomfloor/0/1",
+          "map_key": "e5m2_earth",
+          "count": 1,
+          "repeatable": true,
+          "location": "Reclaimed Earth - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_dlc1_rooftop_bottomfloor/0/2",
+          "map_key": "e5m2_earth",
+          "count": 1,
+          "repeatable": true,
+          "location": "Reclaimed Earth - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_dlc1_rooftop_bottomfloor/0/3",
+          "map_key": "e5m2_earth",
+          "count": 1,
+          "repeatable": true,
+          "location": "Reclaimed Earth - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_dlc1_rooftop_bottomfloor/0/4",
+          "map_key": "e5m2_earth",
+          "count": 1,
+          "repeatable": true,
+          "location": "Reclaimed Earth - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_dlc1_rooftop_bottomfloor/0/5",
+          "map_key": "e5m2_earth",
+          "count": 1,
+          "repeatable": true,
+          "location": "Reclaimed Earth - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_dlc1_floodedsubway/0/6",
+          "map_key": "e5m2_earth",
+          "count": 1,
+          "repeatable": true,
+          "location": "Reclaimed Earth - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_dlc1_punchtrain/0/2",
+          "map_key": "e5m2_earth",
+          "count": 1,
+          "repeatable": true,
+          "location": "Reclaimed Earth - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_dlc1_punchtrain/0/3",
+          "map_key": "e5m2_earth",
+          "count": 1,
+          "repeatable": true,
+          "location": "Reclaimed Earth - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_dlc1_punchtrain/0/4",
+          "map_key": "e5m2_earth",
+          "count": 1,
+          "repeatable": true,
+          "location": "Reclaimed Earth - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_dlc1_firstbuilding/0/26",
+          "map_key": "e5m2_earth",
+          "count": 1,
+          "repeatable": true,
+          "location": "Reclaimed Earth - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_dlc1_firstbuilding/0/27",
+          "map_key": "e5m2_earth",
+          "count": 1,
+          "repeatable": true,
+          "location": "Reclaimed Earth - Mission Complete"
         }
       ],
-      "progression_source_ids": []
+      "progression_source_ids": [],
+      "conditional_managers": [
+        "ai_encounter_manager_dlc1_crane",
+        "ai_encounter_manager_dlc1_firstbuilding",
+        "ai_encounter_manager_dlc1_floodedsubway",
+        "ai_encounter_manager_dlc1_opening",
+        "ai_encounter_manager_dlc1_punchtrain",
+        "ai_encounter_manager_dlc1_rooftop_bottomfloor",
+        "ai_encounter_manager_dlc1_rooftop_topfloor",
+        "ai_encounter_manager_dlc1_skyscraper_upper"
+      ]
     },
     "e5m3_hell": {
       "source_sha256": "8f647f91f79d5ba94b3d50417e48615694a8340d1bac787e6bbe4a35337b0c44",
-      "estimated_kills": 22,
+      "estimated_kills": 38,
       "coverage": "partial",
       "basis": "Conservative partial count covering the pinned finite composition sources; checkpoint and maintenance alternatives are separate.",
       "sources": [
@@ -4200,9 +6838,207 @@
           "count": 1,
           "repeatable": true,
           "location": "Immora - Mission Complete"
+        },
+        {
+          "source_id": "breach_wasteland_encounter_manager_dlc2_2/0/14",
+          "map_key": "e5m3_hell",
+          "count": 2,
+          "repeatable": true,
+          "location": "Immora - Mission Complete"
+        },
+        {
+          "source_id": "city_lower_encounter_manager_b_deck_unlock/0/2",
+          "map_key": "e5m3_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Immora - Mission Complete"
+        },
+        {
+          "source_id": "_example_encounter_manager_0/0/19",
+          "map_key": "e5m3_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Immora - Mission Complete"
+        },
+        {
+          "source_id": "_example_encounter_manager_0/0/26",
+          "map_key": "e5m3_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Immora - Mission Complete"
+        },
+        {
+          "source_id": "_example_encounter_manager_0/0/32",
+          "map_key": "e5m3_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Immora - Mission Complete"
+        },
+        {
+          "source_id": "_example_encounter_manager_0/0/34",
+          "map_key": "e5m3_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Immora - Mission Complete"
+        },
+        {
+          "source_id": "breach_wasteland_arena_encounter_manager_dlc2_2/0/33",
+          "map_key": "e5m3_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Immora - Mission Complete"
+        },
+        {
+          "source_id": "breach_wasteland_arena_encounter_manager_dlc2_2/0/35",
+          "map_key": "e5m3_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Immora - Mission Complete"
+        },
+        {
+          "source_id": "city_rooftop_encounter_manager_dlc2_1/0/7",
+          "map_key": "e5m3_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Immora - Mission Complete"
+        },
+        {
+          "source_id": "city_rooftop_encounter_manager_dlc2_1/0/9",
+          "map_key": "e5m3_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Immora - Mission Complete"
+        },
+        {
+          "source_id": "city_rooftop_encounter_manager_dlc2_1/0/20",
+          "map_key": "e5m3_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Immora - Mission Complete"
+        },
+        {
+          "source_id": "breach_wall_base_encounter_manager_dlc2_3/0/9",
+          "map_key": "e5m3_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Immora - Mission Complete"
+        },
+        {
+          "source_id": "breach_wall_base_encounter_manager_dlc2_3/0/10",
+          "map_key": "e5m3_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Immora - Mission Complete"
+        },
+        {
+          "source_id": "breach_wall_base_encounter_manager_dlc2_3/0/12",
+          "map_key": "e5m3_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Immora - Mission Complete"
+        },
+        {
+          "source_id": "breach_wall_base_encounter_manager_dlc2_3/0/14",
+          "map_key": "e5m3_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Immora - Mission Complete"
+        },
+        {
+          "source_id": "city_reveal_encounter_manager_dlc2_1/0/5",
+          "map_key": "e5m3_hell",
+          "count": 6,
+          "repeatable": true,
+          "location": "Immora - Mission Complete"
+        },
+        {
+          "source_id": "city_reveal_encounter_manager_dlc2_1/0/10",
+          "map_key": "e5m3_hell",
+          "count": 6,
+          "repeatable": true,
+          "location": "Immora - Mission Complete"
+        },
+        {
+          "source_id": "city_lower_encounter_manager_dlc2_2/0/1",
+          "map_key": "e5m3_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Immora - Mission Complete"
+        },
+        {
+          "source_id": "city_lower_encounter_manager_dlc2_2/0/4",
+          "map_key": "e5m3_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Immora - Mission Complete"
+        },
+        {
+          "source_id": "breach_wall_base_encounter_manager_dlc2_1/0/10",
+          "map_key": "e5m3_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Immora - Mission Complete"
+        },
+        {
+          "source_id": "breach_wasteland_arena_encounter_manager_dlc2_2/0/26",
+          "map_key": "e5m3_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Immora - Mission Complete"
+        },
+        {
+          "source_id": "breach_wasteland_arena_encounter_manager_dlc2_2/0/28",
+          "map_key": "e5m3_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Immora - Mission Complete"
+        },
+        {
+          "source_id": "hangar_encounter_manager_dlc2_1/0/26",
+          "map_key": "e5m3_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Immora - Mission Complete"
+        },
+        {
+          "source_id": "hangar_encounter_manager_dlc2_1/0/28",
+          "map_key": "e5m3_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Immora - Mission Complete"
+        },
+        {
+          "source_id": "hangar_encounter_manager_dlc2_1/0/34",
+          "map_key": "e5m3_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Immora - Mission Complete"
+        },
+        {
+          "source_id": "hangar_encounter_manager_dlc2_1/0/36",
+          "map_key": "e5m3_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Immora - Mission Complete"
+        },
+        {
+          "source_id": "city_reveal_encounter_manager_dlc2_1/0/1",
+          "map_key": "e5m3_hell",
+          "count": 1,
+          "repeatable": true,
+          "location": "Immora - Mission Complete"
         }
       ],
-      "progression_source_ids": []
+      "progression_source_ids": [],
+      "conditional_managers": [
+        "_example_encounter_manager_0",
+        "breach_wall_base_encounter_manager_dlc2_3",
+        "breach_wasteland_arena_encounter_manager_dlc2_2",
+        "city_lower_encounter_manager_b_deck_unlock",
+        "city_lower_encounter_manager_dlc2_2",
+        "city_rooftop_encounter_manager_dlc2_1",
+        "hangar_encounter_manager_dlc2_1"
+      ]
     },
     "e5m4_boss": {
       "source_sha256": "7138e321f100dfb16162d3b220d103e4969f11080d5b923ed1b7be7dc812cf87",
