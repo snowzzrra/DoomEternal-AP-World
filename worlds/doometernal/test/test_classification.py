@@ -20,6 +20,7 @@ import unittest
 from collections import Counter
 from BaseClasses import CollectionState, ItemClassification, MultiWorld, Region, Item, Location
 from test.general import setup_multiworld
+from Fill import distribute_items_restrictive
 from worlds.doometernal import DoomEternalWorld
 from worlds.doometernal.campaign import (
     FastState,
@@ -53,6 +54,23 @@ class TestDynamicProgressionClassification(unittest.TestCase):
         self.mw = setup_multiworld(DoomEternalWorld, seed=42)
         self.world = self.mw.worlds[1]
         self.player = 1
+
+    def test_base_without_dlc_classifies_the_effective_crucible_requirement(self):
+        for special in ("progressive_special_weapon", "progressive_sentinel_hammer", "the_crucible"):
+            with self.subTest(special=special):
+                mw = setup_multiworld(DoomEternalWorld, seed=1000, options={
+                    "mission_pool": "base", "mission_order": "vanilla_order",
+                    "goal": "kill_the_icon_of_sin", "use_dlc_content": False,
+                    "special_weapon": special,
+                    "additional_victory_requirements": {"Complete All Mission Challenges"},
+                })
+                crucible = next(item for item in mw.itempool if item.name == "The Crucible")
+                self.assertTrue(crucible.advancement)
+                state = mw.get_all_state(False)
+                state.sweep_for_advancements()
+                self.assertTrue(mw.get_location("Nekravol - Mission Challenge - Die by the Sword", 1).can_reach(state))
+                distribute_items_restrictive(mw)
+                self.assertTrue(mw.can_beat_game())
 
     def _create_prog_item(self, name: str) -> DoomEternalItem:
         """Helper to create an item and set classification to progression (as promoted by planner)."""

@@ -76,7 +76,7 @@ from .logic import (
     requirement_satisfied,
     validate_location_prerequisites,
 )
-from .options import DLCLogicTiming, DeathLinkMode, DoomEternalOptions, SpecialWeapon
+from .options import DeathLinkMode, DoomEternalOptions, SpecialWeapon
 from .settings import DoomEternalSettings
 from .version import (
     APWORLD_REVISION,
@@ -300,7 +300,6 @@ class DoomEternalWorld(World):
             "active_fortress_spend_group_ids": [sg["id"] for sg in active_sg],
             "active_location_count": len([loc for loc in self.multiworld.get_locations(self.player) if loc.address is not None]),
             "cr_dataset_version": "0.1",
-            "dlc_logic_timing": self.options.dlc_logic_timing.current_option_name,
             "goal": self.options.goal.current_option_name,
             "goal_endpoint_event": goal_endpoint_event_name(self.options.goal.current_option_name),
             "goal_endpoint_available": goal_endpoint_available(
@@ -623,6 +622,9 @@ class DoomEternalWorld(World):
         self.multiworld.itempool += pool
         from .classification import apply_dynamic_progression_classification
         apply_dynamic_progression_classification(self)
+        for name, quantity in Counter(plan.get("bootstrap_placed_items", ())).items():
+            early = self.multiworld.local_early_items[self.player]
+            early[name] = max(early.get(name, 0), quantity)
 
     def set_rules(self) -> None:
         active_location_names = {
@@ -718,14 +720,8 @@ class DoomEternalWorld(World):
         filleritempool: list[Item],
         fill_locations: list[Location],
     ) -> None:
-        plan = getattr(self, "campaign_plan", {})
-        bootstrap_placed = Counter(plan.get("bootstrap_placed_items", ()))
-
         def sort_key(item: Item) -> int:
             if item.player == self.player:
-                if bootstrap_placed[item.name] > 0:
-                    bootstrap_placed[item.name] -= 1
-                    return 0
                 if "Battery" in item.name:
                     return 2
             return 1

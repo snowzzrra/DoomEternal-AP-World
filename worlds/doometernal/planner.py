@@ -47,11 +47,6 @@ READINESS_PLACEMENT_SLACK: float = 6.0
 
 FULL_LENGTH_MIN_MISSIONS = 9
 
-DLC_STAGE_IDS = frozenset({
-    "e4m1_rig", "e4m2_swamp", "e4m3_mcity",
-    "e5m1_spear", "e5m2_earth", "e5m3_hell", "e5m4_boss",
-})
-
 CORE_EQUIPMENT = ("Frag Grenade", "Progressive Blood Punch", "Flame Belch", "Ice Bomb")
 
 NORMAL_RUNES_ORDERED = (
@@ -223,9 +218,6 @@ def derive_readiness_targets(options, plan: Mapping[str, Any]) -> list[Readiness
     goal_name = goal_opt.current_option_name if hasattr(goal_opt, "current_option_name") else ""
     is_dark_lord_goal = (goal_name == "kill_the_dark_lord" or plan.get("goal_stage") == DARK_LORD_STAGE_ID)
 
-    dlc_timing = getattr(options, "dlc_logic_timing", None)
-    is_from_the_beginning = (dlc_timing is not None and getattr(dlc_timing, "value", 0) == 1)
-
     if order_val == "mission_access_as_items":
         active_ids = list(plan.get("active_normal_mission_ids", []))
         goal_stage = plan.get("goal_stage")
@@ -233,16 +225,14 @@ def derive_readiness_targets(options, plan: Mapping[str, Any]) -> list[Readiness
             active_ids.append(goal_stage)
         for s_id in active_ids:
             s_name = STAGE_BY_ID[s_id]["name"]
-            if not (is_from_the_beginning and s_id in DLC_STAGE_IDS):
-                add_target(s_id, "base", f"Mission: {s_name}")
+            add_target(s_id, "base", f"Mission: {s_name}")
             if s_id in spirit_stage_ids:
                 add_target(s_id, "spirit_breakpoint", f"Spirit Breakpoint: {s_name}")
     else:
         sequence = plan.get("sequence", [])
         for s_id in sequence:
             s_name = STAGE_BY_ID[s_id]["name"]
-            if not (is_from_the_beginning and s_id in DLC_STAGE_IDS):
-                add_target(s_id, "base", f"Mission: {s_name}")
+            add_target(s_id, "base", f"Mission: {s_name}")
             if s_id in spirit_stage_ids:
                 add_target(s_id, "spirit_breakpoint", f"Spirit Breakpoint: {s_name}")
 

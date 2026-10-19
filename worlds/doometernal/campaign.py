@@ -151,23 +151,8 @@ def resolve_dependencies(package, base_state, player, pool_counts):
 
 SPIRIT_STAGE_IDS = frozenset(SPIRIT_BREAKPOINTS.values())
 
-DLC_STAGE_IDS = frozenset({
-    "e4m1_rig", "e4m2_swamp", "e4m3_mcity",
-    "e5m1_spear", "e5m2_earth", "e5m3_hell", "e5m4_boss",
-})
-
-
 def _start_stage_readiness(state, player, stage_id, world_context):
-    """Readiness required to choose stage_id as a starting mission.
-
-    A starting-stage bootstrap must cover every mandatory gate the player has to
-    pass to complete the start mission and reach progression, not only the
-    mission-root entrance:
-    - mission-root readiness (base CR, or Dark Lord readiness),
-    - the mandatory Spirit breakpoint when the stage has one,
-    - from_the_beginning traversal requirements (Dash and, for TAG2 stages,
-      Super Shotgun + ammo-resource producer).
-    """
+    """Readiness for entry, traversal and mandatory encounters in the starting mission."""
     context = "dark_lord_defeated" if stage_id == "e5m4_boss" else "base"
     result = evaluate_mission_readiness(state, player, stage_id, world_context, context=context)
     if stage_id in SPIRIT_STAGE_IDS:
@@ -617,6 +602,9 @@ def make_plan(options, rng, world=None):
     provisional_sequence = list(active_normal_ids)
     if dark_lord_active and "e5m4_boss" not in provisional_sequence:
         provisional_sequence.append("e5m4_boss")
+    if order_mode == 0 and goal_stage:
+        provisional_sequence.remove(goal_stage)
+        provisional_sequence.append(goal_stage)
     provisional_plan = {
         "sequence": provisional_sequence,
         "active_normal_mission_ids": list(active_normal_ids),
@@ -670,15 +658,16 @@ def make_plan(options, rng, world=None):
         access = []
         goal_as_item = False
     else:
-        candidate_results = {s_id: evaluate_start_stage(s_id) for s_id in ordinary}
-        min_cost = min(candidate_results[s]["bootstrap_cost"] for s in ordinary)
+        candidate_results = {s_id: evaluate_start_stage(s_id) for s_id in ordinary
+                             if STAGE_BY_ID[s_id]["kind"] == "mission"}
+        min_cost = min(result["bootstrap_cost"] for result in candidate_results.values())
         if min_cost >= 999:
-            unresolved = sorted(s for s in ordinary if candidate_results[s]["bootstrap_cost"] >= 999)
+            unresolved = sorted(s for s in candidate_results if candidate_results[s]["bootstrap_cost"] >= 999)
             raise ValueError(
                 "DOOM Eternal cannot solve a readiness bootstrap for any starting stage: "
                 + ", ".join(unresolved)
             )
-        tied_candidates = [s for s in ordinary if candidate_results[s]["bootstrap_cost"] == min_cost]
+        tied_candidates = [s for s in candidate_results if candidate_results[s]["bootstrap_cost"] == min_cost]
         min_intrinsic_cr = min(MISSION_BASE_CR[s] for s in tied_candidates)
         headroom_candidates = sorted(s for s in tied_candidates if order_mode == 2 or MISSION_BASE_CR[s] == min_intrinsic_cr)
         chosen_start = rng.choice(headroom_candidates)

@@ -128,7 +128,6 @@ def create_state_with_items(
 def test_canonical_readiness_and_dlc_intrinsic_difficulty():
     for difficulty in range(4):
         world = make_mock_world(difficulty=difficulty, randomize_dash=True)
-        world.options.dlc_logic_timing.value = 1
         for stage in MISSION_BASE_CR:
             state = create_state_with_items({"Combat Shotgun"}, world=world)
             result = evaluate_mission_readiness(state, 1, stage, world)
@@ -161,12 +160,9 @@ class TestSpiritBreakpoints:
                 "mission_pool": "dlc_only",
                 "goal": "kill_the_dark_lord",
                 "campaign_difficulty": 2,
-                "dlc_logic_timing": "from_the_beginning",
             },
         )
         world: DoomEternalWorld = mw.worlds[1]
-
-        # From Beginning exempts the entry barrier; the Spirit breakpoint uses intrinsic CR 88.
 
         # Region before breakpoint: "The Blood Swamps - Underworld Crossroad"
         # Region after breakpoint: "The Blood Swamps - Sunken Courtyard"
@@ -180,13 +176,15 @@ class TestSpiritBreakpoints:
             "Air Control", "Faster Weapon Swap",
         }
         state = create_state_with_items(items, world=world, health_stages=3, armor_stages=3, ammo_stages=3)
+        for item in mw.precollected_items[1]:
+            state.remove(item)
         from worlds.doometernal.campaign import completion_event
         sequence = world.campaign_plan["sequence"]
         for predecessor in sequence[:sequence.index("e4m2_swamp")]:
             state.collect(DoomEternalItem(completion_event(predecessor), ItemClassification.progression, None, 1), True)
 
         res_base = evaluate_mission_readiness(state, 1, "e4m2_swamp", world)
-        assert 75.0 <= res_base.player_cr < 94.0
+        assert 76.0 <= res_base.player_cr < 88.0
         assert res_base.ready is True
 
         # Check pre-breakpoint reachability: crossroad is reachable!

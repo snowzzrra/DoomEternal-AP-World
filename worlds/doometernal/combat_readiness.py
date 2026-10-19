@@ -179,17 +179,9 @@ def evaluate_mission_readiness(
     """
     diff, sw = _resolve_readiness_options(world, difficulty, special_weapon)
     allowance = get_skill_allowance(diff)
-    dlc_timing = getattr(getattr(world, "options", None), "dlc_logic_timing", None)
-    is_from_the_beginning = (dlc_timing is not None and getattr(dlc_timing, "value", 0) == 1)
-    is_dlc_stage = stage_id in {
-        "e4m1_rig", "e4m2_swamp", "e4m3_mcity",
-        "e5m1_spear", "e5m2_earth", "e5m3_hell", "e5m4_boss"
-    }
-
     if stage_id == DARK_LORD_STAGE_ID and context == "base":
         context = "darklord"
     base_cr = get_mission_base_cr(stage_id)
-    entry_exempt = context == "base" and is_dlc_stage and is_from_the_beginning
     if player_cr is None:
         cr_result = evaluate_player_loadout_cr(state, player, world)
         player_cr = float(cr_result.total)
@@ -207,7 +199,7 @@ def evaluate_mission_readiness(
             soft_penalty = DARK_LORD_HAMMER_PENALTY
             reason = "Missing effective Sentinel Hammer against The Dark Lord (+15 CR)"
 
-    effective_cr = min(MAX_EFFECTIVE_CR, (0 if entry_exempt else base_cr) + soft_penalty)
+    effective_cr = min(MAX_EFFECTIVE_CR, base_cr + soft_penalty)
     deficit = round(effective_cr - player_cr, 2)
     missing = []
     options = getattr(world, "options", None)

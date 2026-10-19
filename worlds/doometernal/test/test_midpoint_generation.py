@@ -15,6 +15,43 @@ from worlds.doometernal.planner import FastState
 
 
 class TestMidpointGeneration(unittest.TestCase):
+    def test_late_start_witness_is_placed_in_initial_reachable_checks(self):
+        mw = setup_multiworld(DoomEternalWorld, seed=1112, options={
+            "mission_pool": "dlc_only", "mission_order": "random_mission_order",
+            "goal": "kill_the_icon_of_sin", "campaign_difficulty": 0,
+            "randomize_dash": False, "randomize_chainsaw": False,
+        })
+        state = CollectionState(mw)
+        initial = {location for location in mw.get_reachable_locations(state, 1) if location.address is not None}
+        witness = Counter(mw.worlds[1].campaign_plan["bootstrap_placed_items"])
+        self.assertTrue(witness)
+        distribute_items_restrictive(mw)
+        self.assertFalse(witness - Counter(location.item.name for location in initial))
+        self.assertTrue(mw.can_beat_game())
+
+    def test_short_dlc_campaign_keeps_endurance_preparation(self):
+        mw = setup_multiworld(DoomEternalWorld, seed=1077, options={
+            "mission_pool": "full_saga", "mission_order": "random_mission_order",
+            "mission_count": 3, "goal": "kill_the_dark_lord", "campaign_difficulty": 1,
+            "randomize_dash": True,
+            "randomize_chainsaw": True,
+        })
+        state = mw.get_all_state(False)
+        state.sweep_for_advancements()
+        result = evaluate_mission_readiness(state, 1, "e4m1_rig", mw.worlds[1])
+        self.assertEqual(result.effective_cr, result.mission_base_cr)
+        self.assertTrue(result.ready)
+        distribute_items_restrictive(mw)
+        self.assertTrue(mw.can_beat_game())
+
+    def test_vanilla_full_saga_icon_is_last(self):
+        mw = setup_multiworld(DoomEternalWorld, seed=19, options={
+            "mission_pool": "full_saga", "mission_order": "vanilla_order", "goal": "kill_the_icon_of_sin"})
+        plan = mw.worlds[1].campaign_plan
+        self.assertEqual(len(plan["sequence"]), 20)
+        self.assertEqual(plan["sequence"][-2:], ["e5m4_boss", "e3m4_boss"])
+        self.assertEqual(plan["starting_stages"], [plan["sequence"][0]])
+
     def test_traversal_and_endurance(self):
         state = FastState(item_data_table.keys())
         state.prog_items.update({f"Progressive {stat} Upgrade": 4 for stat in ("Health", "Armor", "Ammo")})

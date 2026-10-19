@@ -92,28 +92,12 @@ class MissionCount(NamedRange):
         return super().get_option_name(value)
 
 
-class DLCLogicTiming(_ExactLabelChoice):
-    """Choose when The Ancient Gods can enter your Archipelago progression.
-
-    Late Game — DLC mission paths enter logic once your inventory reaches their intended combat readiness.
-
-    From the Beginning — Removes the extra late-game combat-readiness gate. DLC paths become logical as soon as their real traversal, equipment, and internal mission requirements are satisfied (fixed Dash follows the campaign's starting kit or first included mission completion; The World Spear requires Super Shotgun / Meat Hook traversal and a sustainable ammo-resource tool).
-
-    This changes Archipelago progression only. It does not change DOOM Eternal's difficulty or hide missions from the campaign menus.
-    """
-
-    display_name = "DLC Logic Timing"
-    option_late_game = 0
-    option_from_the_beginning = 1
-    default = option_late_game
-    labels = {
-        option_late_game: "Late Game",
-        option_from_the_beginning: "From the Beginning",
-    }
 
 
 class MissionOrder(_ExactLabelChoice):
     """Choose chronological progression, a fixed seeded sequence, or individual Access items.
+
+    Enabled missions follow chronological order in Vanilla Order; the selected goal mission is played last.
 
     Every completed stage remains replayable; travel returns through the Fortress.
     Access and sequence availability do not guarantee immediate logical completion.
@@ -396,7 +380,6 @@ class DoomEternalOptions(DeathLinkMixin, PerGameCommonOptions):
     custom_missions: CustomMissions
     custom_dark_lord: CustomDarkLord
     mission_count: MissionCount
-    dlc_logic_timing: DLCLogicTiming
     mission_order: MissionOrder
     campaign_difficulty: CampaignDifficulty
     starting_missions: StartingMissions
