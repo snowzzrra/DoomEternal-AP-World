@@ -13,7 +13,7 @@ from .enemy_plan import (BASE_COMBAT_COST, _density_weights, _limit_suffix, _ran
 from .enemy_species import enemy_spawn_mask, enemy_tracking_suffix, selected_spawn_type
 
 NATIVE_FAMILIES = {"immediate": "i", "group": "g", "staggered": "t", "maintenance": "m", "archvile": "a",
-                   "spirit": "s", "possessed": "p", "buff_pod": "b", "independent_actor": "d", "summon": "u"}
+                   "spirit": "s", "possessed": "p", "buff_pod": "b", "independent_actor": "d", "summon": "u", "direct_point": "f"}
 
 
 def _body_hitpoints(species, attributes):
@@ -86,9 +86,9 @@ def native_recipe_metadata(plan, map_key):
     seen = set()
     for recipe in plan["maps"][map_key]["recipes"]:
         binding = recipe.get("binding")
-        if not isinstance(binding, dict) or binding.get("mode") not in {"event", "independent_actor", "summon"}:
+        if not isinstance(binding, dict) or binding.get("mode") not in {"event", "independent_actor", "summon", "direct_point"}:
             raise ValueError("Native recipe needs a source binding")
-        source = binding["reference"] if binding["mode"] == "event" else binding["entity"]
+        source = binding["reference"] if binding["mode"] in {"event", "direct_point"} else binding["entity"]
         owner = binding.get("owner", "")
         if any(not isinstance(value, str) or len(value) > 191 or re.fullmatch(r"[A-Za-z0-9_./-]*", value) is None
                for value in (source, owner)):
