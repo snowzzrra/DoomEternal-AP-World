@@ -1,4 +1,4 @@
-from BaseClasses import LocationProgressType, Region
+from BaseClasses import Region
 
 from .campaign import completion_event, REGION_STAGE
 from .items import item_data_table
@@ -49,7 +49,7 @@ def create_killsanity_locations(world):
             location.access_rule = lambda state, threshold=threshold: sum(
                 source["count"] for source, access in sources if access(state)) >= threshold
         else:
-            location.progress_type = LocationProgressType.EXCLUDED
+            location.item_rule = lambda item: not item.advancement
             location.access_rule = lambda state: any(
                 state.has(event, player) and access(state) for event, access in repeatable)
         region.locations.append(location)

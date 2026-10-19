@@ -93,20 +93,26 @@ def build_campaign_kill_budget(campaign, enemy_plan, *, catalog=None):
         if planned is not None:
             if planned["source_sha256"] != original["source_sha256"]:
                 raise ValueError(f"Enemy plan and finite campaign sources use different maps: {key}")
+            operations = planned.get("operations", [])
             if enemy_plan.get("kind") == "native_recipes":
                 from .native_enemy_plan import native_event_identity
+                operations = ()
                 counts = {}
                 for recipe in planned["recipes"]:
+                    if recipe.get("runtime_only"):
+                        continue
                     identity = native_event_identity(recipe)
                     if identity in by_id:
-                        count = (by_id[identity]["count"] * recipe["physical_count"] + recipe["logical_count"] - 1) // recipe["logical_count"]
-                        counts[identity] = counts.get(identity, 0) + count
-                for identity, count in counts.items():
+                        logical, physical = counts.get(identity, (0, 0))
+                        counts[identity] = logical + recipe["logical_count"], physical + recipe["physical_count"]
+                for identity, (logical, physical) in counts.items():
+                    # host and Spirit can share one catalog event
+                    count = (by_id[identity]["count"] * physical + logical - 1) // logical
                     if identity.split('/')[0] not in conditional and identity not in members:
                         estimated_kills += count - by_id[identity]["count"]
                     by_id[identity]["count"] = count
             replaced = set()
-            for operation in planned.get("operations", []):
+            for operation in operations:
                 identity = f"{operation['manager']['entity']}/{operation['script_index']}/{operation['event_index']}"
                 if identity not in by_id or identity in replaced:
                     raise ValueError(f"Enemy replacement has no distinct reviewed finite source: {key}/{identity}")

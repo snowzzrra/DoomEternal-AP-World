@@ -501,7 +501,7 @@ class KillsPerCheck(Range):
 class KillsanityMaximumMilestones(NamedRange):
     """Choose how many kill rewards to add to your campaign.
 
-    Auto: Divide estimated campaign kills plus 10% by Kills per Check, up to 50 rewards.
+    Auto: Divide estimated campaign kills plus 10% by Kills per Check, round down, and cap at 50 rewards.
     1..65,535: Add that many kill rewards. Kills per Check sets the gap between rewards."""
 
     display_name = "Kill Rewards"
