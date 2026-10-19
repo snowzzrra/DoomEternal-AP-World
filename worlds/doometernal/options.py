@@ -447,7 +447,7 @@ class EnemyCountMode(_ExactLabelChoice):
     Preset: Use the selected enemy preset's count setting.
     Auto: Use Intensity and Density to choose between more weak enemies and fewer strong enemies.
     Multiplier: Multiply the fight's original enemy count using Enemy Count Multiplier.
-    Crowded fights can split into extra waves."""
+    Enemies enter through the fight's normal spawn events."""
 
     display_name = "Enemy Count"
     option_preset = 0
@@ -480,7 +480,7 @@ class EnemySizeVariationChance(_EnemyRecipeRange):
 class Killsanity(Toggle):
     """Earn an Archipelago reward after every Kills per Check enemy deaths.
 
-    Every enemy death counts, including enemies spawned by traps, respawns and replayed missions.
+    The counter includes observed deaths from traps, respawns and mission replays.
     On: Add kill rewards. Off: Use the campaign's other rewards."""
 
     display_name = "Killsanity"
@@ -616,7 +616,7 @@ class EnemyWeights(_BoundedItemDict):
 
     Higher weights make an enemy more common. A weight of 20 is twice as likely as 10.
     Zero leaves that type out of random picks. Empty entries use the selected preset.
-    Some fights keep special enemies or add weak enemies for ammo and health."""
+    Some scripted enemies and bosses keep their native behavior."""
 
     display_name = "Bestiary Weights"
     entry_limits = {species: 10000 for species in SPECIES_IDS}

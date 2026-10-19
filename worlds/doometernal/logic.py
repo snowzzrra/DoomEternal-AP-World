@@ -456,29 +456,19 @@ def build_location_prerequisites(
     mastery_locations = sorted(name for name in location_names if name.endswith(MASTERY_SUFFIX))
     generated_targets: dict[str, set[tuple[str, str]]] = {}
     if enemy_plan:
-        from .enemy_plan import _composition_catalog
         from .generated_content import CHALLENGE_ENEMY_TARGETS
+        from .killsanity_plan import load_campaign_kill_sources
+        from .native_enemy_plan import native_event_identity
         from .secret_encounter_timers import load_secret_encounter_timers
-        composition = _composition_catalog()
         secrets = load_secret_encounter_timers()["maps"]
+        kill_sources = load_campaign_kill_sources()["maps"]
         for key, plan in enemy_plan.get("maps", {}).items():
             managers = {timer["manager"] for timer in secrets.get(key, {}).get("timers", [])}
             if not managers:
                 continue
-            sources = {(row["operation"]["manager"]["entity"], row["operation"]["script_index"],
-                        row["operation"]["event_index"]): row["location"]
-                       for row in composition["maps"][key]["encounters"]}
-            locations = {f"{manager}/{script}/{event}": location
-                         for (manager, script, event), location in sources.items()}
-            if enemy_plan.get("kind") == "native_recipes":
-                from .native_enemy_plan import native_event_identity
-                replacements = [(recipe["binding"].get("owner"), native_event_identity(recipe),
-                                 {body["species"] for body in recipe["bodies"]}) for recipe in plan["recipes"]]
-            else:
-                replacements = [(operation["manager"]["entity"],
-                                 f"{operation['manager']['entity']}/{operation['script_index']}/{operation['event_index']}",
-                                 {actor["species"] for wave in operation["waves"] for actor in wave["instances"]})
-                                for operation in plan["operations"]]
+            locations = {row["source_id"]: row.get("location") for row in kill_sources[key]["sources"]}
+            replacements = [(recipe["binding"].get("owner"), native_event_identity(recipe),
+                             {body["species"] for body in recipe["bodies"]}) for recipe in plan["recipes"]]
             for manager, identity, species in replacements:
                 if manager not in managers:
                     continue

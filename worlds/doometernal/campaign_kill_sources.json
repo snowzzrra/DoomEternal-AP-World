@@ -1062,20 +1062,6 @@
           "location": "Exultia - Mission Complete"
         },
         {
-          "source_id": "capitol_encounter_manager_4/0/1",
-          "map_key": "e1m2_war",
-          "count": 1,
-          "repeatable": true,
-          "location": "Exultia - Secret Encounter - Capitol Arena"
-        },
-        {
-          "source_id": "capitol_encounter_manager_4/0/2",
-          "map_key": "e1m2_war",
-          "count": 1,
-          "repeatable": true,
-          "location": "Exultia - Secret Encounter - Capitol Arena"
-        },
-        {
           "source_id": "capitol_encounter_manager_8/0/0",
           "map_key": "e1m2_war",
           "count": 1,
@@ -1153,41 +1139,6 @@
           "location": "Exultia - Mission Complete"
         },
         {
-          "source_id": "battle_encounter_manager_3/0/2",
-          "map_key": "e1m2_war",
-          "count": 1,
-          "repeatable": true,
-          "location": "Exultia - Secret Encounter - Gore Nest Arena"
-        },
-        {
-          "source_id": "battle_encounter_manager_3/0/4",
-          "map_key": "e1m2_war",
-          "count": 1,
-          "repeatable": true,
-          "location": "Exultia - Secret Encounter - Gore Nest Arena"
-        },
-        {
-          "source_id": "battle_encounter_manager_3/0/6",
-          "map_key": "e1m2_war",
-          "count": 1,
-          "repeatable": true,
-          "location": "Exultia - Secret Encounter - Gore Nest Arena"
-        },
-        {
-          "source_id": "battle_encounter_manager_3/0/8",
-          "map_key": "e1m2_war",
-          "count": 1,
-          "repeatable": true,
-          "location": "Exultia - Secret Encounter - Gore Nest Arena"
-        },
-        {
-          "source_id": "battle_encounter_manager_3/0/10",
-          "map_key": "e1m2_war",
-          "count": 1,
-          "repeatable": true,
-          "location": "Exultia - Secret Encounter - Gore Nest Arena"
-        },
-        {
           "source_id": "capitol_encounter_manager_1/0/19",
           "map_key": "e1m2_war",
           "count": 1,
@@ -1228,6 +1179,55 @@
           "count": 1,
           "repeatable": true,
           "location": "Exultia - Mission Complete"
+        },
+        {
+          "source_id": "capitol_encounter_manager_4/0/1",
+          "map_key": "e1m2_war",
+          "count": 1,
+          "repeatable": true,
+          "location": "Exultia - Secret Encounter - Capitol Arena"
+        },
+        {
+          "source_id": "capitol_encounter_manager_4/0/2",
+          "map_key": "e1m2_war",
+          "count": 1,
+          "repeatable": true,
+          "location": "Exultia - Secret Encounter - Capitol Arena"
+        },
+        {
+          "source_id": "battle_encounter_manager_3/0/2",
+          "map_key": "e1m2_war",
+          "count": 1,
+          "repeatable": true,
+          "location": "Exultia - Secret Encounter - Gore Nest Arena"
+        },
+        {
+          "source_id": "battle_encounter_manager_3/0/4",
+          "map_key": "e1m2_war",
+          "count": 1,
+          "repeatable": true,
+          "location": "Exultia - Secret Encounter - Gore Nest Arena"
+        },
+        {
+          "source_id": "battle_encounter_manager_3/0/6",
+          "map_key": "e1m2_war",
+          "count": 1,
+          "repeatable": true,
+          "location": "Exultia - Secret Encounter - Gore Nest Arena"
+        },
+        {
+          "source_id": "battle_encounter_manager_3/0/8",
+          "map_key": "e1m2_war",
+          "count": 1,
+          "repeatable": true,
+          "location": "Exultia - Secret Encounter - Gore Nest Arena"
+        },
+        {
+          "source_id": "battle_encounter_manager_3/0/10",
+          "map_key": "e1m2_war",
+          "count": 1,
+          "repeatable": true,
+          "location": "Exultia - Secret Encounter - Gore Nest Arena"
         }
       ],
       "progression_source_ids": [],
@@ -1293,48 +1293,6 @@
           "count": 1,
           "repeatable": true,
           "location": "Cultist Base - Mission Complete"
-        },
-        {
-          "source_id": "game_encounter_manager_crusher_21/0/1",
-          "map_key": "e1m3_cult",
-          "count": 2,
-          "repeatable": true,
-          "location": "Cultist Base - Secret Encounter - Torture Pit"
-        },
-        {
-          "source_id": "game_encounter_manager_crusher_21/0/3",
-          "map_key": "e1m3_cult",
-          "count": 1,
-          "repeatable": true,
-          "location": "Cultist Base - Secret Encounter - Torture Pit"
-        },
-        {
-          "source_id": "game_encounter_manager_crusher_21/0/5",
-          "map_key": "e1m3_cult",
-          "count": 1,
-          "repeatable": true,
-          "location": "Cultist Base - Secret Encounter - Torture Pit"
-        },
-        {
-          "source_id": "game_encounter_manager_crusher_21/0/7",
-          "map_key": "e1m3_cult",
-          "count": 1,
-          "repeatable": true,
-          "location": "Cultist Base - Secret Encounter - Torture Pit"
-        },
-        {
-          "source_id": "game_encounter_manager_crusher_21/0/9",
-          "map_key": "e1m3_cult",
-          "count": 1,
-          "repeatable": true,
-          "location": "Cultist Base - Secret Encounter - Torture Pit"
-        },
-        {
-          "source_id": "game_encounter_manager_crusher_21/0/11",
-          "map_key": "e1m3_cult",
-          "count": 1,
-          "repeatable": true,
-          "location": "Cultist Base - Secret Encounter - Torture Pit"
         },
         {
           "source_id": "game_encounter_manager_crusher_4/0/2",
@@ -2070,6 +2028,48 @@
           "count": 1,
           "repeatable": true,
           "location": "Cultist Base - Mission Complete"
+        },
+        {
+          "source_id": "game_encounter_manager_crusher_21/0/1",
+          "map_key": "e1m3_cult",
+          "count": 2,
+          "repeatable": true,
+          "location": "Cultist Base - Secret Encounter - Torture Pit"
+        },
+        {
+          "source_id": "game_encounter_manager_crusher_21/0/3",
+          "map_key": "e1m3_cult",
+          "count": 1,
+          "repeatable": true,
+          "location": "Cultist Base - Secret Encounter - Torture Pit"
+        },
+        {
+          "source_id": "game_encounter_manager_crusher_21/0/5",
+          "map_key": "e1m3_cult",
+          "count": 1,
+          "repeatable": true,
+          "location": "Cultist Base - Secret Encounter - Torture Pit"
+        },
+        {
+          "source_id": "game_encounter_manager_crusher_21/0/7",
+          "map_key": "e1m3_cult",
+          "count": 1,
+          "repeatable": true,
+          "location": "Cultist Base - Secret Encounter - Torture Pit"
+        },
+        {
+          "source_id": "game_encounter_manager_crusher_21/0/9",
+          "map_key": "e1m3_cult",
+          "count": 1,
+          "repeatable": true,
+          "location": "Cultist Base - Secret Encounter - Torture Pit"
+        },
+        {
+          "source_id": "game_encounter_manager_crusher_21/0/11",
+          "map_key": "e1m3_cult",
+          "count": 1,
+          "repeatable": true,
+          "location": "Cultist Base - Secret Encounter - Torture Pit"
         }
       ],
       "progression_source_ids": [],
@@ -2305,6 +2305,20 @@
           "location": "Super Gore Nest - Secret Encounter - Below the Red Key"
         },
         {
+          "source_id": "game_encounter_manager_77_e2m1/0/0",
+          "map_key": "e2m1_nest",
+          "count": 1,
+          "repeatable": true,
+          "location": "Super Gore Nest - Secret Encounter - Below the Red Key"
+        },
+        {
+          "source_id": "game_encounter_manager_77_e2m1/0/3",
+          "map_key": "e2m1_nest",
+          "count": 1,
+          "repeatable": true,
+          "location": "Super Gore Nest - Secret Encounter - Below the Red Key"
+        },
+        {
           "source_id": "game_encounter_manager_74/0/0",
           "map_key": "e2m1_nest",
           "count": 1,
@@ -2382,76 +2396,6 @@
           "location": "Super Gore Nest - Mission Complete"
         },
         {
-          "source_id": "game_encounter_manager_70_e2m1/0/2",
-          "map_key": "e2m1_nest",
-          "count": 1,
-          "repeatable": true,
-          "location": "Super Gore Nest - Secret Encounter - Yellow-Key Return Portal"
-        },
-        {
-          "source_id": "game_encounter_manager_70_e2m1/0/3",
-          "map_key": "e2m1_nest",
-          "count": 1,
-          "repeatable": true,
-          "location": "Super Gore Nest - Secret Encounter - Yellow-Key Return Portal"
-        },
-        {
-          "source_id": "game_encounter_manager_70_e2m1/0/4",
-          "map_key": "e2m1_nest",
-          "count": 1,
-          "repeatable": true,
-          "location": "Super Gore Nest - Secret Encounter - Yellow-Key Return Portal"
-        },
-        {
-          "source_id": "game_encounter_manager_70_e2m1/0/5",
-          "map_key": "e2m1_nest",
-          "count": 1,
-          "repeatable": true,
-          "location": "Super Gore Nest - Secret Encounter - Yellow-Key Return Portal"
-        },
-        {
-          "source_id": "game_encounter_manager_70_e2m1/0/6",
-          "map_key": "e2m1_nest",
-          "count": 1,
-          "repeatable": true,
-          "location": "Super Gore Nest - Secret Encounter - Yellow-Key Return Portal"
-        },
-        {
-          "source_id": "game_encounter_manager_70_e2m1/0/7",
-          "map_key": "e2m1_nest",
-          "count": 1,
-          "repeatable": true,
-          "location": "Super Gore Nest - Secret Encounter - Yellow-Key Return Portal"
-        },
-        {
-          "source_id": "game_encounter_manager_70_e2m1/0/8",
-          "map_key": "e2m1_nest",
-          "count": 1,
-          "repeatable": true,
-          "location": "Super Gore Nest - Secret Encounter - Yellow-Key Return Portal"
-        },
-        {
-          "source_id": "game_encounter_manager_70_e2m1/0/9",
-          "map_key": "e2m1_nest",
-          "count": 1,
-          "repeatable": true,
-          "location": "Super Gore Nest - Secret Encounter - Yellow-Key Return Portal"
-        },
-        {
-          "source_id": "game_encounter_manager_70_e2m1/0/10",
-          "map_key": "e2m1_nest",
-          "count": 1,
-          "repeatable": true,
-          "location": "Super Gore Nest - Secret Encounter - Yellow-Key Return Portal"
-        },
-        {
-          "source_id": "game_encounter_manager_70_e2m1/0/11",
-          "map_key": "e2m1_nest",
-          "count": 1,
-          "repeatable": true,
-          "location": "Super Gore Nest - Secret Encounter - Yellow-Key Return Portal"
-        },
-        {
           "source_id": "game_encounter_manager_78/0/1",
           "map_key": "e2m1_nest",
           "count": 1,
@@ -2464,20 +2408,6 @@
           "count": 1,
           "repeatable": true,
           "location": "Super Gore Nest - Mission Complete"
-        },
-        {
-          "source_id": "game_encounter_manager_77_e2m1/0/0",
-          "map_key": "e2m1_nest",
-          "count": 1,
-          "repeatable": true,
-          "location": "Super Gore Nest - Secret Encounter - Below the Red Key"
-        },
-        {
-          "source_id": "game_encounter_manager_77_e2m1/0/3",
-          "map_key": "e2m1_nest",
-          "count": 1,
-          "repeatable": true,
-          "location": "Super Gore Nest - Secret Encounter - Below the Red Key"
         },
         {
           "source_id": "game_encounter_manager_72/0/0",
@@ -2527,20 +2457,6 @@
           "count": 1,
           "repeatable": true,
           "location": "Super Gore Nest - Mission Complete"
-        },
-        {
-          "source_id": "game_encounter_manager_70_e2m1/0/0",
-          "map_key": "e2m1_nest",
-          "count": 1,
-          "repeatable": true,
-          "location": "Super Gore Nest - Secret Encounter - Yellow-Key Return Portal"
-        },
-        {
-          "source_id": "game_encounter_manager_70_e2m1/0/12",
-          "map_key": "e2m1_nest",
-          "count": 1,
-          "repeatable": true,
-          "location": "Super Gore Nest - Secret Encounter - Yellow-Key Return Portal"
         },
         {
           "source_id": "game_encounter_manager_69/0/2",
@@ -3199,6 +3115,90 @@
           "count": 1,
           "repeatable": true,
           "location": "Super Gore Nest - Mission Complete"
+        },
+        {
+          "source_id": "game_encounter_manager_70_e2m1/0/2",
+          "map_key": "e2m1_nest",
+          "count": 1,
+          "repeatable": true,
+          "location": "Super Gore Nest - Secret Encounter - Yellow-Key Return Portal"
+        },
+        {
+          "source_id": "game_encounter_manager_70_e2m1/0/3",
+          "map_key": "e2m1_nest",
+          "count": 1,
+          "repeatable": true,
+          "location": "Super Gore Nest - Secret Encounter - Yellow-Key Return Portal"
+        },
+        {
+          "source_id": "game_encounter_manager_70_e2m1/0/4",
+          "map_key": "e2m1_nest",
+          "count": 1,
+          "repeatable": true,
+          "location": "Super Gore Nest - Secret Encounter - Yellow-Key Return Portal"
+        },
+        {
+          "source_id": "game_encounter_manager_70_e2m1/0/5",
+          "map_key": "e2m1_nest",
+          "count": 1,
+          "repeatable": true,
+          "location": "Super Gore Nest - Secret Encounter - Yellow-Key Return Portal"
+        },
+        {
+          "source_id": "game_encounter_manager_70_e2m1/0/6",
+          "map_key": "e2m1_nest",
+          "count": 1,
+          "repeatable": true,
+          "location": "Super Gore Nest - Secret Encounter - Yellow-Key Return Portal"
+        },
+        {
+          "source_id": "game_encounter_manager_70_e2m1/0/7",
+          "map_key": "e2m1_nest",
+          "count": 1,
+          "repeatable": true,
+          "location": "Super Gore Nest - Secret Encounter - Yellow-Key Return Portal"
+        },
+        {
+          "source_id": "game_encounter_manager_70_e2m1/0/8",
+          "map_key": "e2m1_nest",
+          "count": 1,
+          "repeatable": true,
+          "location": "Super Gore Nest - Secret Encounter - Yellow-Key Return Portal"
+        },
+        {
+          "source_id": "game_encounter_manager_70_e2m1/0/9",
+          "map_key": "e2m1_nest",
+          "count": 1,
+          "repeatable": true,
+          "location": "Super Gore Nest - Secret Encounter - Yellow-Key Return Portal"
+        },
+        {
+          "source_id": "game_encounter_manager_70_e2m1/0/10",
+          "map_key": "e2m1_nest",
+          "count": 1,
+          "repeatable": true,
+          "location": "Super Gore Nest - Secret Encounter - Yellow-Key Return Portal"
+        },
+        {
+          "source_id": "game_encounter_manager_70_e2m1/0/11",
+          "map_key": "e2m1_nest",
+          "count": 1,
+          "repeatable": true,
+          "location": "Super Gore Nest - Secret Encounter - Yellow-Key Return Portal"
+        },
+        {
+          "source_id": "game_encounter_manager_70_e2m1/0/0",
+          "map_key": "e2m1_nest",
+          "count": 1,
+          "repeatable": true,
+          "location": "Super Gore Nest - Secret Encounter - Yellow-Key Return Portal"
+        },
+        {
+          "source_id": "game_encounter_manager_70_e2m1/0/12",
+          "map_key": "e2m1_nest",
+          "count": 1,
+          "repeatable": true,
+          "location": "Super Gore Nest - Secret Encounter - Yellow-Key Return Portal"
         }
       ],
       "progression_source_ids": [],
@@ -3985,34 +3985,6 @@
           "location": "ARC Complex - Mission Complete"
         },
         {
-          "source_id": "slum_hall_encounter_manager_secret_encounter_1/0/0",
-          "map_key": "e2m2_base",
-          "count": 1,
-          "repeatable": true,
-          "location": "ARC Complex - Secret Encounter - Generator Room"
-        },
-        {
-          "source_id": "slum_hall_encounter_manager_secret_encounter_1/0/1",
-          "map_key": "e2m2_base",
-          "count": 1,
-          "repeatable": true,
-          "location": "ARC Complex - Secret Encounter - Generator Room"
-        },
-        {
-          "source_id": "slum_hall_encounter_manager_secret_encounter_1/0/2",
-          "map_key": "e2m2_base",
-          "count": 1,
-          "repeatable": true,
-          "location": "ARC Complex - Secret Encounter - Generator Room"
-        },
-        {
-          "source_id": "slum_hall_encounter_manager_secret_encounter_1/0/4",
-          "map_key": "e2m2_base",
-          "count": 1,
-          "repeatable": true,
-          "location": "ARC Complex - Secret Encounter - Generator Room"
-        },
-        {
           "source_id": "hub_encounter_manager_hub_2/0/0",
           "map_key": "e2m2_base",
           "count": 1,
@@ -4664,27 +4636,6 @@
           "location": "ARC Complex - Mission Complete"
         },
         {
-          "source_id": "fract_encounter_manager_secret_encounter_2/0/1",
-          "map_key": "e2m2_base",
-          "count": 1,
-          "repeatable": true,
-          "location": "ARC Complex - Secret Encounter - Building On Fire Across Gap"
-        },
-        {
-          "source_id": "fract_encounter_manager_secret_encounter_2/0/3",
-          "map_key": "e2m2_base",
-          "count": 1,
-          "repeatable": true,
-          "location": "ARC Complex - Secret Encounter - Building On Fire Across Gap"
-        },
-        {
-          "source_id": "fract_encounter_manager_secret_encounter_2/0/5",
-          "map_key": "e2m2_base",
-          "count": 1,
-          "repeatable": true,
-          "location": "ARC Complex - Secret Encounter - Building On Fire Across Gap"
-        },
-        {
           "source_id": "precombat_encounter_manager_elevator5/0/0",
           "map_key": "e2m2_base",
           "count": 1,
@@ -4816,6 +4767,55 @@
           "count": 1,
           "repeatable": true,
           "location": "ARC Complex - Mission Complete"
+        },
+        {
+          "source_id": "slum_hall_encounter_manager_secret_encounter_1/0/0",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Secret Encounter - Generator Room"
+        },
+        {
+          "source_id": "slum_hall_encounter_manager_secret_encounter_1/0/1",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Secret Encounter - Generator Room"
+        },
+        {
+          "source_id": "slum_hall_encounter_manager_secret_encounter_1/0/2",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Secret Encounter - Generator Room"
+        },
+        {
+          "source_id": "slum_hall_encounter_manager_secret_encounter_1/0/4",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Secret Encounter - Generator Room"
+        },
+        {
+          "source_id": "fract_encounter_manager_secret_encounter_2/0/1",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Secret Encounter - Building On Fire Across Gap"
+        },
+        {
+          "source_id": "fract_encounter_manager_secret_encounter_2/0/3",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Secret Encounter - Building On Fire Across Gap"
+        },
+        {
+          "source_id": "fract_encounter_manager_secret_encounter_2/0/5",
+          "map_key": "e2m2_base",
+          "count": 1,
+          "repeatable": true,
+          "location": "ARC Complex - Secret Encounter - Building On Fire Across Gap"
         }
       ],
       "progression_source_ids": [],
@@ -4851,13 +4851,6 @@
           "count": 2,
           "repeatable": true,
           "location": "Mars Core - Mission Complete"
-        },
-        {
-          "source_id": "uac_chunk_1_encounter_manager_4/0/10",
-          "map_key": "e2m3_core",
-          "count": 1,
-          "repeatable": true,
-          "location": "Mars Core - Secret Encounter - Post-BFG Cracked-Wall Side Room"
         },
         {
           "source_id": "phobos_encounter_manager_18/0/0",
@@ -4944,13 +4937,6 @@
           "location": "Mars Core - Mission Complete"
         },
         {
-          "source_id": "meteors_encounter_manager_secret_enc_01/0/7",
-          "map_key": "e2m3_core",
-          "count": 1,
-          "repeatable": true,
-          "location": "Mars Core - Secret Encounter - Tentacle Portal Arena"
-        },
-        {
           "source_id": "meteors_encounter_manager_21/0/1",
           "map_key": "e2m3_core",
           "count": 1,
@@ -4986,48 +4972,6 @@
           "location": "Mars Core - Mission Complete"
         },
         {
-          "source_id": "uac_chunk_1_encounter_manager_4/0/0",
-          "map_key": "e2m3_core",
-          "count": 1,
-          "repeatable": true,
-          "location": "Mars Core - Secret Encounter - Post-BFG Cracked-Wall Side Room"
-        },
-        {
-          "source_id": "uac_chunk_1_encounter_manager_4/0/2",
-          "map_key": "e2m3_core",
-          "count": 1,
-          "repeatable": true,
-          "location": "Mars Core - Secret Encounter - Post-BFG Cracked-Wall Side Room"
-        },
-        {
-          "source_id": "uac_chunk_1_encounter_manager_4/0/4",
-          "map_key": "e2m3_core",
-          "count": 1,
-          "repeatable": true,
-          "location": "Mars Core - Secret Encounter - Post-BFG Cracked-Wall Side Room"
-        },
-        {
-          "source_id": "uac_chunk_1_encounter_manager_4/0/6",
-          "map_key": "e2m3_core",
-          "count": 1,
-          "repeatable": true,
-          "location": "Mars Core - Secret Encounter - Post-BFG Cracked-Wall Side Room"
-        },
-        {
-          "source_id": "uac_chunk_1_encounter_manager_4/0/8",
-          "map_key": "e2m3_core",
-          "count": 1,
-          "repeatable": true,
-          "location": "Mars Core - Secret Encounter - Post-BFG Cracked-Wall Side Room"
-        },
-        {
-          "source_id": "meteors_encounter_manager_secret_enc_01/0/4",
-          "map_key": "e2m3_core",
-          "count": 1,
-          "repeatable": true,
-          "location": "Mars Core - Secret Encounter - Tentacle Portal Arena"
-        },
-        {
           "source_id": "phobos_encounter_manager_teleport_control_precombat/0/11",
           "map_key": "e2m3_core",
           "count": 1,
@@ -5040,13 +4984,6 @@
           "count": 1,
           "repeatable": true,
           "location": "Mars Core - Mission Complete"
-        },
-        {
-          "source_id": "meteors_encounter_manager_secret_enc_01/0/2",
-          "map_key": "e2m3_core",
-          "count": 1,
-          "repeatable": true,
-          "location": "Mars Core - Secret Encounter - Tentacle Portal Arena"
         },
         {
           "source_id": "slayer_gate_encounter_manager_slayer_lobby/0/1",
@@ -5460,6 +5397,69 @@
           "count": 1,
           "repeatable": true,
           "location": "Mars Core - Mission Complete"
+        },
+        {
+          "source_id": "uac_chunk_1_encounter_manager_4/0/10",
+          "map_key": "e2m3_core",
+          "count": 1,
+          "repeatable": true,
+          "location": "Mars Core - Secret Encounter - Post-BFG Cracked-Wall Side Room"
+        },
+        {
+          "source_id": "uac_chunk_1_encounter_manager_4/0/0",
+          "map_key": "e2m3_core",
+          "count": 1,
+          "repeatable": true,
+          "location": "Mars Core - Secret Encounter - Post-BFG Cracked-Wall Side Room"
+        },
+        {
+          "source_id": "uac_chunk_1_encounter_manager_4/0/2",
+          "map_key": "e2m3_core",
+          "count": 1,
+          "repeatable": true,
+          "location": "Mars Core - Secret Encounter - Post-BFG Cracked-Wall Side Room"
+        },
+        {
+          "source_id": "uac_chunk_1_encounter_manager_4/0/4",
+          "map_key": "e2m3_core",
+          "count": 1,
+          "repeatable": true,
+          "location": "Mars Core - Secret Encounter - Post-BFG Cracked-Wall Side Room"
+        },
+        {
+          "source_id": "uac_chunk_1_encounter_manager_4/0/6",
+          "map_key": "e2m3_core",
+          "count": 1,
+          "repeatable": true,
+          "location": "Mars Core - Secret Encounter - Post-BFG Cracked-Wall Side Room"
+        },
+        {
+          "source_id": "uac_chunk_1_encounter_manager_4/0/8",
+          "map_key": "e2m3_core",
+          "count": 1,
+          "repeatable": true,
+          "location": "Mars Core - Secret Encounter - Post-BFG Cracked-Wall Side Room"
+        },
+        {
+          "source_id": "meteors_encounter_manager_secret_enc_01/0/7",
+          "map_key": "e2m3_core",
+          "count": 1,
+          "repeatable": true,
+          "location": "Mars Core - Secret Encounter - Tentacle Portal Arena"
+        },
+        {
+          "source_id": "meteors_encounter_manager_secret_enc_01/0/4",
+          "map_key": "e2m3_core",
+          "count": 1,
+          "repeatable": true,
+          "location": "Mars Core - Secret Encounter - Tentacle Portal Arena"
+        },
+        {
+          "source_id": "meteors_encounter_manager_secret_enc_01/0/2",
+          "map_key": "e2m3_core",
+          "count": 1,
+          "repeatable": true,
+          "location": "Mars Core - Secret Encounter - Tentacle Portal Arena"
         }
       ],
       "progression_source_ids": [],
@@ -5502,6 +5502,13 @@
           "location": "Taras Nabad - Secret Encounter - Post-Swim Breakable Wall"
         },
         {
+          "source_id": "ai_encounter_manager_throne_secret_e3m1/0/0",
+          "map_key": "e3m1_slayer",
+          "count": 1,
+          "repeatable": true,
+          "location": "Taras Nabad - Secret Encounter - Post-Swim Breakable Wall"
+        },
+        {
           "source_id": "ai_encounter_manager_mountain_01/0/6",
           "map_key": "e3m1_slayer",
           "count": 1,
@@ -5521,13 +5528,6 @@
           "count": 1,
           "repeatable": true,
           "location": "Taras Nabad - Mission Complete"
-        },
-        {
-          "source_id": "ai_encounter_manager_throne_secret_e3m1/0/0",
-          "map_key": "e3m1_slayer",
-          "count": 1,
-          "repeatable": true,
-          "location": "Taras Nabad - Secret Encounter - Post-Swim Breakable Wall"
         },
         {
           "source_id": "ai_encounter_manager_flooded_2/0/12",
@@ -5584,34 +5584,6 @@
           "count": 1,
           "repeatable": true,
           "location": "Taras Nabad - Mission Complete"
-        },
-        {
-          "source_id": "ai_encounter_manager_atrium_secret_e3m1/0/0",
-          "map_key": "e3m1_slayer",
-          "count": 1,
-          "repeatable": true,
-          "location": "Taras Nabad - Secret Encounter - Archvile Courtyard Breakable Wall"
-        },
-        {
-          "source_id": "ai_encounter_manager_atrium_secret_e3m1/0/1",
-          "map_key": "e3m1_slayer",
-          "count": 1,
-          "repeatable": true,
-          "location": "Taras Nabad - Secret Encounter - Archvile Courtyard Breakable Wall"
-        },
-        {
-          "source_id": "ai_encounter_manager_atrium_secret_e3m1/0/2",
-          "map_key": "e3m1_slayer",
-          "count": 1,
-          "repeatable": true,
-          "location": "Taras Nabad - Secret Encounter - Archvile Courtyard Breakable Wall"
-        },
-        {
-          "source_id": "ai_encounter_manager_atrium_secret_e3m1/0/3",
-          "map_key": "e3m1_slayer",
-          "count": 1,
-          "repeatable": true,
-          "location": "Taras Nabad - Secret Encounter - Archvile Courtyard Breakable Wall"
         },
         {
           "source_id": "ai_encounter_manager_skyline_02/0/6",
@@ -5913,6 +5885,34 @@
           "count": 1,
           "repeatable": true,
           "location": "Taras Nabad - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_atrium_secret_e3m1/0/0",
+          "map_key": "e3m1_slayer",
+          "count": 1,
+          "repeatable": true,
+          "location": "Taras Nabad - Secret Encounter - Archvile Courtyard Breakable Wall"
+        },
+        {
+          "source_id": "ai_encounter_manager_atrium_secret_e3m1/0/1",
+          "map_key": "e3m1_slayer",
+          "count": 1,
+          "repeatable": true,
+          "location": "Taras Nabad - Secret Encounter - Archvile Courtyard Breakable Wall"
+        },
+        {
+          "source_id": "ai_encounter_manager_atrium_secret_e3m1/0/2",
+          "map_key": "e3m1_slayer",
+          "count": 1,
+          "repeatable": true,
+          "location": "Taras Nabad - Secret Encounter - Archvile Courtyard Breakable Wall"
+        },
+        {
+          "source_id": "ai_encounter_manager_atrium_secret_e3m1/0/3",
+          "map_key": "e3m1_slayer",
+          "count": 1,
+          "repeatable": true,
+          "location": "Taras Nabad - Secret Encounter - Archvile Courtyard Breakable Wall"
         }
       ],
       "progression_source_ids": [],
@@ -6446,20 +6446,6 @@
           "location": "Nekravol Part II - Mission Complete"
         },
         {
-          "source_id": "ai_encounter_manager_towertop_secret/0/2",
-          "map_key": "e3m2_hell_b",
-          "count": 1,
-          "repeatable": true,
-          "location": "Nekravol Part II - Secret Encounter - Dread Knight Wall Hall"
-        },
-        {
-          "source_id": "ai_encounter_manager_towertop_secret/0/3",
-          "map_key": "e3m2_hell_b",
-          "count": 1,
-          "repeatable": true,
-          "location": "Nekravol Part II - Secret Encounter - Dread Knight Wall Hall"
-        },
-        {
           "source_id": "ai_encounter_manager_soulremoval_01a/0/4",
           "map_key": "e3m2_hell_b",
           "count": 1,
@@ -6500,20 +6486,6 @@
           "count": 1,
           "repeatable": true,
           "location": "Nekravol Part II - Mission Complete"
-        },
-        {
-          "source_id": "ai_encounter_manager_conveyor_secret/0/1",
-          "map_key": "e3m2_hell_b",
-          "count": 1,
-          "repeatable": true,
-          "location": "Nekravol Part II - Secret Encounter - Starting Bridge Side Platforms"
-        },
-        {
-          "source_id": "ai_encounter_manager_conveyor_secret/0/2",
-          "map_key": "e3m2_hell_b",
-          "count": 1,
-          "repeatable": true,
-          "location": "Nekravol Part II - Secret Encounter - Starting Bridge Side Platforms"
         },
         {
           "source_id": "ai_encounter_manager_argentcore2_01a/0/3",
@@ -6605,6 +6577,34 @@
           "count": 1,
           "repeatable": true,
           "location": "Nekravol Part II - Mission Complete"
+        },
+        {
+          "source_id": "ai_encounter_manager_towertop_secret/0/2",
+          "map_key": "e3m2_hell_b",
+          "count": 1,
+          "repeatable": true,
+          "location": "Nekravol Part II - Secret Encounter - Dread Knight Wall Hall"
+        },
+        {
+          "source_id": "ai_encounter_manager_towertop_secret/0/3",
+          "map_key": "e3m2_hell_b",
+          "count": 1,
+          "repeatable": true,
+          "location": "Nekravol Part II - Secret Encounter - Dread Knight Wall Hall"
+        },
+        {
+          "source_id": "ai_encounter_manager_conveyor_secret/0/1",
+          "map_key": "e3m2_hell_b",
+          "count": 1,
+          "repeatable": true,
+          "location": "Nekravol Part II - Secret Encounter - Starting Bridge Side Platforms"
+        },
+        {
+          "source_id": "ai_encounter_manager_conveyor_secret/0/2",
+          "map_key": "e3m2_hell_b",
+          "count": 1,
+          "repeatable": true,
+          "location": "Nekravol Part II - Secret Encounter - Starting Bridge Side Platforms"
         }
       ],
       "progression_source_ids": [],
@@ -6859,34 +6859,6 @@
           "location": "Urdak - Mission Complete"
         },
         {
-          "source_id": "temp_all_scripting_encounter_manager_15/0/0",
-          "map_key": "e3m3_maykr",
-          "count": 1,
-          "repeatable": true,
-          "location": "Urdak - Secret Encounter - Eighth-Arena Breakable Wall"
-        },
-        {
-          "source_id": "temp_all_scripting_encounter_manager_15/0/1",
-          "map_key": "e3m3_maykr",
-          "count": 1,
-          "repeatable": true,
-          "location": "Urdak - Secret Encounter - Eighth-Arena Breakable Wall"
-        },
-        {
-          "source_id": "temp_all_scripting_encounter_manager_15/0/2",
-          "map_key": "e3m3_maykr",
-          "count": 1,
-          "repeatable": true,
-          "location": "Urdak - Secret Encounter - Eighth-Arena Breakable Wall"
-        },
-        {
-          "source_id": "temp_all_scripting_encounter_manager_15/0/3",
-          "map_key": "e3m3_maykr",
-          "count": 1,
-          "repeatable": true,
-          "location": "Urdak - Secret Encounter - Eighth-Arena Breakable Wall"
-        },
-        {
           "source_id": "temp_all_scripting_encounter_manager_16/0/1",
           "map_key": "e3m3_maykr",
           "count": 1,
@@ -6906,41 +6878,6 @@
           "count": 1,
           "repeatable": true,
           "location": "Urdak - Mission Complete"
-        },
-        {
-          "source_id": "temp_all_scripting_encounter_manager_17/0/0",
-          "map_key": "e3m3_maykr",
-          "count": 1,
-          "repeatable": true,
-          "location": "Urdak - Secret Encounter - Statue-Puzzle Upper Door"
-        },
-        {
-          "source_id": "temp_all_scripting_encounter_manager_17/0/1",
-          "map_key": "e3m3_maykr",
-          "count": 1,
-          "repeatable": true,
-          "location": "Urdak - Secret Encounter - Statue-Puzzle Upper Door"
-        },
-        {
-          "source_id": "temp_all_scripting_encounter_manager_17/0/2",
-          "map_key": "e3m3_maykr",
-          "count": 1,
-          "repeatable": true,
-          "location": "Urdak - Secret Encounter - Statue-Puzzle Upper Door"
-        },
-        {
-          "source_id": "temp_all_scripting_encounter_manager_17/0/3",
-          "map_key": "e3m3_maykr",
-          "count": 1,
-          "repeatable": true,
-          "location": "Urdak - Secret Encounter - Statue-Puzzle Upper Door"
-        },
-        {
-          "source_id": "temp_all_scripting_encounter_manager_17/0/4",
-          "map_key": "e3m3_maykr",
-          "count": 1,
-          "repeatable": true,
-          "location": "Urdak - Secret Encounter - Statue-Puzzle Upper Door"
         },
         {
           "source_id": "yellow_arena_tower_yellow_heavies/0/2",
@@ -7165,6 +7102,69 @@
           "count": 1,
           "repeatable": true,
           "location": "Urdak - Mission Complete"
+        },
+        {
+          "source_id": "temp_all_scripting_encounter_manager_15/0/0",
+          "map_key": "e3m3_maykr",
+          "count": 1,
+          "repeatable": true,
+          "location": "Urdak - Secret Encounter - Eighth-Arena Breakable Wall"
+        },
+        {
+          "source_id": "temp_all_scripting_encounter_manager_15/0/1",
+          "map_key": "e3m3_maykr",
+          "count": 1,
+          "repeatable": true,
+          "location": "Urdak - Secret Encounter - Eighth-Arena Breakable Wall"
+        },
+        {
+          "source_id": "temp_all_scripting_encounter_manager_15/0/2",
+          "map_key": "e3m3_maykr",
+          "count": 1,
+          "repeatable": true,
+          "location": "Urdak - Secret Encounter - Eighth-Arena Breakable Wall"
+        },
+        {
+          "source_id": "temp_all_scripting_encounter_manager_15/0/3",
+          "map_key": "e3m3_maykr",
+          "count": 1,
+          "repeatable": true,
+          "location": "Urdak - Secret Encounter - Eighth-Arena Breakable Wall"
+        },
+        {
+          "source_id": "temp_all_scripting_encounter_manager_17/0/0",
+          "map_key": "e3m3_maykr",
+          "count": 1,
+          "repeatable": true,
+          "location": "Urdak - Secret Encounter - Statue-Puzzle Upper Door"
+        },
+        {
+          "source_id": "temp_all_scripting_encounter_manager_17/0/1",
+          "map_key": "e3m3_maykr",
+          "count": 1,
+          "repeatable": true,
+          "location": "Urdak - Secret Encounter - Statue-Puzzle Upper Door"
+        },
+        {
+          "source_id": "temp_all_scripting_encounter_manager_17/0/2",
+          "map_key": "e3m3_maykr",
+          "count": 1,
+          "repeatable": true,
+          "location": "Urdak - Secret Encounter - Statue-Puzzle Upper Door"
+        },
+        {
+          "source_id": "temp_all_scripting_encounter_manager_17/0/3",
+          "map_key": "e3m3_maykr",
+          "count": 1,
+          "repeatable": true,
+          "location": "Urdak - Secret Encounter - Statue-Puzzle Upper Door"
+        },
+        {
+          "source_id": "temp_all_scripting_encounter_manager_17/0/4",
+          "map_key": "e3m3_maykr",
+          "count": 1,
+          "repeatable": true,
+          "location": "Urdak - Secret Encounter - Statue-Puzzle Upper Door"
         }
       ],
       "progression_source_ids": []
@@ -7764,83 +7764,6 @@
           "count": 1,
           "repeatable": true,
           "location": "UAC Atlantica Facility - Mission Complete"
-        },
-        {
-          "source_id": "destroyed_rig_encounter_manager_8/0/0",
-          "map_key": "e4m1_rig",
-          "count": 1,
-          "repeatable": true,
-          "location": "UAC Atlantica Facility - Secret Encounter - Exterior Crane Landing"
-        },
-        {
-          "source_id": "destroyed_rig_encounter_manager_8/0/1",
-          "map_key": "e4m1_rig",
-          "count": 1,
-          "repeatable": true,
-          "location": "UAC Atlantica Facility - Secret Encounter - Exterior Crane Landing"
-        },
-        {
-          "source_id": "destroyed_rig_encounter_manager_8/0/2",
-          "map_key": "e4m1_rig",
-          "count": 1,
-          "repeatable": true,
-          "location": "UAC Atlantica Facility - Secret Encounter - Exterior Crane Landing"
-        },
-        {
-          "source_id": "destroyed_rig_encounter_manager_8/0/3",
-          "map_key": "e4m1_rig",
-          "count": 1,
-          "repeatable": true,
-          "location": "UAC Atlantica Facility - Secret Encounter - Exterior Crane Landing"
-        },
-        {
-          "source_id": "destroyed_rig_encounter_manager_8/0/4",
-          "map_key": "e4m1_rig",
-          "count": 1,
-          "repeatable": true,
-          "location": "UAC Atlantica Facility - Secret Encounter - Exterior Crane Landing"
-        },
-        {
-          "source_id": "destroyed_rig_encounter_manager_8/0/5",
-          "map_key": "e4m1_rig",
-          "count": 1,
-          "repeatable": true,
-          "location": "UAC Atlantica Facility - Secret Encounter - Exterior Crane Landing"
-        },
-        {
-          "source_id": "starting_platform_encounter_manager_15/0/0",
-          "map_key": "e4m1_rig",
-          "count": 1,
-          "repeatable": true,
-          "location": "UAC Atlantica Facility - Secret Encounter - Lower Maintenance Platform"
-        },
-        {
-          "source_id": "starting_platform_encounter_manager_15/0/1",
-          "map_key": "e4m1_rig",
-          "count": 1,
-          "repeatable": true,
-          "location": "UAC Atlantica Facility - Secret Encounter - Lower Maintenance Platform"
-        },
-        {
-          "source_id": "starting_platform_encounter_manager_15/0/2",
-          "map_key": "e4m1_rig",
-          "count": 1,
-          "repeatable": true,
-          "location": "UAC Atlantica Facility - Secret Encounter - Lower Maintenance Platform"
-        },
-        {
-          "source_id": "starting_platform_encounter_manager_15/0/3",
-          "map_key": "e4m1_rig",
-          "count": 1,
-          "repeatable": true,
-          "location": "UAC Atlantica Facility - Secret Encounter - Lower Maintenance Platform"
-        },
-        {
-          "source_id": "starting_platform_encounter_manager_15/0/4",
-          "map_key": "e4m1_rig",
-          "count": 1,
-          "repeatable": true,
-          "location": "UAC Atlantica Facility - Secret Encounter - Lower Maintenance Platform"
         },
         {
           "source_id": "destroyed_rig_encounter_manager_dlc1_7/0/0",
@@ -9143,6 +9066,83 @@
           "count": 1,
           "repeatable": true,
           "location": "UAC Atlantica Facility - Mission Complete"
+        },
+        {
+          "source_id": "destroyed_rig_encounter_manager_8/0/0",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Secret Encounter - Exterior Crane Landing"
+        },
+        {
+          "source_id": "destroyed_rig_encounter_manager_8/0/1",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Secret Encounter - Exterior Crane Landing"
+        },
+        {
+          "source_id": "destroyed_rig_encounter_manager_8/0/2",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Secret Encounter - Exterior Crane Landing"
+        },
+        {
+          "source_id": "destroyed_rig_encounter_manager_8/0/3",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Secret Encounter - Exterior Crane Landing"
+        },
+        {
+          "source_id": "destroyed_rig_encounter_manager_8/0/4",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Secret Encounter - Exterior Crane Landing"
+        },
+        {
+          "source_id": "destroyed_rig_encounter_manager_8/0/5",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Secret Encounter - Exterior Crane Landing"
+        },
+        {
+          "source_id": "starting_platform_encounter_manager_15/0/0",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Secret Encounter - Lower Maintenance Platform"
+        },
+        {
+          "source_id": "starting_platform_encounter_manager_15/0/1",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Secret Encounter - Lower Maintenance Platform"
+        },
+        {
+          "source_id": "starting_platform_encounter_manager_15/0/2",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Secret Encounter - Lower Maintenance Platform"
+        },
+        {
+          "source_id": "starting_platform_encounter_manager_15/0/3",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Secret Encounter - Lower Maintenance Platform"
+        },
+        {
+          "source_id": "starting_platform_encounter_manager_15/0/4",
+          "map_key": "e4m1_rig",
+          "count": 1,
+          "repeatable": true,
+          "location": "UAC Atlantica Facility - Secret Encounter - Lower Maintenance Platform"
         }
       ],
       "progression_source_ids": [],
@@ -9314,90 +9314,6 @@
           "count": 1,
           "repeatable": true,
           "location": "The Blood Swamps - Mission Complete"
-        },
-        {
-          "source_id": "ai_encounter_manager_dlc1_2/0/1",
-          "map_key": "e4m2_swamp",
-          "count": 1,
-          "repeatable": true,
-          "location": "The Blood Swamps - Secret Encounter - Toxic Mire Tree"
-        },
-        {
-          "source_id": "ai_encounter_manager_dlc1_2/0/3",
-          "map_key": "e4m2_swamp",
-          "count": 1,
-          "repeatable": true,
-          "location": "The Blood Swamps - Secret Encounter - Toxic Mire Tree"
-        },
-        {
-          "source_id": "ai_encounter_manager_dlc1_2/0/5",
-          "map_key": "e4m2_swamp",
-          "count": 1,
-          "repeatable": true,
-          "location": "The Blood Swamps - Secret Encounter - Toxic Mire Tree"
-        },
-        {
-          "source_id": "ai_encounter_manager_dlc1_2/0/7",
-          "map_key": "e4m2_swamp",
-          "count": 1,
-          "repeatable": true,
-          "location": "The Blood Swamps - Secret Encounter - Toxic Mire Tree"
-        },
-        {
-          "source_id": "ai_encounter_manager_dlc1_2/0/9",
-          "map_key": "e4m2_swamp",
-          "count": 1,
-          "repeatable": true,
-          "location": "The Blood Swamps - Secret Encounter - Toxic Mire Tree"
-        },
-        {
-          "source_id": "ai_encounter_manager_dlc1_2/0/12",
-          "map_key": "e4m2_swamp",
-          "count": 1,
-          "repeatable": true,
-          "location": "The Blood Swamps - Secret Encounter - Toxic Mire Tree"
-        },
-        {
-          "source_id": "ai_encounter_manager_dlc1_1/0/1",
-          "map_key": "e4m2_swamp",
-          "count": 1,
-          "repeatable": true,
-          "location": "The Blood Swamps - Secret Encounter - Fog Chasm Arena"
-        },
-        {
-          "source_id": "ai_encounter_manager_dlc1_1/0/3",
-          "map_key": "e4m2_swamp",
-          "count": 1,
-          "repeatable": true,
-          "location": "The Blood Swamps - Secret Encounter - Fog Chasm Arena"
-        },
-        {
-          "source_id": "ai_encounter_manager_dlc1_1/0/5",
-          "map_key": "e4m2_swamp",
-          "count": 1,
-          "repeatable": true,
-          "location": "The Blood Swamps - Secret Encounter - Fog Chasm Arena"
-        },
-        {
-          "source_id": "ai_encounter_manager_dlc1_1/0/7",
-          "map_key": "e4m2_swamp",
-          "count": 1,
-          "repeatable": true,
-          "location": "The Blood Swamps - Secret Encounter - Fog Chasm Arena"
-        },
-        {
-          "source_id": "ai_encounter_manager_dlc1_1/0/8",
-          "map_key": "e4m2_swamp",
-          "count": 1,
-          "repeatable": true,
-          "location": "The Blood Swamps - Secret Encounter - Fog Chasm Arena"
-        },
-        {
-          "source_id": "ai_encounter_manager_dlc1_1/0/12",
-          "map_key": "e4m2_swamp",
-          "count": 1,
-          "repeatable": true,
-          "location": "The Blood Swamps - Secret Encounter - Fog Chasm Arena"
         },
         {
           "source_id": "ai_encounter_manager_10/0/3",
@@ -10149,6 +10065,90 @@
           "location": "The Blood Swamps - Mission Complete"
         },
         {
+          "source_id": "ai_encounter_manager_dlc1_2/0/1",
+          "map_key": "e4m2_swamp",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Blood Swamps - Secret Encounter - Toxic Mire Tree"
+        },
+        {
+          "source_id": "ai_encounter_manager_dlc1_2/0/3",
+          "map_key": "e4m2_swamp",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Blood Swamps - Secret Encounter - Toxic Mire Tree"
+        },
+        {
+          "source_id": "ai_encounter_manager_dlc1_2/0/5",
+          "map_key": "e4m2_swamp",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Blood Swamps - Secret Encounter - Toxic Mire Tree"
+        },
+        {
+          "source_id": "ai_encounter_manager_dlc1_2/0/7",
+          "map_key": "e4m2_swamp",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Blood Swamps - Secret Encounter - Toxic Mire Tree"
+        },
+        {
+          "source_id": "ai_encounter_manager_dlc1_2/0/9",
+          "map_key": "e4m2_swamp",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Blood Swamps - Secret Encounter - Toxic Mire Tree"
+        },
+        {
+          "source_id": "ai_encounter_manager_dlc1_2/0/12",
+          "map_key": "e4m2_swamp",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Blood Swamps - Secret Encounter - Toxic Mire Tree"
+        },
+        {
+          "source_id": "ai_encounter_manager_dlc1_1/0/1",
+          "map_key": "e4m2_swamp",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Blood Swamps - Secret Encounter - Fog Chasm Arena"
+        },
+        {
+          "source_id": "ai_encounter_manager_dlc1_1/0/3",
+          "map_key": "e4m2_swamp",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Blood Swamps - Secret Encounter - Fog Chasm Arena"
+        },
+        {
+          "source_id": "ai_encounter_manager_dlc1_1/0/5",
+          "map_key": "e4m2_swamp",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Blood Swamps - Secret Encounter - Fog Chasm Arena"
+        },
+        {
+          "source_id": "ai_encounter_manager_dlc1_1/0/7",
+          "map_key": "e4m2_swamp",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Blood Swamps - Secret Encounter - Fog Chasm Arena"
+        },
+        {
+          "source_id": "ai_encounter_manager_dlc1_1/0/8",
+          "map_key": "e4m2_swamp",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Blood Swamps - Secret Encounter - Fog Chasm Arena"
+        },
+        {
+          "source_id": "ai_encounter_manager_dlc1_1/0/12",
+          "map_key": "e4m2_swamp",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Blood Swamps - Secret Encounter - Fog Chasm Arena"
+        },
+        {
           "source_id": "ai_encounter_manager_dlc1_1/0/10",
           "map_key": "e4m2_swamp",
           "count": 1,
@@ -10198,6 +10198,13 @@
         },
         {
           "source_id": "bridge_encounter_manager_extralife_02_e4m1/0/4",
+          "map_key": "e4m3_mcity",
+          "count": 1,
+          "repeatable": true,
+          "location": "The Holt - Secret Encounter - Ivory Bridge Alcove"
+        },
+        {
+          "source_id": "bridge_encounter_manager_extralife_02_e4m1/0/5",
           "map_key": "e4m3_mcity",
           "count": 1,
           "repeatable": true,
@@ -10391,13 +10398,6 @@
           "count": 1,
           "repeatable": true,
           "location": "The Holt - Mission Complete"
-        },
-        {
-          "source_id": "bridge_encounter_manager_extralife_02_e4m1/0/5",
-          "map_key": "e4m3_mcity",
-          "count": 1,
-          "repeatable": true,
-          "location": "The Holt - Secret Encounter - Ivory Bridge Alcove"
         },
         {
           "source_id": "arena__encounter_manager_cityarena1/0/55",
