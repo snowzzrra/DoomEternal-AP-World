@@ -6,7 +6,7 @@ from Fill import distribute_items_restrictive
 from test.general import setup_multiworld
 from worlds.doometernal import DoomEternalWorld
 from worlds.doometernal.combat_readiness import (
-    MISSION_SKULL_TIERS, SPIRIT_BREAKPOINTS, evaluate_mission_readiness,
+    SPIRIT_BREAKPOINTS, evaluate_mission_readiness, get_mission_skull_tier,
 )
 from worlds.doometernal.combat_rating import NORMAL_RUNE_NAMES, evaluate_player_loadout_cr
 from worlds.doometernal.items import LEGACY_AUTOMAP_PERK_IDS, item_data_table, suit_perk_item_names
@@ -100,7 +100,7 @@ class TestMidpointGeneration(unittest.TestCase):
                 self.assertEqual(len(suit_perk_item_names), 17)
                 presentation = world.fill_slot_data()["mission_presentation_v2"]
                 for stage, rating in presentation.items():
-                    self.assertEqual(rating["skull_tier"], MISSION_SKULL_TIERS[stage])
+                    self.assertEqual(rating["skull_tier"], get_mission_skull_tier(stage, world))
                     self.assertNotIn("expected_player_cr", rating)
                 distribute_items_restrictive(mw)
                 self.assertTrue(mw.can_beat_game())

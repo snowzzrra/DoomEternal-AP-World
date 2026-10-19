@@ -8,6 +8,20 @@ from pathlib import Path
 from .enemy_options import SPECIES_IDS
 
 
+AIRBORNE_SPECIES = frozenset({'gargoyle', 'cacodemon', 'pain_elemental', 'lost_soul', 'blood_angel'})
+STATIONARY_SPECIES = frozenset({'buff_pod', 'tentacle', 'super_tentacle', 'turret'})
+
+
+AMMUNITION_SPECIES = {
+    "imp": "ENCOUNTER_SPAWN_IMP",
+    "hell_soldier": "ENCOUNTER_SPAWN_HELL_SOLDIER",
+    "shotgun_soldier": "ENCOUNTER_SPAWN_SHOTGUN_SOLDIER",
+    "gargoyle": "ENCOUNTER_SPAWN_GARGOYLE",
+    "zombie_tier_1": "ENCOUNTER_SPAWN_ZOMBIE_TIER_1",
+    "zombie_tier_3": "ENCOUNTER_SPAWN_ZOMBIE_TIER_3",
+}
+
+
 def load_species_registry(path):
     registry = json.loads(Path(path).read_bytes().decode("utf-8"))
     project_species_profiles(registry)
@@ -66,6 +80,12 @@ def _registry():
     registry = json.loads(path.read_bytes().decode("utf-8"))
     project_species_profiles(registry)
     return registry
+
+
+@cache
+def stationary_enemy_inherits():
+    return frozenset(inherit for species in STATIONARY_SPECIES
+                     for inherit in _registry()['species'][species]['inherits'])
 
 
 @cache

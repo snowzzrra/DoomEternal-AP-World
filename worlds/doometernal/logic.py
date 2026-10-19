@@ -463,15 +463,28 @@ def build_location_prerequisites(
         secrets = load_secret_encounter_timers()["maps"]
         for key, plan in enemy_plan.get("maps", {}).items():
             managers = {timer["manager"] for timer in secrets.get(key, {}).get("timers", [])}
+            if not managers:
+                continue
             sources = {(row["operation"]["manager"]["entity"], row["operation"]["script_index"],
                         row["operation"]["event_index"]): row["location"]
                        for row in composition["maps"][key]["encounters"]}
-            for operation in plan["operations"]:
-                manager = operation["manager"]["entity"]
+            locations = {f"{manager}/{script}/{event}": location
+                         for (manager, script, event), location in sources.items()}
+            if enemy_plan.get("kind") == "native_recipes":
+                from .native_enemy_plan import native_event_identity
+                replacements = [(recipe["binding"].get("owner"), native_event_identity(recipe),
+                                 {body["species"] for body in recipe["bodies"]}) for recipe in plan["recipes"]]
+            else:
+                replacements = [(operation["manager"]["entity"],
+                                 f"{operation['manager']['entity']}/{operation['script_index']}/{operation['event_index']}",
+                                 {actor["species"] for wave in operation["waves"] for actor in wave["instances"]})
+                                for operation in plan["operations"]]
+            for manager, identity, species in replacements:
                 if manager not in managers:
                     continue
-                location = sources[manager, operation["script_index"], operation["event_index"]]
-                species = {actor["species"] for wave in operation["waves"] for actor in wave["instances"]}
+                location = locations.get(identity)
+                if location is None:
+                    continue
                 for target in CHALLENGE_ENEMY_TARGETS:
                     if target["map_key"] is None and species.intersection(target["species"]):
                         generated_targets.setdefault(target["name"], set()).add(("Location", location))

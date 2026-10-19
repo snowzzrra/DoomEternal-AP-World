@@ -128,16 +128,22 @@ def effective_special_limits(enemies, stage_index, stage_count):
 
 
 def _phase_supplier(phase, profile):
+    opening = next((row.get('opening_supply_source') for row in profile.get('native_phase_supply', [])
+                    if (row['manager'],row['script_index'],row['barrier_index'])==tuple(phase)),None)
+    if opening is not None:
+        if not isinstance(opening,dict) or opening.get('species') not in enemy_species.AMMUNITION_SPECIES:
+            raise ValueError('This combat phase has an invalid opening ammunition source')
+        return opening,opening['species']
     sources = [row for row in profile["encounters"] if row.get("barrier") and
                (row["operation"]["manager"]["entity"], row["operation"]["script_index"],
                 row["barrier"]["event_index"]) == tuple(phase)]
-    supplier = next(((row, species) for species in ("imp", "zombie_tier_1", "zombie_tier_3", "hell_soldier")
+    supplier = next(((row, species) for species in ("imp", "zombie_tier_1", "zombie_tier_3", "hell_soldier", "shotgun_soldier", "gargoyle")
                      for row in sources if species in row["eligible_species"]), None)
     if supplier is None:
         native = next((row for row in profile.get("native_phase_supply", [])
                        if (row["manager"], row["script_index"], row["barrier_index"]) == tuple(phase)), {})
         source = native.get("supply_source")
-        if source and source["species"] in ("imp", "zombie_tier_1", "zombie_tier_3", "hell_soldier"):
+        if source and source["species"] in enemy_species.AMMUNITION_SPECIES:
             return source, source["species"]
         raise ValueError("This combat phase has no compatible ammunition supplier")
     return supplier
@@ -152,22 +158,34 @@ def _phase_needs_supply(phase, profile, species):
     if supply is not None:
         sources = [row for row in profile["encounters"] if row["operation"]["manager"]["entity"] == phase[0]
                    and row["operation"]["script_index"] == phase[1]]
+        phase_sources = [row for row in sources if (row.get('barrier') or {}).get('event_index')==phase[2]]
         if (not isinstance(supply, dict) or set(supply) != {"event_index", "event_sha256", "event_def", "spawn_type", "label"}
-                or type(supply["event_index"]) is not int or not 0 <= supply["event_index"] < min(row["operation"]["event_index"] for row in sources)
+                or not phase_sources or type(supply["event_index"]) is not int
+                or not 0 <= supply["event_index"] < phase[2]
+                or any(row['operation']['event_index']==supply['event_index'] for row in sources)
+                or supply['event_index'] < min(row['operation']['event_index'] for row in phase_sources)
+                and any(row['operation']['event_index'] < supply['event_index']
+                    and (not row.get('barrier') or row['barrier']['event_index']>=supply['event_index'])
+                    and (row.get('barrier') or {}).get('event_index')!=phase[2] for row in sources)
                 or supply["event_def"] not in {"spawnSingleAI", "spawnAI", "staggeredAISpawn", "maintainAICount"}
                 or not isinstance(supply["label"], str) or not isinstance(supply["event_sha256"], str)
                 or not re.fullmatch("[0-9a-f]{64}", supply["event_sha256"])):
             raise ValueError("Preserved native ammunition source is invalid")
         mask = enemy_species.enemy_spawn_mask(supply["spawn_type"])
-        reliable = enemy_species.enemy_spawn_mask("ENCOUNTER_SPAWN_IMP ENCOUNTER_SPAWN_HELL_SOLDIER ENCOUNTER_SPAWN_ZOMBIE_TIER_1 ENCOUNTER_SPAWN_ZOMBIE_TIER_3")
+        reliable = enemy_species.enemy_spawn_mask(" ".join(enemy_species.AMMUNITION_SPECIES.values()))
         if mask & ~reliable or any((row["operation"]["event_index"] == supply["event_index"] or
-                supply["event_def"] == "maintainAICount" and enemy_species.enemy_spawn_mask(enemy_species.selected_spawn_type(row["operation"]["from"])) & mask)
+                supply["event_def"] == "maintainAICount"
+                and (row['operation']['event_index']>supply['event_index'] or not row.get('barrier')
+                     or row['barrier']['event_index']>=supply['event_index'])
+                and enemy_species.enemy_spawn_mask(enemy_species.selected_spawn_type(row["operation"]["from"])) & mask
+                and (not supply['label'] or not isinstance(row.get('source_label'),str) or row['source_label']==supply['label']))
                 for row in profile["encounters"] if row["operation"]["manager"]["entity"] == phase[0]
                 and row["operation"]["script_index"] == phase[1]):
             raise ValueError("Generated enemies overlap native ammunition replenishment")
-        return Fraction(0)
+        if supply['event_index'] < min(row['operation']['event_index'] for row in phase_sources):
+            return Fraction(0)
     needed = native.get("needs_ammunition") or any(
-        value not in ("imp", "hell_soldier", "zombie_tier_1", "zombie_tier_3") for value in species)
+        value not in enemy_species.AMMUNITION_SPECIES and value != 'buff_pod' for value in species)
     return BASE_COMBAT_COST[_phase_supplier(phase, profile)[1]] if needed else Fraction(0)
 
 
@@ -420,6 +438,9 @@ def build_enemy_plan(enemies, campaign, *, seed, challenge_targets=()):
 
 
 def validate_frozen_enemy_plan(plan, enemies):
+    if isinstance(plan, dict) and plan.get("kind") == "native_recipes":
+        from .native_enemy_plan import validate_native_recipes
+        return validate_native_recipes(plan, enemies)
     if plan is None:
         if enemies["enabled"]:
             raise ValueError("Enemy Randomizer requires a frozen enemy generation plan")

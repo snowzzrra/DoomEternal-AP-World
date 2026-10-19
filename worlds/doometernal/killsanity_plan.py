@@ -93,8 +93,20 @@ def build_campaign_kill_budget(campaign, enemy_plan, *, catalog=None):
         if planned is not None:
             if planned["source_sha256"] != original["source_sha256"]:
                 raise ValueError(f"Enemy plan and finite campaign sources use different maps: {key}")
+            if enemy_plan.get("kind") == "native_recipes":
+                from .native_enemy_plan import native_event_identity
+                counts = {}
+                for recipe in planned["recipes"]:
+                    identity = native_event_identity(recipe)
+                    if identity in by_id:
+                        count = (by_id[identity]["count"] * recipe["physical_count"] + recipe["logical_count"] - 1) // recipe["logical_count"]
+                        counts[identity] = counts.get(identity, 0) + count
+                for identity, count in counts.items():
+                    if identity.split('/')[0] not in conditional and identity not in members:
+                        estimated_kills += count - by_id[identity]["count"]
+                    by_id[identity]["count"] = count
             replaced = set()
-            for operation in planned["operations"]:
+            for operation in planned.get("operations", []):
                 identity = f"{operation['manager']['entity']}/{operation['script_index']}/{operation['event_index']}"
                 if identity not in by_id or identity in replaced:
                     raise ValueError(f"Enemy replacement has no distinct reviewed finite source: {key}/{identity}")

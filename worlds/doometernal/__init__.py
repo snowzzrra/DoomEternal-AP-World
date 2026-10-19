@@ -22,11 +22,11 @@ from .generated_content import (
     CAMPAIGN_CONNECTIONS,
     CAMPAIGN_REGIONS,
     MISSION_DIFFICULTY,
-    CHALLENGE_ENEMY_TARGETS,
 )
 from .identity import GAME_NAME
 from .enemy_options import normalize_enemy_options
-from .enemy_plan import build_enemy_plan, validate_frozen_enemy_plan
+from .enemy_plan import validate_frozen_enemy_plan
+from .native_enemy_plan import build_native_recipes
 from .campaign import (
     BASE_GATE_STAGE_IDS,
     FORTRESS_NON_CONSUMER_LOCATIONS,
@@ -142,18 +142,7 @@ class DoomEternalWorld(World):
         self.enemy_plan = None
         planning_state = self.random.getstate()
         self.campaign_plan = make_plan(self.options, self.random, world=self)
-        active_masteries = {name for _, name in ORDERED_MASTERY_CHALLENGES[
-            :self.campaign_plan["active_masteries_count"]]}
-        challenge_targets = [target for target in CHALLENGE_ENEMY_TARGETS
-            if optional_location_enabled(target["name"], self.options)
-            and (target["map_key"] is not None or target["name"] in active_masteries)]
-        self.enemy_plan = build_enemy_plan(self.enemies, self.campaign_plan, seed=self.random.getrandbits(128),
-                                          challenge_targets=challenge_targets)
-        for key, stage in (self.enemy_plan or {}).get("maps", {}).items():
-            reductions = sum("reduction" in operation for operation in stage["operations"])
-            if reductions:
-                logging.warning("DOOM Eternal: %s has %s small fights skipped because your chosen enemies cannot spawn there.",
-                                STAGE_BY_ID[key]["name"], reductions)
+        self.enemy_plan = build_native_recipes(self.enemies, self.campaign_plan, seed=self.random.getrandbits(128))
         if self.enemy_plan is not None:
             candidate = self.campaign_plan
             self.random.setstate(planning_state)
