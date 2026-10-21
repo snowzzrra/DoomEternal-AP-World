@@ -52,6 +52,22 @@ class TestMidpointGeneration(unittest.TestCase):
         self.assertEqual(plan["sequence"][-2:], ["e5m4_boss", "e3m4_boss"])
         self.assertEqual(plan["starting_stages"], [plan["sequence"][0]])
 
+    def test_enemizer_frontloads_arsenal_without_adding_item_copies(self):
+        from worlds.doometernal.combat_rating import WEAPON_NAMES, MOD_HOST
+        mw = setup_multiworld(DoomEternalWorld, seed=29, options={
+            'mission_order': 'random_mission_order', 'mission_count': 6,
+            'enemy_randomizer': True, 'enemy_preset': 'slayers_path'})
+        early = mw.worlds[1].frontloaded_arsenal
+        weapons = set(early) & set(WEAPON_NAMES)
+        self.assertEqual(len(weapons), 2)
+        for weapon in weapons:
+            self.assertEqual(sum(item.name == weapon for item in mw.itempool), 1)
+            if any(MOD_HOST.get(item.name) == weapon for item in mw.itempool):
+                self.assertTrue(any(MOD_HOST.get(name) == weapon for name in early))
+        self.assertTrue(all(item.advancement for item in mw.itempool if item.name in early))
+        distribute_items_restrictive(mw)
+        self.assertTrue(mw.can_beat_game())
+
     def test_traversal_and_endurance(self):
         state = FastState(item_data_table.keys())
         state.prog_items.update({f"Progressive {stat} Upgrade": 4 for stat in ("Health", "Armor", "Ammo")})

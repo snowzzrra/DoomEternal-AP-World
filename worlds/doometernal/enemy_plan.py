@@ -31,12 +31,14 @@ BASE_COMBAT_COST = {
 }
 
 
-def enemy_combat_cost(species, attributes):
+def enemy_combat_cost(species, attributes, *, buff_totems=False):
     if set(attributes) != {f"{name}_percent" for name in ("health", "damage", "speed", "size")} or any(
             type(value) is not int or not 1 <= value <= 10000 for value in attributes.values()):
         raise ValueError("Enemy combat attributes require integer percentages in 1..10000")
     health, damage, speed, size = (attributes[f"{name}_percent"] for name in ("health", "damage", "speed", "size"))
     cost = BASE_COMBAT_COST[species]
+    if buff_totems and species == 'buff_pod':
+        cost *= 12
     size_numerator, size_denominator = (300 + size, 400) if size >= 100 else (3 * size + 100, 4 * size)
     # One kill still takes a targeting action when health is below a normal shot.
     return Fraction(cost.numerator * max(health, 25) * (100 + damage) * (300 + speed) * size_numerator,
@@ -67,7 +69,10 @@ def _density_weights(enemies, candidates, *, seed, phase, stage_index, stage_cou
 def _limit_suffix(enemies, species):
     limits = enemies["special_limits"]
     values = "".join(f"{limits[name]:08x}" for name in ("marauder", "archvile", "spirit", "combined_special"))
-    kind = {"marauder": "m", "archvile": "a", "spirit": "s"}.get(species, "n")
+    kinds = {"marauder": "m", "archvile": "a", "spirit": "s"}
+    if enemies.get('revision', 2) >= 3:
+        kinds['buff_pod'] = 'b'
+    kind = kinds.get(species, "n")
     return f"_l{values}_k{kind}"
 
 
@@ -106,10 +111,17 @@ def sample_species(enemies, eligible_species, *, seed, instance_key):
 
 
 
-def sample_instance_attributes(enemies, species, *, seed, instance_key, stage_index, stage_count):
+def sample_instance_attributes(enemies, species, *, seed, instance_key, stage_index, stage_count, random_draws=None):
     if type(stage_count) is not int or type(stage_index) is not int or not 0 <= stage_index < stage_count:
         raise ValueError("Enemy progression requires an included stage index")
     denominator = max(1, stage_count - 1)
+    def draw(field, lower, upper):
+        key = (field, lower, upper)
+        if random_draws is None:
+            return _random_for(seed, instance_key, field).randint(lower, upper)
+        if key not in random_draws:
+            random_draws[key] = _random_for(seed, instance_key, field).randint(lower, upper)
+        return random_draws[key]
     attributes = {}
     for attribute in ("health", "damage", "speed", "size"):
         ranges = enemies["attributes"][attribute]
@@ -119,15 +131,15 @@ def sample_instance_attributes(enemies, species, *, seed, instance_key, stage_in
              + bounds["late"][edge] * stage_index + denominator // 2) // denominator
             for edge in (0, 1)
         )
-        attributes[f"{attribute}_percent"] = lower if lower == upper else _random_for(seed, instance_key, attribute).randint(lower, upper)
+        attributes[f"{attribute}_percent"] = lower if lower == upper else draw(attribute, lower, upper)
 
     if enemy_species.enemy_speed_capabilities().get(species) != "qualified":
         attributes["speed_percent"] = 100
 
     if species not in enemies["size_variation_exclusions"]:
         chance = enemies["size_variation_chance"]
-        draw = _random_for(seed, instance_key, "size_variation").randrange(200) if chance else 0
-        attributes["size_percent"] = 50 if draw < chance else 200 if draw < 2 * chance else 100
+        variation = draw("size_variation", 0, 199) if chance else 0
+        attributes["size_percent"] = 50 if variation < chance else 200 if variation < 2 * chance else 100
     return attributes
 
 

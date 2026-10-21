@@ -217,6 +217,8 @@ def apply_dynamic_progression_classification(world: DoomEternalWorld) -> Classif
             battery_required -= 1
 
     bootstrap_copies = Counter(world.campaign_plan.get("bootstrap_placed_items", ()))
+    arsenal = set(getattr(world, 'frontloaded_arsenal', ()))
+    bootstrap_copies.update(arsenal)
     for item in mw.itempool:
         if item.player == player and bootstrap_copies[item.name] > 0:
             bootstrap_copies[item.name] -= 1
@@ -225,7 +227,8 @@ def apply_dynamic_progression_classification(world: DoomEternalWorld) -> Classif
                 item.classification = ItemClassification.progression
                 ledger.promotions.append(PromotionRecord(
                     item.name, 1, original, ItemClassification.progression,
-                    "starting_stage_witness", 0.0, "Concrete starting-stage readiness witness", (),
+                    "early_arsenal" if item.name in arsenal else "starting_stage_witness", 0.0,
+                    "Early arsenal" if item.name in arsenal else "Concrete starting-stage readiness witness", (),
                 ))
 
     # 2. Baseline progression-only state

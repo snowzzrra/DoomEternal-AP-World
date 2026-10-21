@@ -178,6 +178,7 @@ class TestSpiritBreakpoints:
                 "mission_pool": "dlc_only",
                 "goal": "kill_the_dark_lord",
                 "campaign_difficulty": 2,
+                "enemy_randomizer": 0,
             },
         )
         world: DoomEternalWorld = mw.worlds[1]
@@ -262,6 +263,7 @@ class TestStructuralVsLogicalReachability:
                 "mission_pool": "full_saga",
                 "mission_order": "random_mission_order",
                 "logic_difficulty": "expert",
+                "enemy_randomizer": 0,
             },
         )
         world: DoomEternalWorld = mw.worlds[1]
@@ -327,6 +329,7 @@ class TestStructuralVsLogicalReachability:
                 "mission_pool": "full_saga",
                 "mission_order": "mission_access_as_items",
                 "logic_difficulty": "expert",
+                "enemy_randomizer": 0,
             },
         )
         world: DoomEternalWorld = mw.worlds[1]
@@ -378,6 +381,7 @@ class TestDashBootstrapAndSphereZero:
                 "goal": "kill_the_dark_lord",
                 "randomize_dash": 0,
                 "campaign_difficulty": 2,
+                "enemy_randomizer": 0,
             },
         )
         world: DoomEternalWorld = mw.worlds[1]
@@ -403,6 +407,7 @@ class TestDashBootstrapAndSphereZero:
                     "mission_pool": "base",
                     "mission_order": "random_mission_order",
                     "campaign_difficulty": diff,
+                    "enemy_randomizer": 0,
                 },
             )
             world: DoomEternalWorld = mw.worlds[1]
@@ -451,6 +456,82 @@ def test_cost_reduction_preserves_protected_boss_preparation():
     assert get_mission_base_cr("e3m3_maykr", world) == MISSION_BASE_CR["e3m3_maykr"]
 
 
+def test_generated_counter_penalties_require_the_weapon_and_its_mod():
+    world = make_mock_world()
+    world.enemy_plan = {'revision': 3, 'combat_costs': {'e1m1_intro': {'campaign': {
+        'actual': 100, 'bodies': 10, 'wave_p90': 20, 'species': ['stone_imp', 'blood_angel', 'spirit']}}}}
+    basic = create_state_with_items({'Combat Shotgun'}, world=world)
+    assert evaluate_mission_readiness(basic, 1, 'e1m1_intro', world).soft_penalty == 29
+    world.enemy_plan['combat_costs']['e1m1_intro']['campaign']['species'].remove('spirit')
+    assert evaluate_mission_readiness(basic, 1, 'e1m1_intro', world, context='spirit_breakpoint').soft_penalty == 29
+    world.enemy_plan['combat_costs']['e1m1_intro']['campaign']['species'].append('spirit')
+    orphan = create_state_with_items({'Full Auto', 'Microwave Beam', 'Precision Bolt'}, world=world)
+    assert evaluate_mission_readiness(orphan, 1, 'e1m1_intro', world).soft_penalty == 29
+    equipped = create_state_with_items({'Combat Shotgun', 'Full Auto', 'Plasma Rifle', 'Microwave Beam', 'Ballista'}, world=world)
+    assert evaluate_mission_readiness(equipped, 1, 'e1m1_intro', world).soft_penalty == 0
+
+
+def test_generated_rating_follows_combat_instead_of_the_mission_name():
+    world = make_mock_world()
+    profile = dict(actual=100, bodies=20, wave_p90=20, species=[])
+    world.enemy_plan = {'revision': 3, 'combat_costs': {
+        stage: {'campaign': dict(profile)} for stage in ('e1m1_intro', 'e1m2_war')}}
+    assert get_mission_base_cr('e1m1_intro', world) == get_mission_base_cr('e1m2_war', world)
+    low = get_mission_base_cr('e1m1_intro', world)
+    world.enemy_plan['combat_costs']['e1m1_intro']['campaign'].update(actual=300, wave_p90=80)
+    assert get_mission_base_cr('e1m1_intro', world) > low
+
+
+def test_wave_range_prepares_for_the_peak_and_duration_affects_effort_separately():
+    from copy import deepcopy
+    from worlds.doometernal.combat_readiness import get_mission_cr_range, get_mission_effort_per_check
+
+    world = make_mock_world()
+    world.options = None
+    profile = dict(actual=150, bodies=20, effort=500, species=[],
+        waves=[dict(cost=10, bodies=10), dict(cost=140, bodies=10)])
+    world.enemy_plan = {'revision': 5, 'combat_costs': {
+        stage: {'campaign': deepcopy(profile)} for stage in ('e1m1_intro', 'e5m1_spear')}}
+    low, high = get_mission_cr_range('e1m1_intro', world)
+    assert low < high == get_mission_base_cr('e1m1_intro', world)
+    assert get_mission_base_cr('e5m1_spear', world) == high
+    ordinary = get_mission_effort_per_check('e1m1_intro', world)
+    assert get_mission_effort_per_check('e5m1_spear', world) > ordinary
+    world.enemy_plan['combat_costs']['e1m1_intro']['campaign']['effort'] *= 2
+    assert get_mission_effort_per_check('e1m1_intro', world) == ordinary * 2
+    assert get_mission_base_cr('e1m1_intro', world) == high
+
+
+def test_rmo_orders_the_frozen_generated_combat_before_selecting_its_start():
+    from copy import deepcopy
+    from random import Random
+    from worlds.doometernal.campaign import make_plan
+
+    mw = setup_multiworld(DoomEternalWorld, seed=871, options={
+        'mission_pool': 'custom', 'custom_missions': ['Hell on Earth', 'Exultia', 'Final Sin'],
+        'goal': 'kill_the_icon_of_sin', 'custom_dark_lord': 0, 'enemy_randomizer': 0,
+    })
+    world = mw.worlds[1]
+    candidate = deepcopy(world.campaign_plan)
+    candidate['composition_bands'] = {stage: n for n, stage in enumerate(candidate['sequence'])}
+    profile = dict(actual=20, bodies=20, wave_p90=2, species=[])
+    world.enemy_plan = {'revision': 3, 'combat_costs': {
+        stage: {'campaign': dict(profile)} for stage in candidate['sequence']}}
+    world.enemy_plan['combat_costs']['e1m1_intro']['campaign'].update(actual=1200, wave_p90=150)
+    plan = make_plan(world.options, Random(871), world, candidate=candidate)
+    assert plan['sequence'] == ['e1m2_war', 'e1m1_intro', 'e3m4_boss']
+    assert plan['starting_stages'] == ['e1m2_war']
+    assert plan['composition_bands'] == candidate['composition_bands']
+    world.enemy_plan['revision'] = 5
+    for entry in world.enemy_plan['combat_costs'].values():
+        entry['campaign'].update(waves=[dict(cost=20, bodies=20)], effort=0)
+    world.enemy_plan['combat_costs']['e1m2_war']['campaign']['effort'] = 100000
+    ranked = make_plan(world.options, Random(871), world, candidate=candidate)
+    assert ranked['sequence'] == ['e1m1_intro', 'e1m2_war', 'e3m4_boss']
+    presentation = world._mission_presentation()['e1m1_intro']
+    assert presentation['cr_min'] == presentation['cr_max'] == presentation['base_cr']
+
+
 def test_generated_combat_is_available_to_pool_and_physical_start_solver():
     from collections import Counter
     from Fill import distribute_items_restrictive
@@ -460,7 +541,7 @@ def test_generated_combat_is_available_to_pool_and_physical_start_solver():
         "goal": "complete_the_full_saga",
         "mission_order": "mission_access_as_items",
         "enemy_count_mode": "multiplier", "enemy_count_multiplier": 500,
-        "enemy_weights": {species: int(species == "stone_imp") for species in SPECIES_IDS},
+        "enemy_weights": {species: 100 if species == "stone_imp" else int(species == 'imp') for species in SPECIES_IDS},
         "enemy_health": {"minimum": 200, "maximum": 200},
     })
     world = mw.worlds[1]
@@ -501,3 +582,24 @@ def test_generated_supply_does_not_assume_hammer_charge_from_instant_kills():
     assert not result.ready and "Chainsaw for ammunition supply" in result.missing_requirements
     state = create_state_with_items({"Ballista", "Chainsaw"}, world=world, prog_special=2)
     assert evaluate_mission_readiness(state, 1, "e1m1_intro", world, player_cr=100).ready
+
+
+def test_native_ammunition_maintenance_requires_chainsaw_even_with_high_combat_rating():
+    world = make_mock_world(randomize_chainsaw=True)
+    world.enemy_plan = {'maps': {'e2m3_core': {'recipes': [
+        {'renewable': True, 'bodies': [{'species': 'imp'}]}]}}}
+    state = create_state_with_items({'Combat Shotgun', 'Dash'}, world=world)
+    result = evaluate_mission_readiness(state, 1, 'e2m3_core', world, player_cr=100)
+    assert not result.ready and 'Chainsaw for ammunition supply' in result.missing_requirements
+    state = create_state_with_items({'Combat Shotgun', 'Dash', 'Chainsaw'}, world=world)
+    assert evaluate_mission_readiness(state, 1, 'e2m3_core', world, player_cr=100).ready
+
+
+def test_generated_breakpoint_penalty_tracks_actual_spirits():
+    world = make_mock_world()
+    world.enemy_plan = {'revision': 4, 'combat_costs': {'e5m1_spear': {'campaign': {
+        'actual': 100, 'bodies': 100, 'wave_p90': 10, 'species': ['imp']}}}}
+    state = create_state_with_items({'Combat Shotgun'}, world=world)
+    assert evaluate_mission_readiness(state, 1, 'e5m1_spear', world, context='spirit_breakpoint').soft_penalty == 0
+    world.enemy_plan['combat_costs']['e5m1_spear']['campaign']['species'].append('spirit')
+    assert evaluate_mission_readiness(state, 1, 'e5m1_spear', world, context='spirit_breakpoint').soft_penalty == 15

@@ -541,6 +541,7 @@ def build_semantic_counts(
         if weapon == starting_weapon:
             continue
         base_pool[weapon] = max(0, 1 - start_inv.get(weapon, 0))
+    base_pool["The Unmaykr"] = max(0, 1 - start_inv.get("The Unmaykr", 0))
 
     # --- Core equipment ---------------------------------------------------
     for equipment in CORE_EQUIPMENT:

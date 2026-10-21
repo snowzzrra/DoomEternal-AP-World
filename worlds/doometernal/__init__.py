@@ -16,7 +16,7 @@ from .combat_readiness import (
     is_mission_ready,
     is_spirit_breakpoint_ready,
 )
-from .combat_rating import evaluate_player_loadout_cr
+from .combat_rating import MOD_HOST, WEAPON_NAMES, evaluate_player_loadout_cr
 
 from .generated_content import (
     CAMPAIGN_CONNECTIONS,
@@ -142,11 +142,18 @@ class DoomEternalWorld(World):
         self.enemy_plan = None
         planning_state = self.random.getstate()
         self.campaign_plan = make_plan(self.options, self.random, world=self)
-        self.enemy_plan = build_native_recipes(self.enemies, self.campaign_plan, seed=self.random.getrandbits(128))
+        if self.enemies['enabled'] and self.options.mission_order.value == 1:
+            composition = [stage for stage in self.campaign_plan['sequence'] if stage != self.campaign_plan['goal_stage']]
+            self.random.shuffle(composition)
+            if self.campaign_plan['goal_stage']: composition.append(self.campaign_plan['goal_stage'])
+            self.campaign_plan['composition_bands'] = {stage: index for index, stage in enumerate(composition)}
+        enemy_seed = self.random.getrandbits(128)
+        self.enemy_plan = build_native_recipes(self.enemies, self.campaign_plan, seed=enemy_seed)
         if self.enemy_plan is not None:
             candidate = self.campaign_plan
             self.random.setstate(planning_state)
             self.campaign_plan = make_plan(self.options, self.random, world=self, candidate=candidate)
+            self.enemy_plan = build_native_recipes(self.enemies, self.campaign_plan, seed=enemy_seed)
         from .killsanity_plan import build_campaign_kill_budget, build_killsanity_plan
         kill_budget = dict(estimated_kills=0, finite_sources=[])
         if self.options.killsanity.value:
@@ -282,11 +289,15 @@ class DoomEternalWorld(World):
         return None
 
     def _mission_presentation(self) -> dict[str, dict[str, int | float]]:
-        from .combat_readiness import get_mission_skull_tier
+        from .combat_readiness import get_mission_skull_tier, get_mission_cr_range, get_mission_effort_per_check
         return {stage_id: {
             "base_cr": get_mission_base_cr(stage_id, self),
             "skill_allowance": get_skill_allowance(self.options.logic_difficulty.value),
             "skull_tier": get_mission_skull_tier(stage_id, self),
+            **({'cr_min': get_mission_cr_range(stage_id, self)[0],
+                'cr_max': get_mission_cr_range(stage_id, self)[1],
+                'effort_per_check': get_mission_effort_per_check(stage_id, self)}
+               if (self.enemy_plan or {}).get('revision', 0) >= 5 else {}),
         } for stage_id in self.campaign_plan["sequence"]}
 
     def fill_slot_data(self) -> dict[str, object]:
@@ -661,6 +672,26 @@ class DoomEternalWorld(World):
                     )
                 pool_names.remove(name)
 
+        self.frontloaded_arsenal = []
+        if self.enemies["enabled"]:
+            owned = set(start_inventory) | set(plan["bootstrap_inventory"]) | set(plan.get("readiness_bootstrap_items", ())) | {self.starting_weapon_name}
+            ammunition = {"Combat Shotgun": "shells", "Super Shotgun": "shells", "Heavy Cannon": "bullets",
+                          "Chaingun": "bullets", "Plasma Rifle": "cells", "Ballista": "cells", "Rocket Launcher": "rockets"}
+            families = {ammunition[name] for name in owned if name in ammunition}
+            for _ in range(2):
+                candidates = sorted(set(pool_names) & set(WEAPON_NAMES) - owned)
+                if not candidates:
+                    break
+                diverse = [name for name in candidates if ammunition.get(name) not in families]
+                weapon = self.random.choice(diverse or candidates)
+                self.frontloaded_arsenal.append(weapon)
+                owned.add(weapon)
+                families.add(ammunition[weapon])
+                mods = sorted(name for name in pool_names if MOD_HOST.get(name) == weapon)
+                if mods:
+                    mod = self.random.choice(mods)
+                    self.frontloaded_arsenal.append(mod)
+
         # Pad with filler and traps to match unfilled locations exactly
         locations_count = len(self.multiworld.get_unfilled_locations(self.player))
         amount_needed = locations_count - len(pool_names)
@@ -675,6 +706,9 @@ class DoomEternalWorld(World):
                 "Full Heal": 8,
                 "Full Armor": 8,
                 "Soulsphere": 5,
+                "Berserk": 3,
+                "Onslaught": 3,
+                "Overdrive": 3,
                 "Small Health": 10,
                 "Small Armor": 1,
                 "Large Health": 10,
@@ -803,10 +837,14 @@ class DoomEternalWorld(World):
         filleritempool: list[Item],
         fill_locations: list[Location],
     ) -> None:
+        arsenal = set(getattr(self, 'frontloaded_arsenal', ()))
+
         def sort_key(item: Item) -> int:
             if item.player == self.player:
+                if item.name in arsenal:
+                    return 1
                 if "Battery" in item.name:
-                    return 2
-            return 1
+                    return 3
+            return 2
 
         progitempool.sort(key=sort_key)

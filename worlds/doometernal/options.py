@@ -421,9 +421,9 @@ class EnemyIntensityLate(_EnemyRecipeRange):
 
 
 class EnemyDensity(_EnemyRecipeRange):
-    """Choose between crowds of weaker enemies and smaller groups of stronger enemies when Enemy Count is Auto.
+    """Choose how many enemies enter each original spawn request when Enemy Count is Auto.
 
-    100%: Use a balanced group size. Higher values favor crowds; lower values favor fewer, tougher enemies.
+    100%: Keep at least the original count. Higher values add enemies. Lower values favor tougher enemies while retaining the original count.
     Auto: Use the selected enemy preset."""
 
     display_name = "Density"
@@ -445,7 +445,7 @@ class EnemyCountMode(_ExactLabelChoice):
     """Choose how to decide the number of randomized enemies in a fight.
 
     Preset: Use the selected enemy preset's count setting.
-    Auto: Use Intensity and Density to choose between more weak enemies and fewer strong enemies.
+    Auto: Keep at least the original count in every spawn request. Density can add enemies; Intensity guides their composition.
     Multiplier: Multiply the fight's original enemy count using Enemy Count Multiplier.
     Enemies enter through the fight's normal spawn events."""
 

@@ -110,6 +110,16 @@ def get_mission_base_cr(stage_id: str, world: Any | None = None) -> int:
     if costs is None:
         return base
     import math
+    profile = costs.get('campaign')
+    if profile is not None:
+        if (getattr(world, 'enemy_plan', None) or {}).get('revision', 0) >= 5 and profile.get('waves'):
+            return get_mission_cr_range(stage_id, world)[1]
+        bodies = max(1, profile['bodies'])
+        pressure = (8 + 8 * math.log2(1 + profile['actual'] / bodies)
+                    + 4 * math.log2(1 + profile['wave_p90'] / 10)
+                    + 3 * math.log2(1 + profile['bodies'] / 100))
+        floor = base if stage_id in {'e1m4_boss', 'e2m4_boss', 'e3m3_maykr', 'e3m4_boss', 'e4m3_mcity', 'e5m4_boss'} else 1
+        return max(floor, min(MAX_EFFECTIVE_CR, round(pressure)))
     # Ten cost units per reference CR; doubling that budget adds twelve CR.
     factor = max(.25, 1 + (costs["actual"] - costs["original"]) / (10 * base))
     floor = base if stage_id in {"e1m4_boss", "e2m2_base", "e2m4_boss",
@@ -117,9 +127,55 @@ def get_mission_base_cr(stage_id: str, world: Any | None = None) -> int:
     return max(floor, min(MAX_EFFECTIVE_CR, round(base + 12 * math.log2(factor))))
 
 
+def get_mission_cr_range(stage_id, world):
+    import math
+    profile = (getattr(world, 'enemy_plan', None) or {}).get('combat_costs', {}).get(stage_id, {}).get('campaign', {})
+    if not profile.get('waves'):
+        value = get_mission_base_cr(stage_id, world)
+        return value, value
+    floor = MISSION_BASE_CR[stage_id] if stage_id in {'e1m4_boss', 'e2m4_boss', 'e3m3_maykr', 'e3m4_boss', 'e4m3_mcity', 'e5m4_boss'} else 1
+    endurance = 3 * math.log2(1 + profile['bodies'] / 100)
+    ratings = [max(floor, min(MAX_EFFECTIVE_CR, round(8 + endurance
+        + 8 * math.log2(1 + wave['cost'] / max(1, wave['bodies']))
+        + 4 * math.log2(1 + wave['cost'] / 10)))) for wave in profile['waves'] if wave['bodies']]
+    return (min(ratings), max(ratings)) if ratings else (floor, floor)
+
+
+def get_mission_effort_per_check(stage_id, world):
+    profile = (getattr(world, 'enemy_plan', None) or {}).get('combat_costs', {}).get(stage_id, {}).get('campaign', {})
+    if 'effort' not in profile:
+        return 0.0
+    from .generated_content import CAMPAIGN_STAGES, LOCATION_ROWS
+    from .locations import optional_location_enabled
+    regions = next(set(stage['regions']) for stage in CAMPAIGN_STAGES if stage['id'] == stage_id)
+    options = getattr(world, 'options', None)
+    checks = sum(code is not None and region in regions and (options is None or optional_location_enabled(name, options))
+                 for name, code, region in LOCATION_ROWS)
+    duration_weight = 1.5 if stage_id in {'e5m1_spear', 'e5m2_earth', 'e5m3_hell'} else 1.25 if stage_id.startswith('e4m') else 1
+    return profile['effort'] * duration_weight / max(1, checks)
+
+
 def get_mission_skull_tier(stage_id: str, world: Any | None = None) -> int:
+    if (getattr(world, 'enemy_plan', None) or {}).get('revision', 0) >= 3:
+        rating = get_mission_intrinsic_cr(stage_id, world)
+        return 1 + sum(rating >= threshold for threshold in (35, 55, 75))
     change = get_mission_base_cr(stage_id, world) - MISSION_BASE_CR[stage_id]
     return max(1, min(4, MISSION_SKULL_TIERS[stage_id] + round(change / 15)))
+
+
+def _enemy_counter_penalties(state, player, stage_id, world):
+    from .logic import COMBAT_CAPABILITIES
+    profile = (getattr(world, 'enemy_plan', None) or {}).get('combat_costs', {}).get(stage_id, {}).get('campaign', {})
+    present = set(profile.get('species', ()))
+    counters = (("spirit", 15, (("Plasma Rifle", "Microwave Beam"),)),
+                ("blood_angel", 8, COMBAT_CAPABILITIES['weak_point']),
+                ("stone_imp", 6, (("Combat Shotgun", "Full Auto"),)))
+    return {species: penalty for species, penalty, alternatives in counters if species in present and not (
+        state is not None and any(all(state.has(item, player) for item in alternative) for alternative in alternatives))}
+
+
+def get_mission_intrinsic_cr(stage_id, world):
+    return min(MAX_EFFECTIVE_CR, get_mission_base_cr(stage_id, world) + sum(_enemy_counter_penalties(None, 1, stage_id, world).values()))
 
 
 def get_skill_allowance(logic_difficulty: int) -> int:
@@ -199,17 +255,23 @@ def evaluate_mission_readiness(
     else:
         player_cr = float(player_cr)
 
-    soft_penalty = 0
+    penalties = _enemy_counter_penalties(state, player, stage_id, world)
     reason = ""
     if context == "spirit_breakpoint":
-        if not has_effective_anti_spirit(state, player):
-            soft_penalty = SPIRIT_PENALTY
+        enemy_plan = getattr(world, 'enemy_plan', None) or {}
+        generated_species = enemy_plan.get('combat_costs', {}).get(stage_id, {}).get('campaign', {}).get('species', ())
+        spirit_present = enemy_plan.get('revision', 0) < 4 or 'spirit' in generated_species
+        if spirit_present and not has_effective_anti_spirit(state, player):
+            penalties['spirit'] = SPIRIT_PENALTY
             reason = "Missing effective Microwave Beam at mandatory Spirit breakpoint (+15 CR)"
     elif context == "dark_lord_defeated" or (stage_id == DARK_LORD_STAGE_ID and context == "boss"):
         if not has_effective_sentinel_hammer(state, player, special_weapon=sw):
-            soft_penalty = DARK_LORD_HAMMER_PENALTY
+            penalties['dark_lord'] = DARK_LORD_HAMMER_PENALTY
             reason = "Missing effective Sentinel Hammer against The Dark Lord (+15 CR)"
 
+    soft_penalty = sum(penalties.values())
+    if soft_penalty and not reason:
+        reason = f"Missing enemy counter preparation (+{soft_penalty} CR)"
     effective_cr = min(MAX_EFFECTIVE_CR, base_cr + soft_penalty)
     deficit = round(effective_cr - player_cr, 2)
     missing = []
@@ -222,6 +284,10 @@ def evaluate_mission_readiness(
     enemy_plan = getattr(world, "enemy_plan", None) or {}
     has_supply = any(operation.get("reserve") for operation in
                      enemy_plan.get("maps", {}).get(stage_id, {}).get("operations", []))
+    from .native_enemy_plan import AMMO_FODDER
+    has_supply = has_supply or any(recipe.get('renewable') and
+        any(body['species'] in AMMO_FODDER for body in recipe['bodies'])
+        for recipe in enemy_plan.get('maps', {}).get(stage_id, {}).get('recipes', []))
     randomize_chainsaw = bool(getattr(getattr(options, "randomize_chainsaw", None), "value", 0))
     # The fixed Chainsaw pickup precedes the profiled Hell on Earth fights.
     if has_supply and randomize_chainsaw:

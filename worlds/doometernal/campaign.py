@@ -20,6 +20,8 @@ from .combat_readiness import (
     evaluate_mission_readiness,
     is_mission_ready,
     MISSION_BASE_CR,
+    get_mission_intrinsic_cr,
+    get_mission_effort_per_check,
     SPIRIT_BREAKPOINTS,
     ENDURANCE_STAGES,
 )
@@ -655,6 +657,17 @@ def make_plan(options, rng, world=None, *, candidate=None):
         starts = list(candidate["starting_stages"])
         chosen_start = candidate["bootstrap_stage"]
         chosen_result = evaluate_start_stage(chosen_start)
+        if order_mode == 1 and (getattr(world_context, 'enemy_plan', None) or {}).get('revision', 0) >= 3:
+            bands = candidate['composition_bands']
+            import math
+            ranked = sorted(ordinary, key=lambda stage: (
+                get_mission_intrinsic_cr(stage, world_context)
+                + min(12, 3 * math.log2(1 + get_mission_effort_per_check(stage, world_context))), bands[stage]))
+            results = {stage: evaluate_start_stage(stage) for stage in ranked}
+            chosen_start = next((stage for stage in ranked if results[stage]['bootstrap_cost'] < 999), ranked[0])
+            chosen_result = results[chosen_start]
+            sequence = [chosen_start] + [stage for stage in ranked if stage != chosen_start] + ([goal_stage] if goal_stage else [])
+            starts = [chosen_start]
         access = list(candidate["access_items"].values())
         goal_as_item = candidate["goal_as_item"]
     elif order_mode == 0:
@@ -746,6 +759,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
 
     return {
         "schema": 1,
+        **({'composition_bands': dict(candidate['composition_bands'])} if candidate and 'composition_bands' in candidate else {}),
         "mode": options.mission_order.current_option_name,
         "difficulty": options.campaign_difficulty.value,
         "logic_difficulty": options.logic_difficulty.current_option_name,

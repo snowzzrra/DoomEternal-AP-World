@@ -183,6 +183,9 @@ item_data_table: dict[str, ItemData] = {
     "One Extra Life": ItemData(7770040, ItemClassification.useful),
     "Armor Shard": ItemData(7770041, ItemClassification.filler),
     "Ammo Cache": ItemData(7770042, ItemClassification.filler),
+    "Berserk": ItemData(7770910, ItemClassification.filler),
+    "Onslaught": ItemData(7770911, ItemClassification.filler),
+    "Overdrive": ItemData(7770912, ItemClassification.filler),
     # Traps
     "Imp Trap": ItemData(7770043, ItemClassification.trap),
     "Carcass Trap": ItemData(7770044, ItemClassification.trap),
