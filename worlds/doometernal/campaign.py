@@ -663,8 +663,9 @@ def make_plan(options, rng, world=None, *, candidate=None):
             ranked = sorted(ordinary, key=lambda stage: (
                 get_mission_intrinsic_cr(stage, world_context)
                 + min(12, 3 * math.log2(1 + get_mission_effort_per_check(stage, world_context))), bands[stage]))
-            results = {stage: evaluate_start_stage(stage) for stage in ranked}
-            chosen_start = next((stage for stage in ranked if results[stage]['bootstrap_cost'] < 999), ranked[0])
+            results = {stage: evaluate_start_stage(stage) for stage in ranked
+                       if STAGE_BY_ID[stage]['kind'] == 'mission'}
+            chosen_start = next((stage for stage in results if results[stage]['bootstrap_cost'] < 999), next(iter(results)))
             chosen_result = results[chosen_start]
             sequence = [chosen_start] + [stage for stage in ranked if stage != chosen_start] + ([goal_stage] if goal_stage else [])
             starts = [chosen_start]

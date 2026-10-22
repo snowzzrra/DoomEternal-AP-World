@@ -540,6 +540,7 @@ def test_generated_combat_is_available_to_pool_and_physical_start_solver():
     mw = setup_multiworld(DoomEternalWorld, seed=71412, options={
         "goal": "complete_the_full_saga",
         "mission_order": "mission_access_as_items",
+        "enemy_randomizer": True,
         "enemy_count_mode": "multiplier", "enemy_count_multiplier": 500,
         "enemy_weights": {species: 100 if species == "stone_imp" else int(species == 'imp') for species in SPECIES_IDS},
         "enemy_health": {"minimum": 200, "maximum": 200},

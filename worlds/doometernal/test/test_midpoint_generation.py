@@ -58,6 +58,7 @@ class TestMidpointGeneration(unittest.TestCase):
             'mission_order': 'random_mission_order', 'mission_count': 6,
             'enemy_randomizer': True, 'enemy_preset': 'slayers_path'})
         early = mw.worlds[1].frontloaded_arsenal
+        self.assertNotIn("e5m4_boss", mw.worlds[1].campaign_plan["starting_stages"])
         weapons = set(early) & set(WEAPON_NAMES)
         self.assertEqual(len(weapons), 2)
         for weapon in weapons:

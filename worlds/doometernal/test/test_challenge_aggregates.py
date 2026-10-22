@@ -56,7 +56,7 @@ def test_generated_secret_encounter_targets_open_mastery_access(mod, weapon, spe
     from ..native_enemy_plan import build_native_recipes
 
     options = normalize_enemy_options({"enemy_count_mode": "multiplier", "enemy_count_multiplier": 100,
-        "enemy_weights": {value: int(value == species) for value in SPECIES_IDS}})
+        "enemy_weights": {value: 100 if value == species else int(value == 'imp') for value in SPECIES_IDS}})
     plan = build_native_recipes(options, {"sequence": ["e3m3_maykr"]}, seed=71605)
     mastery = f"{mod} - Weapon Mastery Challenge"
     secret = "Urdak - Secret Encounter - Statue-Puzzle Upper Door"
