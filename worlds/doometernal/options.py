@@ -132,7 +132,7 @@ class MissionCount(NamedRange):
 class MissionOrder(_ExactLabelChoice):
     """Choose how you unlock missions.
 
-    Vanilla Order: Play missions in their original order.
+    Vanilla Order: Play missions in their original order, with the goal mission last.
     Random Mission Order: Play a shuffled sequence, unlocking the next mission as you progress.
     Mission Access as Items: Find an Access item to unlock each mission.
     You can replay completed missions through the Fortress of Doom."""
