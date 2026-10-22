@@ -309,6 +309,8 @@ def _phase_bodies(sources, candidates, settings, intensity, *, seed, key, catalo
     if balanced and revision >= 5:
         progress = Fraction(stage_index, max(1, stage_count - 1)) if settings['progressive'] else 0
         target = Fraction(neutral, 2) * (1 + progress) * intensity
+        if revision >= 7:
+            target = Fraction(3 * neutral, 4) * (1 + progress) * intensity
     target_numerator, target_denominator = target.numerator ** 2, target.denominator ** 2
     shared = None
     for ordinal, source in enumerate(roster):
@@ -316,7 +318,8 @@ def _phase_bodies(sources, candidates, settings, intensity, *, seed, key, catalo
         random_draws = {}
         draws = {species: sample_instance_attributes(settings, species, seed=seed, instance_key=draw_key,
             stage_index=stage_index, stage_count=stage_count, random_draws=random_draws) for species in candidates}
-        costs = {species: enemy_combat_cost(species, attributes, buff_totems=revision >= 6) for species, attributes in draws.items()}
+        costs = {species: enemy_combat_cost(species, attributes, buff_totems=revision >= 6,
+                                           screechers=revision >= 7) for species, attributes in draws.items()}
         eligible = candidates
         if revision >= 6 and source.get('allowed_species'):
             eligible = [species for species in candidates if species in source['allowed_species']]
@@ -326,7 +329,7 @@ def _phase_bodies(sources, candidates, settings, intensity, *, seed, key, catalo
             eligible = [species for species in eligible if species in AMMO_FODDER]
             if not eligible:
                 raise ValueError(f"Ammunition source requires an enabled chainsaw fodder species: {source['id']}")
-        elif balanced:
+        elif balanced and revision < 7:
             fitted = [species for species in eligible if costs[species] <= target * (3 if revision >= 5 else 6)]
             eligible = fitted or [min(eligible, key=lambda species: (costs[species], species))]
         selected_weights = {}
@@ -342,7 +345,7 @@ def _phase_bodies(sources, candidates, settings, intensity, *, seed, key, catalo
         individual = _random_for(seed, draw_key, 'variety').randrange(100) < settings['variety']
         if shared not in eligible or individual:
             species = sample_species(selected, eligible, seed=seed, instance_key=draw_key)
-            if shared is None: shared = species
+            if shared is None or revision >= 7: shared = species
         else:
             species = shared
         attributes = draws[species]
@@ -352,8 +355,8 @@ def _phase_bodies(sources, candidates, settings, intensity, *, seed, key, catalo
     return bodies
 
 
-def build_native_recipes(enemies, campaign, *, seed, catalog=None, revision=6):
-    if type(revision) is not int or revision not in (1, 2, 3, 4, 5, 6):
+def build_native_recipes(enemies, campaign, *, seed, catalog=None, revision=7):
+    if type(revision) is not int or revision not in (1, 2, 3, 4, 5, 6, 7):
         raise ValueError('Unsupported native recipe revision')
     if not enemies["enabled"]:
         return None
@@ -399,8 +402,10 @@ def build_native_recipes(enemies, campaign, *, seed, catalog=None, revision=6):
         settings = {**enemies, "special_limits": limits}
         candidates = sorted(species for species in catalog["species"]
                             if enemies["weights"].get(species, 0) > 0 and limits.get(species, 1) > 0
-                            and (species != 'buff_pod' or limits['archvile'] > 0)
+                            and (species not in {'buff_pod', 'zombie_t1_screecher'} or
+                                 (species == 'zombie_t1_screecher' and enemies.get('revision',2)<4) or limits['archvile'] > 0)
                             and (species not in {"marauder", "archvile", "spirit", "buff_pod"}
+                                 and not (species == 'zombie_t1_screecher' and enemies.get('revision',2)>=4)
                                  or limits["combined_special"] > 0))
         recipes, protected, inactive = [], [], []
         phases = {}
@@ -499,7 +504,7 @@ def build_native_recipes(enemies, campaign, *, seed, catalog=None, revision=6):
         if revision >= 5: maps[map_key]['wave_progression'] = phase_progression
         original_cost = sum((Fraction(source["combat_cost"]) for sources in phases.values() for source in sources
                              if not source.get("runtime_only")), Fraction(0))
-        actual_cost = sum((enemy_combat_cost(body["species"], body["attributes"], buff_totems=revision >= 6)
+        actual_cost = sum((enemy_combat_cost(body["species"], body["attributes"], buff_totems=revision >= 6, screechers=revision >= 7)
                            for recipe in recipes if not recipe["runtime_only"] for body in recipe["bodies"]), Fraction(0))
         combat_costs[map_key] = {"original": float(original_cost), "target": float(original_cost * intensity),
                                "actual": float(actual_cost)}
@@ -513,7 +518,7 @@ def build_native_recipes(enemies, campaign, *, seed, catalog=None, revision=6):
                 source = by_id[recipe['id']]
                 phase = recipe['wave'] if revision >= 5 else source.get('phase', source['id'])
                 wave_costs[phase] = wave_costs.get(phase, Fraction(0)) + sum(
-                    (enemy_combat_cost(body['species'], body['attributes'], buff_totems=revision >= 6) for body in recipe['bodies']), Fraction(0))
+                    (enemy_combat_cost(body['species'], body['attributes'], buff_totems=revision >= 6, screechers=revision >= 7) for body in recipe['bodies']), Fraction(0))
                 wave_bodies[phase] = wave_bodies.get(phase, 0) + len(recipe['bodies'])
             ordered = sorted(wave_costs.values())
             present = {body['species'] for recipe in active for body in recipe['bodies']}

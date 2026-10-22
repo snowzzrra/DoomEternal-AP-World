@@ -495,11 +495,6 @@ LOCATION_ROWS = (
         "UAC Atlantica Facility - UAC Facility (Destroyed) - Flooded Lab",
     ),
     (
-        "UAC Atlantica Facility - Extra Life - Submerged Sub-Station 2",
-        7770429,
-        "UAC Atlantica Facility - UAC Facility (Destroyed) - Flooded Lab",
-    ),
-    (
         "UAC Atlantica Facility - Book of the Seraphs - Part I Codex",
         7770430,
         "UAC Atlantica Facility - UAC Facility (Destroyed) - Burning Shipyard",
@@ -545,7 +540,6 @@ LOCATION_ROWS = (
     ("The Holt - Book of the Seraphs - Part V Codex", 7770446, "The Holt - Crimson Forest"),
     ("The Holt - Book of the Seraphs - Part VI Codex", 7770448, "The Holt - Maykr Pillars"),
     ("The Holt - Extra Life - Maykr Canopy Perch 1", 7770449, "The Holt - Maykr Pillars"),
-    ("The Holt - Extra Life - Maykr Canopy Perch 2", 7770450, "The Holt - Maykr Pillars"),
     ("The Holt - Slayer Key - Floating Platform Perch", 7770451, "The Holt - Maykr Pillars"),
     ("The Holt - Slayer Gate Complete", 7770452, "The Holt - Maykr Pillars"),
     ("The Holt - Book of the Seraphs - Part VII Codex", 7770453, "The Holt - Ivory Path"),
@@ -1289,7 +1283,6 @@ LOCATION_NAMES_BY_REGION = {
     "The Holt - Maykr Pillars": (
         "The Holt - Book of the Seraphs - Part VI Codex",
         "The Holt - Extra Life - Maykr Canopy Perch 1",
-        "The Holt - Extra Life - Maykr Canopy Perch 2",
         "The Holt - Slayer Key - Floating Platform Perch",
         "The Holt - Slayer Gate Complete",
     ),
@@ -1333,7 +1326,6 @@ LOCATION_NAMES_BY_REGION = {
     "UAC Atlantica Facility - UAC Facility (Destroyed) - Flooded Lab": (
         "UAC Atlantica Facility - Extra Life - Flooded Lab Vent",
         "UAC Atlantica Facility - Extra Life - Submerged Sub-Station 1",
-        "UAC Atlantica Facility - Extra Life - Submerged Sub-Station 2",
         "UAC Atlantica Facility - Automap Station",
     ),
     "UAC Atlantica Facility - UAC Facility (Intact) - Generator Tower": (
