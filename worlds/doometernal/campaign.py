@@ -25,6 +25,7 @@ from .combat_readiness import (
     SPIRIT_BREAKPOINTS,
     ENDURANCE_STAGES,
 )
+from .native_enemy_safety import OPENING_REGIONS
 from .planner import (
     FastState,
     ITEM_DEPENDENCIES,
@@ -142,8 +143,14 @@ SPIRIT_STAGE_IDS = frozenset(SPIRIT_BREAKPOINTS.values())
 def _start_stage_readiness(state, player, stage_id, world_context):
     """Readiness for entry, traversal and mandatory encounters in the starting mission."""
     context = "dark_lord_defeated" if stage_id == "e5m4_boss" else "base"
+    if (stage_id in OPENING_REGIONS and getattr(world_context, 'enemies', {}).get('enabled')
+            and getattr(world_context, 'enemies', {}).get('progressive')
+            and getattr(world_context, 'enemies', {}).get('count_mode') == 'auto'
+            and (getattr(world_context, 'enemy_plan', None) is None
+                 or world_context.enemy_plan['campaign'].get('opening_stage') == stage_id)):
+        context = 'opening'
     result = evaluate_mission_readiness(state, player, stage_id, world_context, context=context)
-    if stage_id in SPIRIT_STAGE_IDS:
+    if stage_id in SPIRIT_STAGE_IDS and context != 'opening':
         breakpoint = evaluate_mission_readiness(
             state, player, stage_id, world_context, context="spirit_breakpoint"
         )
@@ -157,11 +164,16 @@ def solve_stage_bootstrap(
     world_context,
     base_state: FastState,
     pool_counts: Counter,
+    *, capacity=None,
 ):
     """Compute minimal readiness bootstrap cost and items for stage_id."""
     player = base_state.player
-    free_capacity = len(FORTRESS_BOOTSTRAP_LOCATIONS)
-    res_0 = _start_stage_readiness(base_state, player, stage_id, world_context)
+    free_capacity = len(FORTRESS_BOOTSTRAP_LOCATIONS) if capacity is None else capacity
+    def readiness(state):
+        if capacity is None:
+            return _start_stage_readiness(state, player, stage_id, world_context)
+        return evaluate_mission_readiness(state, player, stage_id, world_context)
+    res_0 = readiness(base_state)
     if res_0.ready:
         return {
             "stage_id": stage_id,
@@ -174,7 +186,7 @@ def solve_stage_bootstrap(
             "overshoot": res_0.allowance - res_0.deficit,
         }
 
-    if stage_id in ENDURANCE_STAGES:
+    if stage_id in ENDURANCE_STAGES or capacity is not None:
         # shortcut: greedy pruning can reject a legal package in a constrained pool.
         targets = [ReadinessTarget(stage_id, "base", "Starting endurance mission")]
         if stage_id in SPIRIT_STAGE_IDS:
@@ -192,18 +204,17 @@ def solve_stage_bootstrap(
                 state = base_state.copy()
                 for item in reduced:
                     state.collect(item)
-                if _start_stage_readiness(state, player, stage_id, world_context).ready:
+                if readiness(state).ready:
                     package = reduced
         package = tuple(package)
-        bootstrap_size = max(0, len(package) - len(FORTRESS_BOOTSTRAP_LOCATIONS))
-        if selection.satisfied:
+        if selection.satisfied and len(package) <= free_capacity:
             state = base_state.copy()
             for name in package:
                 state.collect(name)
-            final = _start_stage_readiness(state, player, stage_id, world_context)
+            final = readiness(state)
             return {
-                "stage_id": stage_id, "bootstrap_cost": bootstrap_size,
-                "bootstrap_items": package[:bootstrap_size], "placed_items": package[bootstrap_size:],
+                "stage_id": stage_id, "bootstrap_cost": 0,
+                "bootstrap_items": (), "placed_items": package,
                 "initial_cr": res_0.player_cr, "final_cr": final.player_cr,
                 "effective_cr": final.effective_cr, "overshoot": final.allowance - final.deficit,
             }
@@ -259,7 +270,7 @@ def solve_stage_bootstrap(
         st = base_state.copy()
         for it in pkg:
             st.collect(it)
-        r = _start_stage_readiness(st, player, stage_id, world_context)
+        r = readiness(st)
         cr = evaluate_player_loadout_cr(st, player, world_context).total
         result = (r, cr)
         eval_cache[key] = result
@@ -316,54 +327,6 @@ def solve_stage_bootstrap(
             "effective_cr": best_zero[4],
             "overshoot": best_zero[1],
         }
-
-    # 2. Search for B > 0 (minimal bootstrap)
-    for B in range(1, len(primary_candidates) + 1):
-        best_b = None
-        placed_capacity = free_capacity
-
-        for c_boot in itertools.combinations(primary_candidates, B):
-            valid_b, full_boot = resolve_cached(c_boot, pool_counts)
-            if not valid_b or len(full_boot) != B:
-                continue
-
-            rem_pool = Counter(pool_counts)
-            for it in full_boot:
-                rem_pool[it] -= 1
-
-            ranked_placed = [
-                c for c in [
-                    "Dash", "Super Shotgun", "Ballista", "Chaingun", "Progressive Special Weapon",
-                    "The Crucible", "Sentinel Hammer",
-                    "Energy Shield", "Flame Belch", "Ice Bomb", "Progressive Blood Punch", "Destroyer Blade",
-                    "Arbalest", "Lock-on Burst", "Rocket Launcher", "Plasma Rifle", "Microwave Beam",
-                    "Precision Bolt", "Sticky Bombs", "Mobile Turret", "Heat Blast", "Remote Detonate",
-                    "Chainsaw",
-                ] if rem_pool[c] > 0
-            ]
-            placed_sample = tuple(ranked_placed[:placed_capacity])
-            boot_state = base_state.copy()
-            for item in full_boot:
-                boot_state.collect(item)
-            valid_p, full_p = resolve_dependencies(placed_sample, boot_state, player, rem_pool)
-            if valid_p and len(full_p) <= placed_capacity:
-                full_total = full_boot + full_p
-                r, cr = eval_pkg(full_total)
-                if r.ready:
-                    overshoot = r.allowance - r.deficit
-                    best_b = (overshoot, len(full_total), full_boot, tuple(sorted(full_p)), cr, r.effective_cr)
-                    break
-        if best_b is not None:
-            return {
-                "stage_id": stage_id,
-                "bootstrap_cost": B,
-                "bootstrap_items": best_b[2],
-                "placed_items": best_b[3],
-                "initial_cr": res_0.player_cr,
-                "final_cr": best_b[4],
-                "effective_cr": best_b[5],
-                "overshoot": best_b[0],
-            }
 
     return {
         "stage_id": stage_id,
@@ -576,6 +539,8 @@ def make_plan(options, rng, world=None, *, candidate=None):
             self.player = plyr
 
     world_context = world if world is not None else MinimalWorldContext(options, player)
+    enemies = getattr(world_context, 'enemies', {})
+    use_opening = enemies.get('enabled') and enemies.get('progressive') and enemies.get('count_mode') == 'auto'
 
     ordinary = [s for s in active_normal_ids if s != goal_stage]
     if dark_lord_active and "e5m4_boss" != goal_stage and "e5m4_boss" not in ordinary:
@@ -652,7 +617,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
             s_id, world_context, get_candidate_base_state(s_id), pool_counts
         )
 
-    if candidate is not None:
+    if candidate is not None and order_mode != 2:
         sequence = list(candidate["sequence"])
         starts = list(candidate["starting_stages"])
         chosen_start = candidate["bootstrap_stage"]
@@ -681,7 +646,12 @@ def make_plan(options, rng, world=None, *, candidate=None):
         goal_as_item = False
     else:
         candidate_results = {s_id: evaluate_start_stage(s_id) for s_id in ordinary
-                             if STAGE_BY_ID[s_id]["kind"] == "mission"}
+                              if STAGE_BY_ID[s_id]["kind"] == "mission"
+                              and (not use_opening or options.start_inventory.value or s_id in OPENING_REGIONS)
+                              and (candidate is None or not candidate.get('opening_stage')
+                                   or s_id == candidate['opening_stage'])}
+        if not candidate_results:
+            raise ValueError('This mission pool has no verified opening for progressive enemizer without starting equipment')
         min_cost = min(result["bootstrap_cost"] for result in candidate_results.values())
         if min_cost >= 999:
             unresolved = sorted(s for s in candidate_results if candidate_results[s]["bootstrap_cost"] >= 999)
@@ -760,6 +730,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
 
     return {
         "schema": 1,
+        **({'opening_stage': chosen_start} if chosen_start in OPENING_REGIONS and use_opening else {}),
         **({'composition_bands': dict(candidate['composition_bands'])} if candidate and 'composition_bands' in candidate else {}),
         "mode": options.mission_order.current_option_name,
         "difficulty": options.campaign_difficulty.value,

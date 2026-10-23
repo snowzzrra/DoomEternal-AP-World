@@ -15,6 +15,13 @@ lets you unlock missions by finding their Access items. **Vanilla Order** follow
 their original order. Your **Goal** can require the Unmaykr, the Icon of Sin,
 the Dark Lord or the Full Saga; **Additional Victory Requirements** adds tasks.
 
+Your starting weapon, explicit starting inventory, and nonrandomized Dash and
+Chainsaw follow your player options. Combat equipment comes from checks.
+Progressive enemizer campaigns can start gradually in Hell on Earth or Exultia:
+collect weapons in the Fortress and the opening areas before tackling the harder
+encounters later in the mission. Other starting pools may need explicit starting
+equipment; generation rejects a start that cannot supply its required items.
+
 ## Find rewards
 
 Pickups, secrets, combat encounters, mission challenges, weapon masteries and

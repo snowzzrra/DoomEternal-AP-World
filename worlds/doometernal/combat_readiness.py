@@ -127,9 +127,16 @@ def get_mission_base_cr(stage_id: str, world: Any | None = None) -> int:
     return max(floor, min(MAX_EFFECTIVE_CR, round(base + 12 * math.log2(factor))))
 
 
-def get_mission_cr_range(stage_id, world):
+def get_mission_cr_range(stage_id, world, *, opening=False):
     import math
     profile = (getattr(world, 'enemy_plan', None) or {}).get('combat_costs', {}).get(stage_id, {}).get('campaign', {})
+    if opening:
+        if getattr(world, 'enemy_plan', None) is None:
+            return 35, 35
+        waves = profile.get('opening_waves')
+        if not waves:
+            raise ValueError('Starting mission has no verified opening encounters')
+        profile = {**profile, 'waves': waves, 'bodies': sum(wave['bodies'] for wave in waves)}
     if not profile.get('waves'):
         value = get_mission_base_cr(stage_id, world)
         return value, value
@@ -163,10 +170,10 @@ def get_mission_skull_tier(stage_id: str, world: Any | None = None) -> int:
     return max(1, min(4, MISSION_SKULL_TIERS[stage_id] + round(change / 15)))
 
 
-def _enemy_counter_penalties(state, player, stage_id, world):
+def _enemy_counter_penalties(state, player, stage_id, world, *, opening=False):
     from .logic import COMBAT_CAPABILITIES
     profile = (getattr(world, 'enemy_plan', None) or {}).get('combat_costs', {}).get(stage_id, {}).get('campaign', {})
-    present = set(profile.get('species', ()))
+    present = set(profile.get('opening_species' if opening else 'species', ()))
     counters = (("spirit", 15, (("Plasma Rifle", "Microwave Beam"),)),
                 ("blood_angel", 8, COMBAT_CAPABILITIES['weak_point']),
                 ("stone_imp", 6, (("Combat Shotgun", "Full Auto"),)))
@@ -249,13 +256,15 @@ def evaluate_mission_readiness(
     if stage_id == DARK_LORD_STAGE_ID and context == "base":
         context = "darklord"
     base_cr = get_mission_base_cr(stage_id, world)
+    if context == 'opening':
+        base_cr = get_mission_cr_range(stage_id, world, opening=True)[1]
     if player_cr is None:
         cr_result = evaluate_player_loadout_cr(state, player, world)
         player_cr = float(cr_result.total)
     else:
         player_cr = float(player_cr)
 
-    penalties = _enemy_counter_penalties(state, player, stage_id, world)
+    penalties = _enemy_counter_penalties(state, player, stage_id, world, opening=context == 'opening')
     reason = ""
     if context == "spirit_breakpoint":
         enemy_plan = getattr(world, 'enemy_plan', None) or {}

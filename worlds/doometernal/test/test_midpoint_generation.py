@@ -12,22 +12,49 @@ from worlds.doometernal.combat_rating import NORMAL_RUNE_NAMES, evaluate_player_
 from worlds.doometernal.items import LEGACY_AUTOMAP_PERK_IDS, item_data_table, suit_perk_item_names
 from worlds.doometernal.logic import connection_requirement, requirement_satisfied
 from worlds.doometernal.planner import FastState
+from .bases import DLC_START_INVENTORY
 
 
 class TestMidpointGeneration(unittest.TestCase):
-    def test_late_start_witness_is_placed_in_initial_reachable_checks(self):
-        mw = setup_multiworld(DoomEternalWorld, seed=1112, options={
-            "mission_pool": "dlc_only", "mission_order": "random_mission_order",
-            "goal": "kill_the_icon_of_sin", "campaign_difficulty": 0,
-            "randomize_dash": False, "randomize_chainsaw": False,
+    def test_starting_arsenal_is_earned_before_later_encounters(self):
+        from worlds.doometernal.native_enemy_safety import OPENING_REGIONS
+        mw = setup_multiworld(DoomEternalWorld, seed=230001, options={
+            'mission_pool': 'custom', 'custom_missions': {'Hell on Earth', 'Exultia', 'Mars Core'},
+            'mission_order': 'mission_access_as_items', 'starting_missions': 2,
+            'campaign_difficulty': 'nightmare', 'enemy_randomizer': True,
+            'enemy_preset': 'hells_vanguard', 'randomize_dash': False, 'randomize_chainsaw': False,
         })
+        world = mw.worlds[1]
+        plan = world.campaign_plan
+        self.assertEqual(Counter(item.name for item in mw.precollected_items[1]),
+                         Counter({'Combat Shotgun': 1, 'Chainsaw': 1,
+                                  'Dash': int(any(stage not in {'e1m1_intro', 'e1m2_war'}
+                                                 for stage in plan['starting_stages']))}))
+        stage = plan['opening_stage']
         state = CollectionState(mw)
-        initial = {location for location in mw.get_reachable_locations(state, 1) if location.address is not None}
-        witness = Counter(mw.worlds[1].campaign_plan["bootstrap_placed_items"])
-        self.assertTrue(witness)
+        for loc in mw.get_reachable_locations(state, 1):
+            if loc.address is not None and loc.item is not None and loc.parent_region.name not in OPENING_REGIONS[stage]:
+                state.collect(loc.item, True, loc)
+        self.assertTrue(evaluate_mission_readiness(state, 1, stage, world, context='opening').ready)
+        for loc in mw.get_reachable_locations(state, 1):
+            if loc.address is not None and loc.item is not None:
+                state.collect(loc.item, True, loc)
+        self.assertTrue(evaluate_mission_readiness(state, 1, stage, world).ready)
+        all_items = mw.itempool + mw.precollected_items[1] + [
+            loc.item for loc in mw.get_filled_locations(1) if loc.address is not None]
+        counts = Counter(item.name for item in all_items)
+        for name, quantity in plan['semantic_counts'].items():
+            self.assertEqual(counts[name], quantity, name)
         distribute_items_restrictive(mw)
-        self.assertFalse(witness - Counter(location.item.name for location in initial))
         self.assertTrue(mw.can_beat_game())
+
+    def test_unprepared_dlc_start_is_rejected_without_free_items(self):
+        with self.assertRaisesRegex(ValueError, 'starting stage'):
+            setup_multiworld(DoomEternalWorld, seed=1112, options={
+                "mission_pool": "dlc_only", "mission_order": "random_mission_order",
+                "goal": "kill_the_icon_of_sin", "campaign_difficulty": 0,
+                "randomize_dash": False, "randomize_chainsaw": False,
+            })
 
     def test_short_dlc_campaign_keeps_endurance_preparation(self):
         mw = setup_multiworld(DoomEternalWorld, seed=1077, options={
@@ -35,7 +62,11 @@ class TestMidpointGeneration(unittest.TestCase):
             "mission_count": 3, "goal": "kill_the_dark_lord", "campaign_difficulty": 1,
             "randomize_dash": True,
             "randomize_chainsaw": True,
+            "start_inventory": DLC_START_INVENTORY,
         })
+        for name, quantity in DLC_START_INVENTORY.items():
+            for _ in range(quantity):
+                mw.push_precollected(mw.worlds[1].create_item(name))
         state = mw.get_all_state(False)
         state.sweep_for_advancements()
         result = evaluate_mission_readiness(state, 1, "e4m1_rig", mw.worlds[1])
@@ -62,7 +93,8 @@ class TestMidpointGeneration(unittest.TestCase):
         weapons = set(early) & set(WEAPON_NAMES)
         self.assertEqual(len(weapons), 2)
         for weapon in weapons:
-            self.assertEqual(sum(item.name == weapon for item in mw.itempool), 1)
+            self.assertEqual(sum(item.name == weapon for item in mw.itempool + [
+                loc.item for loc in mw.get_filled_locations(1) if loc.address is not None]), 1)
             if any(MOD_HOST.get(item.name) == weapon for item in mw.itempool):
                 self.assertTrue(any(MOD_HOST.get(name) == weapon for name in early))
         self.assertTrue(all(item.advancement for item in mw.itempool if item.name in early))
@@ -96,16 +128,20 @@ class TestMidpointGeneration(unittest.TestCase):
                  "randomize_dash": False, "reveal_ap_locations_on_automap": True}),
             (19, {"mission_pool": "full_saga", "mission_order": "mission_access_as_items", "mission_count": "all"}),
             (3, {"mission_pool": "dlc_only", "mission_order": "random_mission_order", "mission_count": 3,
-                 "goal": "kill_the_dark_lord", "randomize_dash": True}),
+                 "goal": "kill_the_dark_lord", "randomize_dash": True, "start_inventory": DLC_START_INVENTORY}),
         )
         for seed, options in cases:
             with self.subTest(seed=seed):
                 mw = setup_multiworld(DoomEternalWorld, seed=seed, options=options)
                 world = mw.worlds[1]
+                for name, quantity in options.get('start_inventory', {}).items():
+                    for _ in range(quantity):
+                        mw.push_precollected(world.create_item(name))
                 plan = world.campaign_plan
                 self.assertEqual(len(mw.itempool), len(mw.get_unfilled_locations(1)))
                 self.assertFalse(any(item.code in LEGACY_AUTOMAP_PERK_IDS for item in mw.itempool + mw.precollected_items[1]))
-                counts = Counter(item.name for item in mw.itempool + mw.precollected_items[1])
+                counts = Counter(item.name for item in mw.itempool + mw.precollected_items[1] + [
+                    loc.item for loc in mw.get_filled_locations(1) if loc.address is not None])
                 for name, quantity in plan["semantic_counts"].items():
                     self.assertEqual(counts[name], quantity, name)
                 if options.get("randomize_dash") is False:

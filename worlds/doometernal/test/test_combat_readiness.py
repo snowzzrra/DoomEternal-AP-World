@@ -34,6 +34,7 @@ from worlds.doometernal.combat_readiness import (
 )
 from worlds.doometernal.items import DoomEternalItem, item_data_table
 from test.general import setup_multiworld
+from .bases import DLC_START_INVENTORY
 
 
 def make_mock_world(
@@ -176,6 +177,7 @@ class TestSpiritBreakpoints:
             seed=100,
             options={
                 "mission_pool": "dlc_only",
+                "start_inventory": DLC_START_INVENTORY,
                 "goal": "kill_the_dark_lord",
                 "campaign_difficulty": 2,
                 "enemy_randomizer": 0,
@@ -378,6 +380,7 @@ class TestDashBootstrapAndSphereZero:
             seed=42,
             options={
                 "mission_pool": "dlc_only",  # Starts at UAC Atlantica
+                "start_inventory": DLC_START_INVENTORY,
                 "goal": "kill_the_dark_lord",
                 "randomize_dash": 0,
                 "campaign_difficulty": 2,
@@ -542,12 +545,16 @@ def test_generated_combat_is_available_to_pool_and_physical_start_solver():
         "mission_order": "mission_access_as_items",
         "enemy_randomizer": True,
         "enemy_count_mode": "multiplier", "enemy_count_multiplier": 500,
+        "progressive_difficulty": False, "start_inventory": DLC_START_INVENTORY,
         "enemy_weights": {species: 100 if species == "stone_imp" else int(species == 'imp') for species in SPECIES_IDS},
         "enemy_health": {"minimum": 200, "maximum": 200},
     })
     world = mw.worlds[1]
     plan = world.campaign_plan
     assert plan["bootstrap_cost"] < 999
+    for name, quantity in DLC_START_INVENTORY.items():
+        for _ in range(quantity):
+            mw.push_precollected(world.create_item(name))
     bands = plan["enemy_progression_bands"]
     assert all(bands[stage] == 0 for stage in plan["starting_stages"])
     later = sorted((stage for stage in plan["sequence"] if stage not in plan["starting_stages"]),
@@ -558,7 +565,7 @@ def test_generated_combat_is_available_to_pool_and_physical_start_solver():
     assert len(mw.itempool) == len(mw.get_unfilled_locations(1))
     counts = Counter(item.name for item in mw.itempool + mw.precollected_items[1])
     for name, quantity in plan["semantic_counts"].items():
-        assert counts[name] == quantity
+        assert counts[name] == quantity, name
     distribute_items_restrictive(mw)
     assert mw.can_beat_game()
 
