@@ -134,10 +134,10 @@ ITEM_DEPENDENCIES.update({
 # evaluation (combat baseline); they only count once promoted.
 COMBAT_BASELINE_NAMES = frozenset(WEAPON_NAMES) | frozenset(ALL_MOD_NAMES)
 
-# Modules that are mechanically mandatory because an active challenge rule
-# requires them conjunctively (owner: logic.build_location_prerequisites).
+# mods required by active location rules in logic.build_location_prerequisites
 HARD_MOD_BY_STAGE: dict[str, tuple[str, ...]] = {
     "e3m3_maykr": ("Precision Bolt",),
+    "e4m3_mcity": ("Microwave Beam",),
 }
 
 _CAPACITY_STATS = ("Health", "Armor", "Ammo")

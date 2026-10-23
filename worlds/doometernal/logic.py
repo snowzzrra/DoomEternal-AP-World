@@ -526,6 +526,8 @@ def build_location_prerequisites(
             combat_all_of: tuple[str, ...] = ()
             if mission_name == "Urdak":
                 all_of = ("Blood Punch", "Dash")
+            elif mission_name == "The Holt":
+                all_of = ("Plasma Rifle", "Microwave Beam")
             table[location_name] = LocationRequirement(
                 all_of=all_of,
                 combat_all_of=combat_all_of,
