@@ -754,7 +754,8 @@ class DoomEternalWorld(World):
         for name, quantity in Counter(plan.get("bootstrap_placed_items", ())).items():
             if plan.get('opening_stage'):
                 continue
-            early = self.multiworld.local_early_items[self.player]
+            early = (self.multiworld.early_items if name in self.options.non_local_items.value
+                     else self.multiworld.local_early_items)[self.player]
             early[name] = max(early.get(name, 0), quantity)
 
     def pre_fill(self) -> None:
@@ -768,6 +769,12 @@ class DoomEternalWorld(World):
         for items, regions in ((plan['bootstrap_placed_items'], ()),
                                (plan['opening_placed_items'], opening)):
             for name in items:
+                if name in self.options.non_local_items.value:
+                    early = self.multiworld.early_items[self.player]
+                    early[name] = max(early.get(name, 0), 1)
+                    state.collect(self.create_item(name), True)
+                    state.sweep_for_advancements()
+                    continue
                 locations = [loc for loc in self.multiworld.get_unfilled_locations(self.player)
                              if loc.address is not None and loc.can_reach(state)
                              and (loc.name in FORTRESS_BOOTSTRAP_LOCATIONS or loc.parent_region.name in regions)]
