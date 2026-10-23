@@ -560,7 +560,7 @@ def test_generated_combat_is_available_to_pool_and_physical_start_solver():
     later = sorted((stage for stage in plan["sequence"] if stage not in plan["starting_stages"]),
                    key=lambda stage: (MISSION_BASE_CR[stage], stage))
     assert [bands[stage] for stage in later] == sorted(bands[stage] for stage in later)
-    assert bands[later[-1]] == 4
+    assert [bands[stage] for stage in later] == list(range(1, len(later) + 1))
     assert get_mission_base_cr("e1m1_intro", world) > MISSION_BASE_CR["e1m1_intro"]
     assert len(mw.itempool) == len(mw.get_unfilled_locations(1))
     counts = Counter(item.name for item in mw.itempool + mw.precollected_items[1])

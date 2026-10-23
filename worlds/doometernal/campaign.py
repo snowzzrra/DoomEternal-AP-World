@@ -684,6 +684,8 @@ def make_plan(options, rng, world=None, *, candidate=None):
             rem_ordinary = [s for s in ordinary if s != chosen_start]
             rng.shuffle(rem_ordinary)
 
+            if use_opening:
+                rem_ordinary.sort(key=lambda stage: (stage not in OPENING_REGIONS, STAGE_BY_ID[stage]['kind'] != 'mission'))
             starts = [chosen_start] + rem_ordinary[:eff_starts - 1]
             other_stages = rem_ordinary[eff_starts - 1:]
             access = list(other_stages)
@@ -723,7 +725,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
         ranked = sorted((stage for stage in sequence if stage not in starts),
                         key=lambda stage: (MISSION_BASE_CR[stage], stage))
         enemy_bands = {stage: 0 for stage in starts}
-        enemy_bands.update({stage: (4 if len(ranked) == 1 else 1 + index * 3 // (len(ranked) - 1))
+        enemy_bands.update({stage: index + 1
                             for index, stage in enumerate(ranked)})
     else:
         enemy_bands = {stage: index for index, stage in enumerate(sequence)}
