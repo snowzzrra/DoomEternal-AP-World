@@ -33,20 +33,6 @@ To create one:
 Use the APWorld bundled with this release. The room fixes your campaign options
 during generation; editing your YAML afterward does not change a running room.
 
-### Local items
-
-In **CREATE PLAYER → MULTIWORLD**, select **Local Items** to keep those items in
-your own world, or **Non-local Items** to place them in another player's world.
-Each setting applies to every copy of the selected item. Leave both lists empty
-to let the generator choose. An item cannot be in both lists.
-
-The YAML uses the standard Archipelago options under `DOOM Eternal`:
-
-```yaml
-  local_items: [Ammo Refill]
-  non_local_items: [Ballista]
-```
-
 ## Join the room
 
 1. Open the DOOM launcher and choose **JOIN ROOM**.

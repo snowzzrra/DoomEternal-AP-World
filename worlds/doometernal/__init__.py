@@ -765,6 +765,7 @@ class DoomEternalWorld(World):
         from .campaign import FORTRESS_BOOTSTRAP_LOCATIONS
         from .native_enemy_safety import OPENING_REGIONS
         state = CollectionState(self.multiworld)
+        events = [location for location in self.multiworld.get_locations() if location.address is None]
         opening = OPENING_REGIONS[plan['opening_stage']]
         for items, regions in ((plan['bootstrap_placed_items'], ()),
                                (plan['opening_placed_items'], opening)):
@@ -773,7 +774,7 @@ class DoomEternalWorld(World):
                     early = self.multiworld.early_items[self.player]
                     early[name] = max(early.get(name, 0), 1)
                     state.collect(self.create_item(name), True)
-                    state.sweep_for_advancements()
+                    state.sweep_for_advancements(events)
                     continue
                 locations = [loc for loc in self.multiworld.get_unfilled_locations(self.player)
                              if loc.address is not None and loc.can_reach(state)
@@ -786,7 +787,7 @@ class DoomEternalWorld(World):
                 location.place_locked_item(item)
                 self.multiworld.itempool.remove(item)
                 state.collect(item, True, location)
-                state.sweep_for_advancements()
+                state.sweep_for_advancements(events)
 
     def set_rules(self) -> None:
         active_location_names = {
@@ -884,11 +885,19 @@ class DoomEternalWorld(World):
         fill_locations: list[Location],
     ) -> None:
         arsenal = set(getattr(self, 'frontloaded_arsenal', ()))
+        access_priority = {}
+        if self.options.mission_order.value == 2 and self.enemies.get('balance_preset'):
+            ranks = self.campaign_plan['enemy_progression_bands']
+            count = max(1, max(ranks.values()))
+            for stage in self.campaign_plan['access_items'].values():
+                access_priority[STAGE_BY_ID[stage]['name'] + ' Access'] = ranks[stage] / count + self.random.uniform(-0.6, 0.6)
 
-        def sort_key(item: Item) -> int:
+        def sort_key(item: Item) -> float:
             if item.player == self.player:
                 if item.name in arsenal:
                     return 1
+                if item.name in access_priority:
+                    return 1.5 + access_priority[item.name]
                 if "Battery" in item.name:
                     return 3
             return 2

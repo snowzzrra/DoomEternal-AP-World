@@ -421,12 +421,23 @@ class EnemyIntensityLate(_EnemyRecipeRange):
 
 
 class EnemyDensity(_EnemyRecipeRange):
-    """Choose how many enemies enter each original spawn request when Enemy Count is Auto.
+    """Choose how many enemies can fight at the same time when Enemy Count is Auto.
 
-    100%: Keep at least the original count. Higher values add enemies. Lower values favor tougher enemies while retaining the original count.
+    100%: Use the preset's simultaneous limit. Higher values allow more enemies together.
+    Enemy Length controls the total number of enemies across the fight.
     Auto: Use the selected enemy preset."""
 
     display_name = "Density"
+
+class EnemyLength(_EnemyRecipeRange):
+    """Choose the total enemies across each arena when Enemy Count is Auto.
+
+    100%: Keep the original total. 120%: Add up to 20% through finite spawn events.
+    Maintained enemies keep their original active counts and replenishment quotas.
+    Auto: Use the selected enemy preset."""
+
+    display_name = "Enemy Length"
+    range_start = 100
 
 
 class EnemyVariety(_EnemyRecipeRange):
@@ -445,7 +456,7 @@ class EnemyCountMode(_ExactLabelChoice):
     """Choose how to decide the number of randomized enemies in a fight.
 
     Preset: Use the selected enemy preset's count setting.
-    Auto: Keep at least the original count in every spawn request. Density can add enemies; Intensity guides their composition.
+    Auto: Preserve original spawn requests. Length can add enemies over the fight; Density controls how many fight together.
     Multiplier: Multiply the fight's original enemy count using Enemy Count Multiplier.
     Enemies enter through the fight's normal spawn events."""
 
@@ -861,6 +872,7 @@ class DoomEternalOptions(DeathLinkMixin, PerGameCommonOptions):
     enemy_intensity_early: EnemyIntensityEarly
     enemy_intensity_late: EnemyIntensityLate
     enemy_density: EnemyDensity
+    enemy_length: EnemyLength
     enemy_variety: EnemyVariety
     progressive_difficulty: ProgressiveDifficulty
     enemy_count_mode: EnemyCountMode

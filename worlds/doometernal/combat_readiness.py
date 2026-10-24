@@ -140,11 +140,11 @@ def get_mission_cr_range(stage_id, world, *, opening=False):
     if not profile.get('waves'):
         value = get_mission_base_cr(stage_id, world)
         return value, value
-    floor = MISSION_BASE_CR[stage_id] if stage_id in {'e1m4_boss', 'e2m4_boss', 'e3m3_maykr', 'e3m4_boss', 'e4m3_mcity', 'e5m4_boss'} else 1
-    endurance = 3 * math.log2(1 + profile['bodies'] / 100)
+    floor = MISSION_BASE_CR[stage_id] if not opening and stage_id in {'e1m4_boss', 'e2m4_boss', 'e3m3_maykr', 'e3m4_boss', 'e4m3_mcity', 'e5m4_boss'} else 1
+    endurance = 3 * math.log2(1 + profile.get('estimated_kills', profile['bodies']) / 100)
     ratings = [max(floor, min(MAX_EFFECTIVE_CR, round(8 + endurance
-        + 8 * math.log2(1 + wave['cost'] / max(1, wave['bodies']))
-        + 4 * math.log2(1 + wave['cost'] / 10)))) for wave in profile['waves'] if wave['bodies']]
+        + 8 * math.log2(1 + wave.get('peak_cost', wave['cost']) / max(1, wave.get('peak_bodies', wave['bodies'])))
+        + 4 * math.log2(1 + wave.get('peak_cost', wave['cost']) / 10)))) for wave in profile['waves'] if wave['bodies']]
     return (min(ratings), max(ratings)) if ratings else (floor, floor)
 
 
@@ -309,7 +309,20 @@ def evaluate_mission_readiness(
                 randomize_chainsaw=bool(getattr(getattr(options, "randomize_chainsaw", None), "value", 0)), special_weapon=sw):
             missing.append("Ammo resource producer")
     preparation_deficit = float(len(missing))
-    if stage_id in ENDURANCE_STAGES:
+    enemies = getattr(world, 'enemies', {})
+    progression = enemy_plan.get('maps', {}).get(stage_id, {}).get('progression', [0, 1])
+    prepared = enemies.get('balance_preset') and progression[0] * 5 >= max(1, progression[1] - 1)
+    if prepared and context != 'opening':
+        from .combat_rating import WEAPON_NAMES, MOD_HOST
+        weapons = {name for name in WEAPON_NAMES if state.has(name, player)}
+        mods = sum(state.has(name, player) and host in weapons for name, host in MOD_HOST.items())
+        mods += state.has('Meat Hook', player) and 'Super Shotgun' in weapons
+        preparation_deficit += max(0, 3 - len(weapons)) + max(0, 2 - mods)
+        preparation_deficit += not dash_available(state, player, randomize_dash=randomize_dash)
+        preparation_deficit += not state.has('Progressive Ammo Upgrade', player)
+        preparation_deficit += not any(state.has(name, player) for name in
+                                      ('Progressive Health Upgrade', 'Progressive Armor Upgrade'))
+    if stage_id in ENDURANCE_STAGES and context != 'opening':
         # shortcut: capacity floors need comparative gameplay calibration.
         capacities = ("Progressive Health Upgrade", "Progressive Armor Upgrade", "Progressive Ammo Upgrade")
         preparation_deficit += sum(not state.has(name, player) for name in capacities)

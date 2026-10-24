@@ -296,6 +296,10 @@ def solve_stage_bootstrap(
                         yield w_combo + other_combo
 
     best_zero = None
+    def preference(package):
+        weapons = (sum(name in WEAPON_NAMES for name in package[2])
+                   if getattr(world_context, 'enemies', {}).get('enabled') else 0)
+        return package[0], -weapons, package[1], package[2]
     target_cr = res_0.effective_cr - res_0.allowance
     upper_state = base_state.copy()
     for candidate in set(primary_candidates):
@@ -311,7 +315,7 @@ def solve_stage_bootstrap(
                 if r.ready:
                     overshoot = r.allowance - r.deficit
                     cand = (len(full), overshoot, tuple(sorted(full)), cr, r.effective_cr)
-                    if best_zero is None or cand < best_zero:
+                    if best_zero is None or preference(cand) < preference(best_zero):
                         best_zero = cand
             if best_zero is not None and best_zero[0] == k:
                 break
@@ -684,8 +688,6 @@ def make_plan(options, rng, world=None, *, candidate=None):
             rem_ordinary = [s for s in ordinary if s != chosen_start]
             rng.shuffle(rem_ordinary)
 
-            if use_opening:
-                rem_ordinary.sort(key=lambda stage: (stage not in OPENING_REGIONS, STAGE_BY_ID[stage]['kind'] != 'mission'))
             starts = [chosen_start] + rem_ordinary[:eff_starts - 1]
             other_stages = rem_ordinary[eff_starts - 1:]
             access = list(other_stages)
@@ -722,8 +724,15 @@ def make_plan(options, rng, world=None, *, candidate=None):
         semantic_placement_counts[access_name] = semantic_placement_counts.get(access_name, 0) + 1
 
     if order_mode == 2:
-        ranked = sorted((stage for stage in sequence if stage not in starts),
-                        key=lambda stage: (MISSION_BASE_CR[stage], stage))
+        ranked = [stage for stage in sequence if stage not in starts and stage != goal_stage]
+        if candidate is not None and enemies.get('balance_preset'):
+            ranked.sort(key=candidate['enemy_progression_bands'].__getitem__)
+        elif enemies.get('balance_preset'):
+            rng.shuffle(ranked)
+        else:
+            ranked.sort(key=lambda stage: (MISSION_BASE_CR[stage], stage))
+        if goal_stage:
+            ranked.append(goal_stage)
         enemy_bands = {stage: 0 for stage in starts}
         enemy_bands.update({stage: index + 1
                             for index, stage in enumerate(ranked)})
