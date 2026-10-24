@@ -664,6 +664,13 @@ def make_plan(options, rng, world=None, *, candidate=None):
                 + ", ".join(unresolved)
             )
         tied_candidates = [s for s in candidate_results if candidate_results[s]["bootstrap_cost"] == min_cost]
+        if use_opening and order_mode == 2 and candidate is None:
+            checks = {stage: sum(code is not None and region in OPENING_REGIONS.get(stage, ())
+                                 and optional_location_enabled(name, options)
+                                 for name, code, region in LOCATION_ROWS)
+                      for stage in tied_candidates}
+            minimum = min(8, sorted(checks.values())[len(checks) // 2])
+            tied_candidates = [stage for stage in tied_candidates if checks[stage] >= minimum]
         min_intrinsic_cr = min(MISSION_BASE_CR[s] for s in tied_candidates)
         headroom_candidates = sorted(s for s in tied_candidates if order_mode == 2 or MISSION_BASE_CR[s] == min_intrinsic_cr)
         chosen_start = rng.choice(headroom_candidates)
@@ -687,6 +694,8 @@ def make_plan(options, rng, world=None, *, candidate=None):
             # Mission Access as Items (§5)
             rem_ordinary = [s for s in ordinary if s != chosen_start]
             rng.shuffle(rem_ordinary)
+            if use_opening:
+                rem_ordinary.sort(key=lambda stage: stage not in OPENING_REGIONS)
 
             starts = [chosen_start] + rem_ordinary[:eff_starts - 1]
             other_stages = rem_ordinary[eff_starts - 1:]
