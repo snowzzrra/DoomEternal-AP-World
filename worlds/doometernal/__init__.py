@@ -309,7 +309,7 @@ class DoomEternalWorld(World):
         from .combat_readiness import get_mission_skull_tier, get_mission_cr_range, get_mission_effort_per_check
         return {stage_id: {
             "base_cr": get_mission_base_cr(stage_id, self),
-            "skill_allowance": get_skill_allowance(self.options.logic_difficulty.value),
+            "skill_allowance": get_skill_allowance(self.options.logic_difficulty.value, self.options.campaign_difficulty.value),
             "skull_tier": get_mission_skull_tier(stage_id, self),
             **({'cr_min': get_mission_cr_range(stage_id, self)[0],
                 'cr_max': get_mission_cr_range(stage_id, self)[1],

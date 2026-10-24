@@ -185,14 +185,14 @@ def get_mission_intrinsic_cr(stage_id, world):
     return min(MAX_EFFECTIVE_CR, get_mission_base_cr(stage_id, world) + sum(_enemy_counter_penalties(None, 1, stage_id, world).values()))
 
 
-def get_skill_allowance(logic_difficulty: int) -> int:
+def get_skill_allowance(logic_difficulty: int, campaign_difficulty: int = 1) -> int:
     """Return the preparation allowance for a LogicDifficulty value."""
     if logic_difficulty not in SKILL_ALLOWANCES:
         raise ValueError(
             f"Unsupported logic difficulty: {logic_difficulty}. "
             "Supported: 0 (Relaxed), 1 (Standard), 2 (Expert)"
         )
-    return SKILL_ALLOWANCES[logic_difficulty]
+    return max(0, SKILL_ALLOWANCES[logic_difficulty] - max(0, campaign_difficulty - 1) * 2)
 
 
 def has_effective_anti_spirit(state: CollectionState, player: int) -> bool:
@@ -252,7 +252,8 @@ def evaluate_mission_readiness(
     state; it must be the exact ``evaluate_player_loadout_cr`` total.
     """
     diff, sw = _resolve_readiness_options(world, logic_difficulty, special_weapon)
-    allowance = get_skill_allowance(diff)
+    campaign_difficulty = getattr(getattr(getattr(world, 'options', None), 'campaign_difficulty', None), 'value', 1)
+    allowance = get_skill_allowance(diff, campaign_difficulty)
     if stage_id == DARK_LORD_STAGE_ID and context == "base":
         context = "darklord"
     base_cr = get_mission_base_cr(stage_id, world)
@@ -310,19 +311,7 @@ def evaluate_mission_readiness(
             missing.append("Ammo resource producer")
     preparation_deficit = float(len(missing))
     enemies = getattr(world, 'enemies', {})
-    progression = enemy_plan.get('maps', {}).get(stage_id, {}).get('progression', [0, 1])
-    prepared = enemies.get('balance_preset') and progression[0] * 5 >= max(1, progression[1] - 1)
-    if prepared and context != 'opening':
-        from .combat_rating import WEAPON_NAMES, MOD_HOST
-        weapons = {name for name in WEAPON_NAMES if state.has(name, player)}
-        mods = sum(state.has(name, player) and host in weapons for name, host in MOD_HOST.items())
-        mods += state.has('Meat Hook', player) and 'Super Shotgun' in weapons
-        preparation_deficit += max(0, 3 - len(weapons)) + max(0, 2 - mods)
-        preparation_deficit += not dash_available(state, player, randomize_dash=randomize_dash)
-        preparation_deficit += not state.has('Progressive Ammo Upgrade', player)
-        preparation_deficit += not any(state.has(name, player) for name in
-                                      ('Progressive Health Upgrade', 'Progressive Armor Upgrade'))
-    if stage_id in ENDURANCE_STAGES and context != 'opening':
+    if stage_id in ENDURANCE_STAGES and context != 'opening' and not enemies.get('balance_preset'):
         # shortcut: capacity floors need comparative gameplay calibration.
         capacities = ("Progressive Health Upgrade", "Progressive Armor Upgrade", "Progressive Ammo Upgrade")
         preparation_deficit += sum(not state.has(name, player) for name in capacities)

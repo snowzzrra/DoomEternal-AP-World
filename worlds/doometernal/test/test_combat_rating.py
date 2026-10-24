@@ -1,7 +1,4 @@
-"""P7.4 — Combat Rating parity and CollectionState integration tests.
-
-Tests against the frozen P7.1 numeric model from
-"""
+"""Combat rating and CollectionState integration tests."""
 from __future__ import annotations
 
 import pytest
@@ -15,12 +12,6 @@ from worlds.doometernal.combat_rating import (
 )
 
 EPSILON = 1e-9
-
-
-# ═══════════════════════════════════════════════════════════════
-# §1 — P7.1 Parity Matrix (frozen scenarios A through N)
-# ═══════════════════════════════════════════════════════════════
-
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -77,13 +68,21 @@ class TestSpecialModeMatrix:
 class TestFasterWeaponSwap:
 
     def test_fws_normal_arsenal_only(self):
-        """Ballista + Hammer: FWS bonus uses normal Arsenal 12, not special."""
+        normal = rate_items({"Ballista", "Faster Weapon Swap"})
         r = rate_items(
             {"Ballista", "Faster Weapon Swap"},
             special_mode="progressive_hammer", special_stage=1,
         )
-        # Normal Arsenal = 12 (Ballista), capped at 35. FWS = min(6, 0.15 * 12) = 1.8
-        assert r["raw"]["Enhancements"] == pytest.approx(1.8, abs=EPSILON)
+        assert r["raw"]["Enhancements"] == normal["raw"]["Enhancements"]
+
+    def test_guns_do_not_replace_survival_and_inactive_runes(self):
+        guns = set(WEAPON_BASE)
+        bare = rate_items(guns)
+        inactive = rate_items(guns | {"Equipment Fiend", "Punch and Reave", "Ammo Refill"})
+        prepared = rate_items(guns, health_stages=3, armor_stages=3, ammo_stages=3)
+        assert inactive.final == bare.final
+        assert prepared.categories["Arsenal"] > bare.categories["Arsenal"]
+        assert prepared.final > bare.final
 
 
 # ═══════════════════════════════════════════════════════════════

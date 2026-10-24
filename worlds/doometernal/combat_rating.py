@@ -22,13 +22,13 @@ CATEGORY_CAPS: dict[str, float] = {
 }
 
 WEAPON_BASE: dict[str, float] = {
-    "Ballista":         12.0,
+    "Ballista":          8.0,
     "Super Shotgun":    10.0,
     "Rocket Launcher":  10.0,
     "Heavy Cannon":      8.0,
     "Plasma Rifle":      7.0,
     "Combat Shotgun":    6.0,
-    "Chaingun":          5.0,
+    "Chaingun":          4.0,
 }
 WEAPON_NAMES = frozenset(WEAPON_BASE)
 
@@ -102,7 +102,7 @@ ITEM_CONTRIBUTIONS: dict[str, list[_Contrib]] = {
     "Frag Grenade":             _flat(("Enhancements", 2), ("Control / Utility", 2)),
     "Blood Punch":              _flat(("Enhancements", 2), ("Control / Utility", 1)),
     "Dash":                     _flat(("Mobility", 4), ("Defense", 2)),
-    "Ammo Refill":              _flat(("Sustain", 2)),
+    "Ammo Refill":              [],
 
     # Suit perks (no dependency)
     "Faster Ledge Grab":        _flat(("Mobility", 1)),
@@ -216,7 +216,10 @@ def _normal_arsenal(weapons: tuple[str, ...]) -> float:
         WEAPON_BASE[w] * WEAPON_MULTIPLIERS[i]
         for i, w in enumerate(weapons[:len(WEAPON_MULTIPLIERS)])
     )
-    total += BREADTH_BONUS[min(len(weapons), len(BREADTH_BONUS) - 1)]
+    ammunition = {'Combat Shotgun': 'shells', 'Super Shotgun': 'shells', 'Heavy Cannon': 'bullets',
+                  'Chaingun': 'bullets', 'Plasma Rifle': 'cells', 'Ballista': 'cells', 'Rocket Launcher': 'rockets'}
+    families = {ammunition[weapon] for weapon in weapons}
+    total += BREADTH_BONUS[min(len(families), len(BREADTH_BONUS) - 1)]
     return total
 
 
@@ -364,6 +367,10 @@ def _evaluate_with_rune_selection(
 
     # 5. Selected normal runes
     for name in selected_runes:
+        if name == 'Equipment Fiend' and not owned.intersection({'Flame Belch', 'Ice Bomb', 'Frag Grenade'}):
+            continue
+        if name == 'Punch and Reave' and 'Blood Punch' not in owned:
+            continue
         for cat, val, deps in NORMAL_RUNE_CONTRIBS[name]:
             if all(dep in owned for dep in deps):
                 raw[cat] += val
@@ -387,6 +394,8 @@ def _evaluate_with_rune_selection(
         raw_variant = dict(raw)
         _apply_special(variant_mode, variant_stage, raw_variant)
         capped_variant = {cat: min(val, CATEGORY_CAPS[cat]) for cat, val in raw_variant.items()}
+        capped_variant['Arsenal'] = min(capped_variant['Arsenal'],
+            10 + capped_variant['Defense'] + min(10, capped_variant['Sustain']))
         final_variant = round(sum(capped_variant.values()), 2)
         candidate = {
             "raw": raw_variant,

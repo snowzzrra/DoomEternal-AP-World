@@ -92,6 +92,10 @@ class TestDynamicProgressionClassification(unittest.TestCase):
                    "Rocket Launcher", "Ballista", "Chaingun"]
         for w_name in weapons:
             state.collect(self.mw.create_item(w_name, self.player))
+        for name in ("Progressive Health Upgrade", "Progressive Armor Upgrade", "Progressive Ammo Upgrade"):
+            for _ in range(4):
+                state.collect(self.mw.create_item(name, self.player))
+        state.collect(self.mw.create_item("Saving Throw", self.player))
         cr_before = evaluate_player_loadout_cr(state, self.player, self.world)
         self.assertEqual(cr_before.categories["Arsenal"], 35.0)
 

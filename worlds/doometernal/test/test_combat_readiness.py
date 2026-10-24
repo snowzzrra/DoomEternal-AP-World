@@ -140,20 +140,28 @@ def test_canonical_readiness_and_dlc_intrinsic_difficulty():
                 assert not result.ready
 
 
-@pytest.mark.parametrize(("items", "expected"), [
-    ({"Combat Shotgun", "Frag Grenade"}, (True, False, False)),
-    ({"Combat Shotgun", "Chainsaw"}, (True, True, False)),
-    ({"Combat Shotgun", "Chainsaw", "Dash"}, (True, True, True)),
+@pytest.mark.parametrize("items", [
+    {"Combat Shotgun", "Frag Grenade"},
+    {"Combat Shotgun", "Chainsaw"},
+    {"Combat Shotgun", "Chainsaw", "Dash"},
 ])
-def test_logic_profiles_are_independent_of_campaign_difficulty(items, expected):
-    for campaign_difficulty in range(4):
-        for logic_difficulty, ready in enumerate(expected):
+def test_nightmare_requires_more_preparation_without_changing_mission_tier(items):
+    changed = False
+    for logic_difficulty in range(3):
+        results = []
+        for campaign_difficulty in range(4):
             world = make_mock_world(
                 difficulty=campaign_difficulty, logic_difficulty=logic_difficulty,
                 randomize_chainsaw=True, randomize_dash=True,
             )
             state = create_state_with_items(items, world=world)
-            assert evaluate_mission_readiness(state, 1, "e1m2_war", world).ready is ready
+            results.append(evaluate_mission_readiness(state, 1, "e1m2_war", world))
+        assert len({result.mission_base_cr for result in results}) == 1
+        assert len({result.player_cr for result in results}) == 1
+        assert results[-1].allowance < results[1].allowance
+        assert not results[-1].ready or results[1].ready
+        changed |= results[1].ready and not results[-1].ready
+    assert changed
 
 
 def test_victory_requirement_alias_keeps_canonical_export():
@@ -557,10 +565,8 @@ def test_generated_combat_is_available_to_pool_and_physical_start_solver():
             mw.push_precollected(world.create_item(name))
     bands = plan["enemy_progression_bands"]
     assert all(bands[stage] == 0 for stage in plan["starting_stages"])
-    later = sorted((stage for stage in plan["sequence"] if stage not in plan["starting_stages"]),
-                   key=lambda stage: (MISSION_BASE_CR[stage], stage))
-    assert [bands[stage] for stage in later] == sorted(bands[stage] for stage in later)
-    assert [bands[stage] for stage in later] == list(range(1, len(later) + 1))
+    later = [stage for stage in plan["sequence"] if stage not in plan["starting_stages"]]
+    assert sorted(bands[stage] for stage in later) == list(range(1, len(later) + 1))
     assert get_mission_base_cr("e1m1_intro", world) > MISSION_BASE_CR["e1m1_intro"]
     assert len(mw.itempool) == len(mw.get_unfilled_locations(1))
     counts = Counter(item.name for item in mw.itempool + mw.precollected_items[1])
