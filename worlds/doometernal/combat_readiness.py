@@ -137,6 +137,8 @@ def get_mission_cr_range(stage_id, world, *, opening=False):
         if not waves:
             raise ValueError('Starting mission has no verified opening encounters')
         profile = {**profile, 'waves': waves, 'bodies': sum(wave['bodies'] for wave in waves)}
+        if 'opening_estimated_kills' in profile:
+            profile['estimated_kills'] = profile['opening_estimated_kills']
     if not profile.get('waves'):
         value = get_mission_base_cr(stage_id, world)
         return value, value
@@ -174,6 +176,8 @@ def _enemy_counter_penalties(state, player, stage_id, world, *, opening=False):
     from .logic import COMBAT_CAPABILITIES
     profile = (getattr(world, 'enemy_plan', None) or {}).get('combat_costs', {}).get(stage_id, {}).get('campaign', {})
     present = set(profile.get('opening_species' if opening else 'species', ()))
+    if (getattr(world, 'enemy_plan', None) or {}).get('revision', 0) >= 13:
+        present.difference_update({'spirit', 'stone_imp'})
     counters = (("spirit", 15, (("Plasma Rifle", "Microwave Beam"),)),
                 ("blood_angel", 8, COMBAT_CAPABILITIES['weak_point']),
                 ("stone_imp", 6, (("Combat Shotgun", "Full Auto"),)))
@@ -259,8 +263,10 @@ def evaluate_mission_readiness(
     base_cr = get_mission_base_cr(stage_id, world)
     if context == 'opening':
         base_cr = get_mission_cr_range(stage_id, world, opening=True)[1]
-    if player_cr is None:
-        cr_result = evaluate_player_loadout_cr(state, player, world)
+    native_chainsaw = (stage_id == 'e1m1_intro' and (getattr(world, 'enemy_plan', None) or {}).get('revision', 0) >= 13
+        and not getattr(getattr(getattr(world, 'options', None), 'randomize_chainsaw', None), 'value', 0))
+    if player_cr is None or native_chainsaw:
+        cr_result = evaluate_player_loadout_cr(state, player, world, native_chainsaw=native_chainsaw)
         player_cr = float(cr_result.total)
     else:
         player_cr = float(player_cr)
@@ -271,6 +277,8 @@ def evaluate_mission_readiness(
         enemy_plan = getattr(world, 'enemy_plan', None) or {}
         generated_species = enemy_plan.get('combat_costs', {}).get(stage_id, {}).get('campaign', {}).get('species', ())
         spirit_present = enemy_plan.get('revision', 0) < 4 or 'spirit' in generated_species
+        if enemy_plan.get('revision', 0) >= 13:
+            spirit_present = False
         if spirit_present and not has_effective_anti_spirit(state, player):
             penalties['spirit'] = SPIRIT_PENALTY
             reason = "Missing effective Microwave Beam at mandatory Spirit breakpoint (+15 CR)"

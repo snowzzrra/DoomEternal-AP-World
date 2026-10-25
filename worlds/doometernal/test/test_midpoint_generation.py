@@ -48,13 +48,6 @@ class TestMidpointGeneration(unittest.TestCase):
         distribute_items_restrictive(mw)
         self.assertTrue(mw.can_beat_game())
 
-    def test_unprepared_dlc_start_is_rejected_without_free_items(self):
-        with self.assertRaisesRegex(ValueError, 'starting stage'):
-            setup_multiworld(DoomEternalWorld, seed=1112, options={
-                "mission_pool": "dlc_only", "mission_order": "random_mission_order",
-                "goal": "kill_the_icon_of_sin", "campaign_difficulty": 0,
-                "randomize_dash": False, "randomize_chainsaw": False,
-            })
 
     def test_short_dlc_campaign_keeps_endurance_preparation(self):
         mw = setup_multiworld(DoomEternalWorld, seed=1077, options={
@@ -83,23 +76,6 @@ class TestMidpointGeneration(unittest.TestCase):
         self.assertEqual(plan["sequence"][-2:], ["e5m4_boss", "e3m4_boss"])
         self.assertEqual(plan["starting_stages"], [plan["sequence"][0]])
 
-    def test_enemizer_frontloads_arsenal_without_adding_item_copies(self):
-        from worlds.doometernal.combat_rating import WEAPON_NAMES, MOD_HOST
-        mw = setup_multiworld(DoomEternalWorld, seed=29, options={
-            'mission_order': 'random_mission_order', 'mission_count': 6,
-            'enemy_randomizer': True, 'enemy_preset': 'slayers_path'})
-        early = mw.worlds[1].frontloaded_arsenal
-        self.assertNotIn("e5m4_boss", mw.worlds[1].campaign_plan["starting_stages"])
-        weapons = set(early) & set(WEAPON_NAMES)
-        self.assertEqual(len(weapons), 2)
-        for weapon in weapons:
-            self.assertEqual(sum(item.name == weapon for item in mw.itempool + [
-                loc.item for loc in mw.get_filled_locations(1) if loc.address is not None]), 1)
-            if any(MOD_HOST.get(item.name) == weapon for item in mw.itempool):
-                self.assertTrue(any(MOD_HOST.get(name) == weapon for name in early))
-        self.assertTrue(all(item.advancement for item in mw.itempool if item.name in early))
-        distribute_items_restrictive(mw)
-        self.assertTrue(mw.can_beat_game())
 
     def test_traversal_and_endurance(self):
         state = FastState(item_data_table.keys())

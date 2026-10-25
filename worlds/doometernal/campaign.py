@@ -188,8 +188,10 @@ def solve_stage_bootstrap(
 
     if stage_id in ENDURANCE_STAGES or capacity is not None:
         # shortcut: greedy pruning can reject a legal package in a constrained pool.
-        targets = [ReadinessTarget(stage_id, "base", "Starting endurance mission")]
-        if stage_id in SPIRIT_STAGE_IDS:
+        opening = (res_0.context == 'opening' and getattr(world_context, 'enemies', {}).get('revision', 0) >= 7
+                   and getattr(world_context, 'enemies', {}).get('balance_preset'))
+        targets = [ReadinessTarget(stage_id, 'opening' if opening else 'base', "Starting endurance mission")]
+        if stage_id in SPIRIT_STAGE_IDS and not opening:
             targets.append(ReadinessTarget(stage_id, "spirit_breakpoint", "Starting Spirit breakpoint"))
         selection = select_readiness_items(
             base_items=base_state.prog_items,
@@ -271,7 +273,7 @@ def solve_stage_bootstrap(
         for it in pkg:
             st.collect(it)
         r = readiness(st)
-        cr = evaluate_player_loadout_cr(st, player, world_context).total
+        cr = r.player_cr
         result = (r, cr)
         eval_cache[key] = result
         return result
@@ -544,6 +546,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
 
     world_context = world if world is not None else MinimalWorldContext(options, player)
     enemies = getattr(world_context, 'enemies', {})
+    vanilla_curve = enemies.get('revision', 0) >= 7 and enemies.get('balance_preset')
     use_opening = enemies.get('enabled') and enemies.get('progressive') and enemies.get('count_mode') == 'auto'
 
     ordinary = [s for s in active_normal_ids if s != goal_stage]
@@ -577,9 +580,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
     access_count = (len(ordinary) - eff_starts + int(bool(goal_stage and options.goal_mission_as_item.value))) if order_mode == 2 else 0
     suit_option = options.praetor_suit_upgrades_in_pool.value
     profile = options.resource_profile.current_option_name
-    auto_span = {"Balanced": 13, "Generous": 9, "Lean": 19}[profile]
-    effective_suit_count = (min(len(suit_perk_item_names), max(3,
-                            (len(suit_perk_item_names) * len(active_normal_ids) + auto_span - 1) // auto_span))
+    effective_suit_count = (len(suit_perk_item_names)
                             if suit_option == -2 else resolve_praetor_suit_upgrade_count(suit_option, rng))
     overrides = options.item_pool_counts.value
     requested_suits = {name for name in suit_perk_item_names if options.start_inventory.value.get(name)}
@@ -594,7 +595,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
         candidates,
         min(len(candidates), suit_count - len(fixed_suits)),
     ))
-    compact_runes = rng.sample(sorted(NORMAL_RUNE_NAMES), 2) if is_compact_campaign(active_normal_ids) else ()
+    compact_runes = tuple(sorted(NORMAL_RUNE_NAMES))
     semantic_pool = build_semantic_counts(
         options,
         active_normal_ids=active_normal_ids,
@@ -626,7 +627,8 @@ def make_plan(options, rng, world=None, *, candidate=None):
         starts = list(candidate["starting_stages"])
         chosen_start = candidate["bootstrap_stage"]
         chosen_result = evaluate_start_stage(chosen_start)
-        if order_mode == 1 and (getattr(world_context, 'enemy_plan', None) or {}).get('revision', 0) >= 3:
+        if (order_mode == 1 and not vanilla_curve
+                and (getattr(world_context, 'enemy_plan', None) or {}).get('revision', 0) >= 3):
             bands = candidate['composition_bands']
             import math
             ranked = sorted(ordinary, key=lambda stage: (
@@ -672,7 +674,8 @@ def make_plan(options, rng, world=None, *, candidate=None):
             minimum = min(8, sorted(checks.values())[len(checks) // 2])
             tied_candidates = [stage for stage in tied_candidates if checks[stage] >= minimum]
         min_intrinsic_cr = min(MISSION_BASE_CR[s] for s in tied_candidates)
-        headroom_candidates = sorted(s for s in tied_candidates if order_mode == 2 or MISSION_BASE_CR[s] == min_intrinsic_cr)
+        headroom_candidates = sorted(s for s in tied_candidates
+            if order_mode == 2 and not vanilla_curve or MISSION_BASE_CR[s] == min_intrinsic_cr)
         chosen_start = rng.choice(headroom_candidates)
         chosen_result = candidate_results[chosen_start]
 
@@ -734,7 +737,10 @@ def make_plan(options, rng, world=None, *, candidate=None):
 
     if order_mode == 2:
         ranked = [stage for stage in sequence if stage not in starts and stage != goal_stage]
-        if candidate is not None and enemies.get('balance_preset'):
+        if vanilla_curve:
+            order = {stage['id']: index for index, stage in enumerate(CAMPAIGN_STAGES)}
+            ranked.sort(key=order.__getitem__)
+        elif candidate is not None and enemies.get('balance_preset'):
             ranked.sort(key=candidate['enemy_progression_bands'].__getitem__)
         elif enemies.get('balance_preset'):
             rng.shuffle(ranked)

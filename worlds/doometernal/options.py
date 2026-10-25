@@ -805,7 +805,7 @@ class StartingWeapon(Choice):
 class PraetorSuitUpgradesInPool(NamedRange):
     """Choose how many individual Praetor Suit upgrades you can find.
 
-    Auto: Use your campaign's length and Resource Profile.
+    Auto: Include every Praetor Suit upgrade at any campaign length.
     Random: Let the seed choose a moderate amount.
     0: Leave suit upgrades out. A positive number adds exactly that many; the maximum includes them all."""
 

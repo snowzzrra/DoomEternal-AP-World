@@ -164,13 +164,13 @@ ITEM_CONTRIBUTIONS: dict[str, list[_Contrib]] = {
 NORMAL_RUNE_CONTRIBS: dict[str, list[_Contrib]] = {
     "Savagery":         [],
     "Seek and Destroy": _flat(("Enhancements", 1), ("Control / Utility", 2)),
-    "Blood Fueled":     _flat(("Mobility", 1)),
+    "Blood Fueled":     _flat(("Mobility", 3)),
     "Air Control":      _flat(("Mobility", 6)),
-    "Dazed and Confused": _flat(("Control / Utility", 1)),
+    "Dazed and Confused": _flat(("Control / Utility", 2)),
     "Saving Throw":     _flat(("Defense", 5)),
     "Chrono Strike":    [],
-    "Equipment Fiend":  _flat(("Sustain", 2), ("Control / Utility", 2)),
-    "Punch and Reave":  _flat(("Sustain", 1), ("Control / Utility", 1)),
+    "Equipment Fiend":  _flat(("Sustain", 4), ("Control / Utility", 2)),
+    "Punch and Reave":  _flat(("Sustain", 3), ("Control / Utility", 1)),
 }
 NORMAL_RUNE_NAMES = frozenset(NORMAL_RUNE_CONTRIBS)
 
@@ -183,17 +183,17 @@ SUPPORT_RUNE_NAMES = frozenset(SUPPORT_RUNE_CONTRIBS)
 
 # ── Progressive capacities ────────────────────────────────────
 # CR per stage (1-indexed, up to 4 each)
-HEALTH_CR_PER_STAGE = 1.75   # Defense
-ARMOR_CR_PER_STAGE  = 1.50   # Defense
-AMMO_CR_PER_STAGE   = 1.75   # Sustain
+HEALTH_CR_PER_STAGE = 3.50   # Defense
+ARMOR_CR_PER_STAGE  = 3.00   # Defense
+AMMO_CR_PER_STAGE   = 3.50   # Sustain
 
 # ── WUP ───────────────────────────────────────────────────────
 WUP_ENHANCEMENT_PER_COPY = 0.25
 WUP_ENHANCEMENT_CAP      = 4.0
 
 # ── Faster Weapon Swap ────────────────────────────────────────
-FASTER_WEAPON_SWAP_RATIO = 0.15
-FASTER_WEAPON_SWAP_CAP   = 6.0
+FASTER_WEAPON_SWAP_RATIO = 0.25
+FASTER_WEAPON_SWAP_CAP   = 8.0
 
 # ── Special weapon modes ──────────────────────────────────────
 # Crucible standalone: Arsenal +9, Control +1
@@ -381,7 +381,6 @@ def _evaluate_with_rune_selection(
             if all(dep in owned for dep in deps):
                 raw[cat] += val
 
-    # 7. Faster Weapon Swap: +15% of normal Arsenal (capped normal) → Enhancement
     if "Faster Weapon Swap" in owned and weapons:
         effective_arsenal = min(normal_arsenal, CATEGORY_CAPS["Arsenal"])
         bonus = min(FASTER_WEAPON_SWAP_CAP, FASTER_WEAPON_SWAP_RATIO * effective_arsenal)
@@ -541,6 +540,7 @@ def evaluate_player_loadout_cr(
     use_dlc: bool | None = None,
     randomize_chainsaw: bool | None = None,
     randomize_dash: bool | None = None,
+    native_chainsaw: bool = False,
 ) -> PlayerLoadoutCR:
     """Evaluate Player Loadout CR from an AP CollectionState.
 
@@ -556,6 +556,7 @@ def evaluate_player_loadout_cr(
         use_dlc: Override for whether DLC content is enabled.
         randomize_chainsaw: Override for whether Chainsaw is randomized.
         randomize_dash: Override for whether Dash is randomized.
+        native_chainsaw: Include the fixed pickup preceding the profiled opening fights.
 
     Returns:
         PlayerLoadoutCR dataclass supporting both attribute and dict-like access.
@@ -601,7 +602,7 @@ def evaluate_player_loadout_cr(
         owned.add("Dash")
 
     # Chainsaw availability via logic
-    if state.has("Chainsaw", player) or chainsaw_available(state, player, randomize_chainsaw=randomize_chainsaw):
+    if native_chainsaw or state.has("Chainsaw", player) or chainsaw_available(state, player, randomize_chainsaw=randomize_chainsaw):
         owned.add("Chainsaw")
 
     # Progressive capacities

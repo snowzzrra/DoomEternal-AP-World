@@ -142,7 +142,8 @@ class DoomEternalWorld(World):
         self.enemy_plan = None
         planning_state = self.random.getstate()
         self.campaign_plan = make_plan(self.options, self.random, world=self)
-        if self.enemies['enabled'] and self.options.mission_order.value == 1:
+        vanilla_curve = self.enemies.get('revision', 0) >= 7 and self.enemies.get('balance_preset')
+        if self.enemies['enabled'] and self.options.mission_order.value == 1 and not vanilla_curve:
             composition = [stage for stage in self.campaign_plan['sequence'] if stage != self.campaign_plan['goal_stage']]
             self.random.shuffle(composition)
             if self.campaign_plan['goal_stage']: composition.append(self.campaign_plan['goal_stage'])

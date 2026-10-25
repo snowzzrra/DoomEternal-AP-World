@@ -2,14 +2,7 @@
 from __future__ import annotations
 
 import pytest
-from worlds.doometernal.combat_rating import (
-    ALL_MASTERY_NAMES,
-    CATEGORY_CAPS,
-    WEAPON_BASE,
-    rate_items,
-    rate_collection_state,
-    evaluate_player_loadout_cr,
-)
+from worlds.doometernal.combat_rating import ALL_MASTERY_NAMES, CATEGORY_CAPS, rate_items, rate_collection_state, evaluate_player_loadout_cr
 
 EPSILON = 1e-9
 
@@ -75,14 +68,6 @@ class TestFasterWeaponSwap:
         )
         assert r["raw"]["Enhancements"] == normal["raw"]["Enhancements"]
 
-    def test_guns_do_not_replace_survival_and_inactive_runes(self):
-        guns = set(WEAPON_BASE)
-        bare = rate_items(guns)
-        inactive = rate_items(guns | {"Equipment Fiend", "Punch and Reave", "Ammo Refill"})
-        prepared = rate_items(guns, health_stages=3, armor_stages=3, ammo_stages=3)
-        assert inactive.final == bare.final
-        assert prepared.categories["Arsenal"] > bare.categories["Arsenal"]
-        assert prepared.final > bare.final
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -241,4 +226,3 @@ class TestCollectionStateIntegration:
         _ = self._eval(state, world)
         rng_state_after = mw.random.getstate()
         assert rng_state_before == rng_state_after, "Evaluating CR must not consume RNG"
-

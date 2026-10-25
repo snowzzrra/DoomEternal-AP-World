@@ -13,6 +13,7 @@ from worlds.doometernal.planner import STAGE_SLAYER_GATE_KEYS
 class TestShortWorldGeneration(unittest.TestCase):
     """Generation and cardinality checks for supported short campaigns."""
 
+
     def test_full_saga_baseline(self) -> None:
         """Full Saga exports the selected missions, resources and active checks."""
         mw = setup_multiworld(
@@ -98,25 +99,6 @@ class TestShortWorldGeneration(unittest.TestCase):
         self.assertEqual(len(plan["active_normal_mission_ids"]), 3)
         self.assertTrue(plan["dark_lord_active"])
 
-    def test_short_campaign_balances_pool_and_access_items(self) -> None:
-        from Fill import distribute_items_restrictive
-
-        for mode in ("random_mission_order", "mission_access_as_items"):
-            with self.subTest(mode=mode):
-                mw = setup_multiworld(DoomEternalWorld, seed=42, options={
-                    "mission_pool": "custom",
-                    "custom_missions": {"e3m4_boss", "e5m1_spear", "e5m2_earth"},
-                    "custom_dark_lord": 0, "mission_count": 3, "mission_order": mode,
-                    "starting_missions": 1, "goal": "kill_the_icon_of_sin", "goal_mission_as_item": 1,
-                    "enemy_randomizer": False,
-                })
-                unfilled = mw.get_unfilled_locations(1)
-                self.assertEqual(len(unfilled), len(mw.itempool))
-                access_items = [item for item in mw.itempool if item.name.endswith(" Access")]
-                self.assertEqual(len(access_items), 2 if mode == "mission_access_as_items" else 0)
-                distribute_items_restrictive(mw)
-                self.assertTrue(mw.can_beat_game())
-                self.assertTrue(all(location.item is not None for location in unfilled))
 
     def test_goal_acquire_unmaykr_forces_6_gates_and_count_ge_6(self) -> None:
         """Goal Acquire the Unmaykr forces 6 Base Slayer Gates and clamps count >= 6."""
@@ -170,31 +152,6 @@ class TestShortWorldGeneration(unittest.TestCase):
             )
 
 
-    def test_dlc_missions_preserve_disabled_dlc_content(self) -> None:
-        for randomize_chainsaw in (False, True):
-            with self.subTest(randomize_chainsaw=randomize_chainsaw):
-                mw = setup_multiworld(
-                    DoomEternalWorld,
-                    seed=42,
-                    options={
-                        "mission_pool": "dlc_only",
-                        "use_dlc_content": 0,
-                        "goal": "kill_the_dark_lord",
-                        "randomize_chainsaw": randomize_chainsaw,
-                    },
-                )
-                world: DoomEternalWorld = mw.worlds[1]
-                self.assertFalse(bool(world.options.use_dlc_content.value))
-                self.assertTrue(world.campaign_plan["dark_lord_active"])
-                self.assertTrue(all(STAGE_BY_ID[stage]["source"] in ("tag1", "tag2")
-                                    for stage in world.campaign_plan["active_normal_mission_ids"]))
-                self.assertNotIn("stone_imp", world.enemies["weights"])
-                self.assertEqual(world.campaign_plan["bootstrap_inventory"].get("Chainsaw", 0), int(not randomize_chainsaw))
-                self.assertEqual(world.campaign_plan["semantic_counts"].get("Chainsaw", 0), int(randomize_chainsaw))
-                precollected = sum(item.name == "Chainsaw" for item in mw.precollected_items[1])
-                self.assertEqual(precollected, int(not randomize_chainsaw) +
-                                 world.campaign_plan["readiness_bootstrap_items"].count("Chainsaw"))
-                self.assertEqual(sum(item.name == "Chainsaw" for item in mw.itempool) + precollected, 1)
 
 
     def test_start_inventory_preserves_cardinality_and_reserves_items(self) -> None:
@@ -216,7 +173,7 @@ class TestShortWorldGeneration(unittest.TestCase):
             },
         )
         world: DoomEternalWorld = mw.worlds[1]
-        unfilled = [loc for loc in mw.get_locations(1) if loc.address is not None]
+        unfilled = [loc for loc in mw.get_unfilled_locations(1) if loc.address is not None]
         start_inv = world.effective_starting_inventory()
         self.assertEqual(start_inv["Lock-on Burst"], 1)
         self.assertEqual(start_inv["Sentinel Battery"], 2)

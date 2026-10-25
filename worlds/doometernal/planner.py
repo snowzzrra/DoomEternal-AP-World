@@ -518,23 +518,16 @@ def build_semantic_counts(
     mandatory_mods: set[str] = set()
     for name, quantity in (suit_counts or {}).items():
         base_pool[name] = max(0, quantity - start_inv.get(name, 0))
-    if compact or lean:
-        for name in compact_runes:
-            base_pool[name] = max(0, 1 - start_inv.get(name, 0))
-        for stat in _CAPACITY_STATS:
-            name = f"Progressive {stat} Upgrade"
-            base_pool[name] = max(0, 1 - start_inv.get(name, 0))
+    for name in (*NORMAL_RUNES_ORDERED, *(SUPPORT_RUNES_ORDERED if use_dlc else ())):
+        base_pool[name] = max(0, 1 - start_inv.get(name, 0))
+    for stat in _CAPACITY_STATS:
+        name = f"Progressive {stat} Upgrade"
+        base_pool[name] = max(0, _CAPACITY_MAX_STAGES - start_inv.get(name, 0))
 
     if compact:
         mod_floor = min(12, max(6, 2 * n_normals)) if profile == 1 else (0 if lean else 6)
         for mod in ALL_MODS_ORDERED[:mod_floor]:
             base_pool[mod] = max(0, 1 - start_inv.get(mod, 0))
-        if profile == 1:
-            for rune in NORMAL_RUNES_ORDERED[:min(9, 2 * n_normals)]:
-                base_pool[rune] = max(0, 1 - start_inv.get(rune, 0))
-            for stat in _CAPACITY_STATS:
-                name = f"Progressive {stat} Upgrade"
-                base_pool[name] = max(0, min(4, (4 * n_normals + 8) // 9) - start_inv.get(name, 0))
 
     # --- Weapons (guarantee: 7 normal + BFG-9000) -------------------------
     for weapon in world_pool_weapon_item_names:
@@ -781,7 +774,7 @@ def build_semantic_counts(
         mastery_locations = {name for _, name in ORDERED_MASTERY_CHALLENGES[:active_masteries_count]}
         active_locations = {name for name, data in location_data_table.items()
                             if data.code is not None and optional_location_enabled(name, options)
-                            and (data.region in regions or data.region.startswith("Fortress of Doom"))
+                            and (data.region in regions or data.region.startswith("Fortress of Doom") or name in mastery_locations)
                             and (not name.endswith(" - Weapon Mastery Challenge") or name in mastery_locations)}
         active_regions = regions | {location_data_table[name].region for name in active_locations}
         requirements = build_location_prerequisites(
@@ -802,8 +795,7 @@ def build_semantic_counts(
         locked = set(overrides)
         if _option_value(options, "praetor_suit_upgrades_in_pool", -2) != -2:
             locked.update(suit_counts or {})
-        candidates = (set(ALL_MOD_NAMES) | set(NORMAL_RUNE_NAMES) | set(SUPPORT_RUNE_NAMES)
-                      | set(suit_perk_item_names) | {f"Progressive {stat} Upgrade" for stat in _CAPACITY_STATS}
+        candidates = (set(ALL_MOD_NAMES) | set(ALL_MASTERY_NAMES)
                       | {"Progressive Blood Punch"}) - locked - hard_items
 
         def inventory_counts():
