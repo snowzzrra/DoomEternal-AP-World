@@ -137,7 +137,7 @@ class TestCollectionStateIntegration:
         from worlds.doometernal import DoomEternalWorld
         multiworld = setup_multiworld(
             DoomEternalWorld, seed=42,
-            options={"mission_pool": "full_saga", "mission_count": 3},
+            options={"mission_pool": "full_saga", "mission_count": 6},
         )
         return multiworld, multiworld.worlds[1]
 

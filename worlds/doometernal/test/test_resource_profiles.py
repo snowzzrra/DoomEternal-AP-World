@@ -6,10 +6,13 @@ from worlds.doometernal.options import ItemPoolCounts, ResourceProfile
 from worlds.doometernal.planner import build_semantic_counts
 from worlds.doometernal import campaign as campaign_module
 from worlds.doometernal import logic
+from worlds.doometernal.combat_rating import NORMAL_RUNE_NAMES, SUPPORT_RUNE_NAMES
+from worlds.doometernal.items import suit_perk_item_names
 
 
-CAMPAIGN = {"mission_pool": "custom", "custom_missions": {"Hell on Earth", "Exultia", "Final Sin"},
-            "mission_count": 3, "goal": "kill_the_icon_of_sin", "mission_order": "random_mission_order"}
+CAMPAIGN = {"mission_pool": "custom", "custom_missions": {
+    "Hell on Earth", "Exultia", "Cultist Base", "Super Gore Nest", "ARC Complex", "Final Sin"},
+    "mission_count": 6, "goal": "kill_the_icon_of_sin", "mission_order": "random_mission_order"}
 
 
 
@@ -38,3 +41,17 @@ def test_hard_quantities_and_explicit_items_survive_auto_budget(monkeypatch):
     )
     assert pool.total_counts["Progressive Health Upgrade"] >= 3
     assert pool.total_counts["Progressive Armor Upgrade"] == 4
+
+
+def test_short_campaign_keeps_all_upgrades_instead_of_fillers():
+    mw = setup_multiworld(DoomEternalWorld, seed=705, options=CAMPAIGN)
+    options = mw.worlds[1].options
+    pool = build_semantic_counts(
+        options, active_normal_ids=('e1m1_intro',), starting_weapon='Combat Shotgun',
+        active_sg=(), active_masteries_count=0, battery_surplus=0, targets=(),
+        suit_counts={name: 1 for name in suit_perk_item_names}, placement_budget=156,
+    )
+    for name in NORMAL_RUNE_NAMES | SUPPORT_RUNE_NAMES | set(suit_perk_item_names):
+        assert pool.total_counts[name] == 1
+    assert all(pool.total_counts[f'Progressive {stat} Upgrade'] == 4 for stat in ('Health', 'Armor', 'Ammo'))
+    assert pool.total_counts['Faster Weapon Swap'] == 1

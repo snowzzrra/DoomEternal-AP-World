@@ -1,5 +1,5 @@
 import unittest
-from test.general import setup_multiworld
+from test.general import gen_steps, setup_multiworld
 from worlds.doometernal import DoomEternalWorld
 from worlds.doometernal.campaign import (
     BASE_GATE_STAGE_IDS,
@@ -56,14 +56,14 @@ class TestShortWorldGeneration(unittest.TestCase):
         self.assertEqual(slot_data["active_location_count"], len(unfilled))
 
 
-    def test_base_campaign_mission_count_3(self) -> None:
-        """Base campaign scaled to 3 missions with Kill the Icon of Sin."""
+    def test_base_campaign_mission_count_6(self) -> None:
+        """Base campaign with the smallest supported mission count."""
         mw = setup_multiworld(
             DoomEternalWorld,
             seed=100,
             options={
                 "mission_pool": "base",
-                "mission_count": 3,
+                "mission_count": 6,
                 "mission_order": "random_mission_order",
                 "goal": "kill_the_icon_of_sin",
             },
@@ -73,22 +73,25 @@ class TestShortWorldGeneration(unittest.TestCase):
 
         self.assertEqual(len(unfilled), len(mw.itempool))
         plan = world.campaign_plan
-        self.assertEqual(len(plan["active_normal_mission_ids"]), 3)
+        self.assertEqual(len(plan["active_normal_mission_ids"]), 6)
         self.assertFalse(plan["dark_lord_active"])
         self.assertIn("e3m4_boss", plan["active_normal_mission_ids"])
         self.assertGreaterEqual(len(unfilled), 30)
 
 
-    def test_dlc_only_count_3(self) -> None:
-        """DLC Only with 3 missions + Dark Lord."""
+    def test_dlc_only_count_6(self) -> None:
+        """Six DLC missions fit all upgrades with optional checks disabled."""
         mw = setup_multiworld(
             DoomEternalWorld,
             seed=77,
             options={
                 "mission_pool": "dlc_only",
-                "mission_count": 3,
+                "mission_count": 6,
                 "mission_order": "random_mission_order",
                 "goal": "kill_the_dark_lord",
+                "include_slayer_gates": False,
+                "include_secret_encounters": False,
+                "include_weapon_mastery_challenges": False,
             },
         )
         world: DoomEternalWorld = mw.worlds[1]
@@ -96,8 +99,15 @@ class TestShortWorldGeneration(unittest.TestCase):
 
         self.assertEqual(len(unfilled), len(mw.itempool))
         plan = world.campaign_plan
-        self.assertEqual(len(plan["active_normal_mission_ids"]), 3)
+        self.assertEqual(len(plan["active_normal_mission_ids"]), 6)
         self.assertTrue(plan["dark_lord_active"])
+        from worlds.doometernal.combat_rating import NORMAL_RUNE_NAMES, SUPPORT_RUNE_NAMES
+        counts = [item.name for item in mw.itempool + mw.precollected_items[1]] + [
+            loc.item.name for loc in mw.get_filled_locations(1) if loc.address is not None]
+        for name in NORMAL_RUNE_NAMES | SUPPORT_RUNE_NAMES | set(suit_perk_item_names):
+            self.assertEqual(counts.count(name), 1, name)
+        for stat in ('Health', 'Armor', 'Ammo'):
+            self.assertEqual(counts.count(f'Progressive {stat} Upgrade'), 4)
 
 
     def test_goal_acquire_unmaykr_forces_6_gates_and_count_ge_6(self) -> None:
@@ -107,7 +117,7 @@ class TestShortWorldGeneration(unittest.TestCase):
             seed=42,
             options={
                 "mission_pool": "base",
-                "mission_count": 3,  # Requested 3, should clamp to 6
+                "mission_count": 6,
                 "goal": "acquire_the_unmaykr",
             },
         )
@@ -137,15 +147,15 @@ class TestShortWorldGeneration(unittest.TestCase):
             )
 
 
-    def test_custom_pool_requires_at_least_3_missions(self) -> None:
-        """Custom pool with fewer than 3 normal missions must raise ValueError."""
+    def test_custom_pool_requires_at_least_6_missions(self) -> None:
+        """An undersized custom pool must fail before generation."""
         with self.assertRaises(ValueError):
             setup_multiworld(
                 DoomEternalWorld,
                 seed=42,
                 options={
                     "mission_pool": "custom",
-                    "custom_missions": {"e1m1_intro", "e1m2_war"},
+                    "custom_missions": {"e1m1_intro", "e1m2_war", "e1m3_cult", "e1m4_boss", "e2m1_nest"},
                     "custom_dark_lord": 0,
                     "goal": "kill_the_icon_of_sin",
                 },
@@ -158,12 +168,13 @@ class TestShortWorldGeneration(unittest.TestCase):
         """Items in start_inventory are reserved into quotas without increasing pool cardinality."""
         mw = setup_multiworld(
             DoomEternalWorld,
+            steps=gen_steps[:-1],
             seed=42,
             options={
                 "mission_pool": "custom",
-                "custom_missions": {"e3m4_boss", "e5m1_spear", "e5m2_earth"},
+                "custom_missions": {"e1m1_intro", "e1m2_war", "e1m3_cult", "e3m4_boss", "e5m1_spear", "e5m2_earth"},
                 "custom_dark_lord": 0,
-                "mission_count": 3,
+                "mission_count": 6,
                 "mission_order": "random_mission_order",
                 "goal": "kill_the_icon_of_sin",
                 "start_inventory": {
@@ -173,6 +184,10 @@ class TestShortWorldGeneration(unittest.TestCase):
             },
         )
         world: DoomEternalWorld = mw.worlds[1]
+        for name, quantity in world.options.start_inventory.value.items():
+            for _ in range(quantity):
+                mw.push_precollected(world.create_item(name))
+        world.pre_fill()
         unfilled = [loc for loc in mw.get_unfilled_locations(1) if loc.address is not None]
         start_inv = world.effective_starting_inventory()
         self.assertEqual(start_inv["Lock-on Burst"], 1)
@@ -186,9 +201,9 @@ class TestShortWorldGeneration(unittest.TestCase):
             seed=42,
             options={
                 "mission_pool": "custom",
-                "custom_missions": {"e3m4_boss", "e5m1_spear", "e5m2_earth"},
+                "custom_missions": {"e1m1_intro", "e1m2_war", "e1m3_cult", "e3m4_boss", "e5m1_spear", "e5m2_earth"},
                 "custom_dark_lord": 0,
-                "mission_count": 3,
+                "mission_count": 6,
                 "mission_order": "mission_access_as_items",
                 "starting_missions": 1,
                 "goal": "kill_the_icon_of_sin",
@@ -197,7 +212,7 @@ class TestShortWorldGeneration(unittest.TestCase):
         )
         item_names_on = [item.name for item in mw_on.itempool]
         access_on = [name for name in item_names_on if " Access" in name]
-        self.assertEqual(len(access_on), 2)  # 1 non-starting normal + 1 goal stage
+        self.assertEqual(len(access_on), 5)
         self.assertIn("Final Sin Access", access_on)
 
         mw_off = setup_multiworld(
@@ -205,9 +220,9 @@ class TestShortWorldGeneration(unittest.TestCase):
             seed=42,
             options={
                 "mission_pool": "custom",
-                "custom_missions": {"e3m4_boss", "e5m1_spear", "e5m2_earth"},
+                "custom_missions": {"e1m1_intro", "e1m2_war", "e1m3_cult", "e3m4_boss", "e5m1_spear", "e5m2_earth"},
                 "custom_dark_lord": 0,
-                "mission_count": 3,
+                "mission_count": 6,
                 "mission_order": "mission_access_as_items",
                 "starting_missions": 1,
                 "goal": "kill_the_icon_of_sin",
@@ -216,7 +231,7 @@ class TestShortWorldGeneration(unittest.TestCase):
         )
         item_names_off = [item.name for item in mw_off.itempool]
         access_off = [name for name in item_names_off if " Access" in name]
-        self.assertEqual(len(access_off), 1)  # 1 non-starting normal, 0 for goal stage
+        self.assertEqual(len(access_off), 4)
         self.assertNotIn("Final Sin Access", access_off)
 
     def test_complete_all_included_missions_victory_semantics(self) -> None:
@@ -228,9 +243,9 @@ class TestShortWorldGeneration(unittest.TestCase):
             seed=42,
             options={
                 "mission_pool": "custom",
-                "custom_missions": {"e3m4_boss", "e5m1_spear", "e5m2_earth"},
+                "custom_missions": {"e1m1_intro", "e1m2_war", "e1m3_cult", "e3m4_boss", "e5m1_spear", "e5m2_earth"},
                 "custom_dark_lord": 1,
-                "mission_count": 3,
+                "mission_count": 6,
                 "mission_order": "random_mission_order",
                 "goal": "kill_the_icon_of_sin",
                 "additional_victory_requirements": {"Complete All Included Missions"},
@@ -251,6 +266,9 @@ class TestShortWorldGeneration(unittest.TestCase):
 
         state.collect(DoomEternalItem("Internal Mission Clear: Final Sin", ItemClassification.progression, None, 1))
         self.assertFalse(condition(state))  # Dark Lord still active and required!
+
+        for name in ("Hell on Earth", "Exultia", "Cultist Base"):
+            state.collect(DoomEternalItem("Internal Mission Clear: " + name, ItemClassification.progression, None, 1))
 
         state.collect(DoomEternalItem("Internal Goal Endpoint: Kill the Dark Lord", ItemClassification.progression, None, 1))
         self.assertTrue(condition(state))

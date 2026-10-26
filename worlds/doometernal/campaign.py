@@ -6,7 +6,7 @@ import logging
 from .generated_content import CAMPAIGN_STAGES, FORTRESS_SPEND_GROUPS, FORTRESS_POLICY, LOCATION_ROWS, RESOURCE_NEUTRAL_LOCATION_NAMES
 from .logic import goal_endpoint_event_name, mission_clear_event_name, CRUCIBLE_CHALLENGE, crucible_challenge_enabled
 from .items import suit_perk_item_names
-from .options import resolve_praetor_suit_upgrade_count
+from .options import MissionCount, resolve_praetor_suit_upgrade_count
 from .locations import location_data_table, optional_location_enabled
 from .combat_rating import (
     WEAPON_NAMES,
@@ -100,7 +100,7 @@ def get_short_world_scaling(
 def select_active_normal_missions(candidate_ids, requested_count, forced_ids, rng):
     candidates = sorted(candidate_ids)
     effective_count = len(candidates) if requested_count == "all" or requested_count == 0 else min(int(requested_count), len(candidates))
-    effective_count = max(3, effective_count)
+    effective_count = max(MissionCount.range_start, effective_count)
     if forced_ids:
         effective_count = max(effective_count, len(forced_ids))
     selected = sorted(forced_ids)
@@ -410,8 +410,8 @@ def make_plan(options, rng, world=None, *, candidate=None):
             if s["kind"] == "mission" and (s["name"] in custom_vals or s["id"] in custom_vals)
         ]
         dark_lord_candidate = bool(options.custom_dark_lord.value)
-        if len(candidate_normal_ids) < 3:
-            raise ValueError("DOOM Eternal Custom Mission Pool requires at least 3 normal missions.")
+        if len(candidate_normal_ids) < MissionCount.range_start:
+            raise ValueError(f"DOOM Eternal Custom Mission Pool requires at least {MissionCount.range_start} normal missions to fit the upgrade pool.")
     else:
         raise ValueError(f"Unknown Mission Pool: {pool_name}")
 
@@ -467,7 +467,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
         else:
             requested_count = raw_count
             effective_count = min(raw_count, len(candidate_normal_ids))
-            effective_count = max(3, effective_count)
+            effective_count = max(MissionCount.range_start, effective_count)
 
         if goal_name == "Acquire the Unmaykr":
             effective_count = max(6, effective_count)
@@ -571,11 +571,6 @@ def make_plan(options, rng, world=None, *, candidate=None):
         if REGION_STAGE.get(location_data_table[CRUCIBLE_CHALLENGE].region) in active_stage_set:
             mission_loc_count -= 1
             resource_mission_locations -= 1
-    hub_location_count = len(FORTRESS_NON_CONSUMER_LOCATIONS | {
-        name for group in active_sg for name in group["locations"]
-    }) + int(set(BASE_GATE_STAGE_IDS).issubset(active_stage_set))
-    planned_location_count = mission_loc_count + hub_location_count + active_masteries_count
-    resource_budget = resource_mission_locations + hub_location_count + active_masteries_count
     eff_starts = max(1, min(options.starting_missions.value, len(ordinary)))
     access_count = (len(ordinary) - eff_starts + int(bool(goal_stage and options.goal_mission_as_item.value))) if order_mode == 2 else 0
     suit_option = options.praetor_suit_upgrades_in_pool.value
@@ -596,20 +591,41 @@ def make_plan(options, rng, world=None, *, candidate=None):
         min(len(candidates), suit_count - len(fixed_suits)),
     ))
     compact_runes = tuple(sorted(NORMAL_RUNE_NAMES))
-    semantic_pool = build_semantic_counts(
-        options,
-        active_normal_ids=active_normal_ids,
-        starting_weapon=starting_weapon,
-        active_sg=active_sg,
-        active_masteries_count=active_masteries_count,
-        battery_surplus=battery_surplus,
-        targets=readiness_targets,
-        player=player,
-        world_context=world_context,
-        suit_counts={name: 1 for name in sorted(chosen_suits)},
-        compact_runes=compact_runes,
-        placement_budget=max(0, resource_budget - access_count),
-    )
+    while True:
+        hub_location_count = len(FORTRESS_NON_CONSUMER_LOCATIONS | {
+            name for group in active_sg for name in group['locations']
+        }) + int(set(BASE_GATE_STAGE_IDS).issubset(active_stage_set))
+        planned_location_count = mission_loc_count + hub_location_count + active_masteries_count
+        resource_budget = resource_mission_locations + hub_location_count + active_masteries_count
+        semantic_pool = build_semantic_counts(
+            options,
+            active_normal_ids=active_normal_ids,
+            starting_weapon=starting_weapon,
+            active_sg=active_sg,
+            active_masteries_count=active_masteries_count,
+            battery_surplus=battery_surplus,
+            targets=readiness_targets,
+            player=player,
+            world_context=world_context,
+            suit_counts={name: 1 for name in sorted(chosen_suits)},
+            compact_runes=compact_runes,
+            placement_budget=max(0, resource_budget - access_count),
+        )
+        shortfall = sum(semantic_pool.placement_counts.values()) - max(0, resource_budget - access_count)
+        if shortfall <= 0:
+            break
+        if not is_compact_campaign(active_normal_ids):
+            raise ValueError('DOOM Eternal items do not fit the enabled checks; include more missions or checks, '
+                             'or reduce explicit Item Pool Overrides')
+        if battery_surplus:
+            battery_surplus = max(0, battery_surplus - shortfall)
+        elif active_sg and sum(group['cost'] for group in active_sg[:-1]) >= options.start_inventory.value.get('Sentinel Battery', 0):
+            active_sg = active_sg[:-1]
+        elif active_masteries_count:
+            active_masteries_count -= 1
+        else:
+            raise ValueError('DOOM Eternal upgrades do not fit the enabled checks; include more missions or checks, '
+                             'or reduce explicit Item Pool Overrides')
     chosen_suits = {name for name in chosen_suits if semantic_pool.total_counts.get(name, 0)}
     if semantic_pool.auto_adjustments:
         actual = sum(semantic_pool.placement_counts.values())

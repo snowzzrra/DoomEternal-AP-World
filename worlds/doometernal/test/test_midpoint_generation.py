@@ -19,7 +19,7 @@ class TestMidpointGeneration(unittest.TestCase):
     def test_starting_arsenal_is_earned_before_later_encounters(self):
         from worlds.doometernal.native_enemy_safety import OPENING_REGIONS
         mw = setup_multiworld(DoomEternalWorld, seed=230001, options={
-            'mission_pool': 'custom', 'custom_missions': {'Hell on Earth', 'Exultia', 'Mars Core'},
+            'mission_pool': 'custom', 'custom_missions': {'Hell on Earth', 'Exultia', 'Cultist Base', 'Super Gore Nest', 'Mars Core', 'Final Sin'},
             'mission_order': 'mission_access_as_items', 'starting_missions': 2,
             'campaign_difficulty': 'nightmare', 'enemy_randomizer': True,
             'enemy_preset': 'hells_vanguard', 'randomize_dash': False, 'randomize_chainsaw': False,
@@ -52,7 +52,7 @@ class TestMidpointGeneration(unittest.TestCase):
     def test_short_dlc_campaign_keeps_endurance_preparation(self):
         mw = setup_multiworld(DoomEternalWorld, seed=1077, options={
             "mission_pool": "full_saga", "mission_order": "random_mission_order",
-            "mission_count": 3, "goal": "kill_the_dark_lord", "campaign_difficulty": 1,
+            "mission_count": 6, "goal": "kill_the_dark_lord", "campaign_difficulty": 1,
             "randomize_dash": True,
             "randomize_chainsaw": True,
             "start_inventory": DLC_START_INVENTORY,
@@ -103,7 +103,7 @@ class TestMidpointGeneration(unittest.TestCase):
                  "goal": "kill_the_icon_of_sin",
                  "randomize_dash": False, "reveal_ap_locations_on_automap": True}),
             (19, {"mission_pool": "full_saga", "mission_order": "mission_access_as_items", "mission_count": "all"}),
-            (3, {"mission_pool": "dlc_only", "mission_order": "random_mission_order", "mission_count": 3,
+            (3, {"mission_pool": "dlc_only", "mission_order": "random_mission_order", "mission_count": 6,
                  "goal": "kill_the_dark_lord", "randomize_dash": True, "start_inventory": DLC_START_INVENTORY}),
         )
         for seed, options in cases:
@@ -123,9 +123,9 @@ class TestMidpointGeneration(unittest.TestCase):
                 if options.get("randomize_dash") is False:
                     self.assertEqual(plan["fixed_dash_completion_stage"], plan["sequence"][0])
                 if len(plan["active_normal_mission_ids"]) < 9:
-                    self.assertGreaterEqual(sum(counts[name] for name in NORMAL_RUNE_NAMES), 2)
+                    self.assertGreaterEqual(sum(counts[name] for name in NORMAL_RUNE_NAMES), 9)
                     for stat in ("Health", "Armor", "Ammo"):
-                        self.assertGreaterEqual(counts[f"Progressive {stat} Upgrade"], 1)
+                        self.assertGreaterEqual(counts[f"Progressive {stat} Upgrade"], 4)
                 self.assertEqual(len(suit_perk_item_names), 17)
                 presentation = world.fill_slot_data()["mission_presentation_v2"]
                 for stage, rating in presentation.items():
@@ -144,7 +144,8 @@ class TestMidpointGeneration(unittest.TestCase):
                             continue
                         region = mw.get_region(next(s["entry_region"] for s in plan["stages"] if s["id"] == stage), 1)
                         if state.can_reach(region):
-                            result = evaluate_mission_readiness(state, 1, stage, world)
+                            result = evaluate_mission_readiness(state, 1, stage, world,
+                                context='opening' if stage == plan.get('opening_stage') else 'base')
                             physical_state = state.copy()
                             for name, quantity in physical_items.items():
                                 physical_state.prog_items[1][name] = max(

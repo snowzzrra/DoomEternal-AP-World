@@ -582,7 +582,8 @@ def build_semantic_counts(
 
     # --- Weapon Masteries (content scaling) & prerequisite mods ------------
     family_masteries: list[str] = []
-    for mod_name, _location in ORDERED_MASTERY_CHALLENGES[:mastery_resource_family_count(n_normals)]:
+    family_count = active_masteries_count if compact else mastery_resource_family_count(n_normals)
+    for mod_name, _location in ORDERED_MASTERY_CHALLENGES[:family_count]:
         mastery_name = mod_name + " Mastery"
         family_masteries.append(mastery_name)
     requested_masteries = sorted(name for name in ALL_MASTERY_NAMES if start_inv.get(name))

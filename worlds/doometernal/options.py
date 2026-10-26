@@ -113,11 +113,11 @@ class MissionCount(NamedRange):
     """Choose how many missions to play in Random Mission Order or Mission Access as Items.
 
     All: Use every mission in your selected pool.
-    3..19: Randomly choose that many missions from the pool.
+    6..19: Randomly choose that many missions from the pool.
     The Dark Lord is an additional boss stage. Vanilla Order uses the whole selected pool."""
 
     display_name = "Mission Count"
-    range_start = 3
+    range_start = 6
     range_end = 19
     special_range_names = {"all": 0}
     default = 0
