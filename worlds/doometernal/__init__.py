@@ -49,7 +49,6 @@ from .items import (
     SPECIAL_WEAPON_ITEM_NAMES,
     SPECIAL_WEAPON_POOL_COUNTS,
     SUPPORT_RUNE_ITEM_NAMES,
-    TAG_MISSION_LOCAL_ITEM_NAMES,
     WEAPON_UPGRADE_POINTS_NAME,
     WEAPON_UPGRADE_POINTS_ITEM_COUNT,
     item_data_table,
@@ -151,9 +150,32 @@ class DoomEternalWorld(World):
         enemy_seed = self.random.getrandbits(128)
         self.enemy_plan = build_native_recipes(self.enemies, self.campaign_plan, seed=enemy_seed)
         if self.enemy_plan is not None:
+            from .campaign import ReadinessBootstrapError
+            from .native_enemy_safety import OPENING_REGIONS
             candidate = self.campaign_plan
-            self.random.setstate(planning_state)
-            self.campaign_plan = make_plan(self.options, self.random, world=self, candidate=candidate)
+            starts = [candidate['bootstrap_stage']]
+            if candidate.get('opening_stage') and self.options.mission_order.value in (1, 2):
+                starts.extend(stage for stage in candidate['sequence'] if stage in OPENING_REGIONS
+                              and stage != starts[0])
+            for start in starts:
+                trial = candidate
+                if start != candidate['bootstrap_stage']:
+                    trial = {**candidate, 'opening_stage': start, 'bootstrap_stage': start,
+                             'sequence': [start] + [stage for stage in candidate['sequence'] if stage != start],
+                             'starting_stages': ([start] + [stage for stage in candidate['starting_stages']
+                                                           if stage != start])[:len(candidate['starting_stages'])]}
+                    if self.options.mission_order.value == 2:
+                        trial['enemy_progression_bands'] = {stage: 0 if stage in trial['starting_stages'] else band
+                            for stage, band in candidate['enemy_progression_bands'].items()}
+                    self.enemy_plan = build_native_recipes(self.enemies, trial, seed=enemy_seed)
+                self.random.setstate(planning_state)
+                try:
+                    self.campaign_plan = make_plan(self.options, self.random, world=self, candidate=trial)
+                except ReadinessBootstrapError:
+                    if start == starts[-1]:
+                        raise
+                else:
+                    break
             self.enemy_plan = build_native_recipes(self.enemies, self.campaign_plan, seed=enemy_seed)
         if self.campaign_plan.get('opening_stage'):
             from .campaign import solve_stage_bootstrap
@@ -206,9 +228,6 @@ class DoomEternalWorld(World):
                 unsafe.append(name)
                 continue
             if name in SUPPORT_RUNE_ITEM_NAMES and not dlc_enabled:
-                unavailable.append(f"{name} (requires Use DLC Content ON)")
-                continue
-            if name in TAG_MISSION_LOCAL_ITEM_NAMES and not dlc_enabled:
                 unavailable.append(f"{name} (requires Use DLC Content ON)")
                 continue
             if name not in DEVINV_START_INVENTORY_ITEM_NAMES:

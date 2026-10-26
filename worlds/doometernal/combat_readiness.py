@@ -297,7 +297,7 @@ def evaluate_mission_readiness(
     randomize_dash = bool(getattr(getattr(options, "randomize_dash", None), "value", 0))
     if stage_id in TRAVERSAL_DASH_STAGES and not dash_available(state, player, randomize_dash=randomize_dash):
         missing.append("Dash")
-    if stage_id in HOOK_TRAVERSAL_STAGES:
+    if stage_id in HOOK_TRAVERSAL_STAGES and context != 'opening':
         missing.extend(name for name in ("Super Shotgun", "Meat Hook") if not state.has(name, player))
     enemy_plan = getattr(world, "enemy_plan", None) or {}
     has_supply = any(operation.get("reserve") for operation in

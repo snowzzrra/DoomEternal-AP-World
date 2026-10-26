@@ -565,8 +565,6 @@ def build_semantic_counts(
             continue
         if stage_id not in active_normal_ids:
             continue
-        if stage_id in ("e4m1_rig", "e4m3_mcity") and not use_dlc:
-            continue
         base_pool[key_name] = max(0, 1 - start_inv.get(key_name, 0))
 
     # --- Battery economy ---------------------------------------------------

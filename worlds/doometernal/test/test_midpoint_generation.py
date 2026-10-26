@@ -16,6 +16,48 @@ from .bases import DLC_START_INVENTORY
 
 
 class TestMidpointGeneration(unittest.TestCase):
+    def test_dlc_mission_gate_keys_follow_missions_with_dlc_gear_disabled(self):
+        mw = setup_multiworld(DoomEternalWorld, seed=141104560, options={
+            'mission_pool': 'full_saga', 'goal': 'complete_the_full_saga',
+            'use_dlc_content': False, 'enemy_randomizer': False, 'include_slayer_gates': True,
+        })
+        state = mw.get_all_state(False)
+        state.sweep_for_advancements()
+        for mission in ('UAC Atlantica Facility', 'The Holt'):
+            self.assertTrue(state.has(f'Slayer Gate Key {mission}', 1))
+            self.assertTrue(mw.get_location(f'{mission} - Slayer Gate Complete', 1).can_reach(state))
+        distribute_items_restrictive(mw)
+        self.assertTrue(mw.can_beat_game())
+
+    def test_varied_openings_fit_fortress_preparation(self):
+        from worlds.doometernal.enemy_options import SPECIES_GROUPS
+        from worlds.doometernal.campaign import _start_stage_readiness
+        weights = {name: {'fodder': 20, 'heavy': 20, 'superheavy': 10, 'support': 7,
+                         'stationary': 0}[role] for role, names in SPECIES_GROUPS.items() for name in names}
+        weights.update(buff_pod=7, zombie_t1_screecher=7)
+        attributes = dict(early_minimum=100, early_maximum=100, late_minimum=100, late_maximum=100)
+        options = {
+            'mission_pool': 'full_saga', 'mission_count': 6, 'mission_order': 'random_mission_order',
+            'campaign_difficulty': 'ultra_violence', 'starting_weapon': 'random_weapon',
+            'randomize_dash': False, 'randomize_chainsaw': False, 'enemy_weights': weights,
+            'enemy_health': attributes, 'enemy_damage': attributes, 'enemy_speed': attributes,
+            'enemy_size_variation_chance': 3,
+        }
+        for seed in (89654039614909134671, 348679427, 164570677, 427264797):
+            with self.subTest(seed=seed):
+                mw = setup_multiworld(DoomEternalWorld, seed=seed, options=options)
+                world = mw.worlds[1]
+                plan = world.campaign_plan
+                state = CollectionState(mw)
+                placed = [loc.item for loc in mw.get_filled_locations(1) if loc.item]
+                for name in plan['bootstrap_placed_items']:
+                    item = next(item for item in placed if item.player == 1 and item.name == name and item.advancement)
+                    state.collect(item)
+                    placed.remove(item)
+                self.assertTrue(_start_stage_readiness(state, 1, plan['opening_stage'], world).ready)
+                distribute_items_restrictive(mw)
+                self.assertTrue(mw.can_beat_game())
+
     def test_starting_arsenal_is_earned_before_later_encounters(self):
         from worlds.doometernal.native_enemy_safety import OPENING_REGIONS
         mw = setup_multiworld(DoomEternalWorld, seed=230001, options={

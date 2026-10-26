@@ -26,6 +26,7 @@ from .combat_readiness import (
     ENDURANCE_STAGES,
 )
 from .native_enemy_safety import OPENING_REGIONS
+from .enemy_options import uses_protected_opening
 from .planner import (
     FastState,
     ITEM_DEPENDENCIES,
@@ -42,6 +43,10 @@ from .planner import (
 STAGE_BY_ID = {stage["id"]: stage for stage in CAMPAIGN_STAGES}
 STAGE_BY_NAME = {stage["name"]: stage for stage in CAMPAIGN_STAGES}
 REGION_STAGE = {region: stage["id"] for stage in CAMPAIGN_STAGES for region in stage["regions"]}
+
+
+class ReadinessBootstrapError(ValueError):
+    pass
 
 BASE_GATE_STAGE_IDS = (
     "e1m2_war",
@@ -143,9 +148,7 @@ SPIRIT_STAGE_IDS = frozenset(SPIRIT_BREAKPOINTS.values())
 def _start_stage_readiness(state, player, stage_id, world_context):
     """Readiness for entry, traversal and mandatory encounters in the starting mission."""
     context = "dark_lord_defeated" if stage_id == "e5m4_boss" else "base"
-    if (stage_id in OPENING_REGIONS and getattr(world_context, 'enemies', {}).get('enabled')
-            and getattr(world_context, 'enemies', {}).get('progressive')
-            and getattr(world_context, 'enemies', {}).get('count_mode') == 'auto'
+    if (stage_id in OPENING_REGIONS and uses_protected_opening(getattr(world_context, 'enemies', {}))
             and (getattr(world_context, 'enemy_plan', None) is None
                  or world_context.enemy_plan['campaign'].get('opening_stage') == stage_id)):
         context = 'opening'
@@ -186,7 +189,7 @@ def solve_stage_bootstrap(
             "overshoot": res_0.allowance - res_0.deficit,
         }
 
-    if stage_id in ENDURANCE_STAGES or capacity is not None:
+    if capacity is not None or stage_id in ENDURANCE_STAGES and res_0.context != 'opening':
         # shortcut: greedy pruning can reject a legal package in a constrained pool.
         opening = (res_0.context == 'opening' and getattr(world_context, 'enemies', {}).get('revision', 0) >= 7
                    and getattr(world_context, 'enemies', {}).get('balance_preset'))
@@ -547,7 +550,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
     world_context = world if world is not None else MinimalWorldContext(options, player)
     enemies = getattr(world_context, 'enemies', {})
     vanilla_curve = enemies.get('revision', 0) >= 7 and enemies.get('balance_preset')
-    use_opening = enemies.get('enabled') and enemies.get('progressive') and enemies.get('count_mode') == 'auto'
+    use_opening = uses_protected_opening(enemies)
 
     ordinary = [s for s in active_normal_ids if s != goal_stage]
     if dark_lord_active and "e5m4_boss" != goal_stage and "e5m4_boss" not in ordinary:
@@ -677,7 +680,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
         min_cost = min(result["bootstrap_cost"] for result in candidate_results.values())
         if min_cost >= 999:
             unresolved = sorted(s for s in candidate_results if candidate_results[s]["bootstrap_cost"] >= 999)
-            raise ValueError(
+            raise ReadinessBootstrapError(
                 "DOOM Eternal cannot solve a readiness bootstrap for any starting stage: "
                 + ", ".join(unresolved)
             )
@@ -725,7 +728,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
             sequence = starts + other_stages + ([goal_stage] if goal_stage else [])
 
     if chosen_result["bootstrap_cost"] >= 999:
-        raise ValueError(
+        raise ReadinessBootstrapError(
             f"DOOM Eternal cannot plan a readiness bootstrap for starting stage "
             f"'{chosen_start}'; refusing a sentinel bootstrap plan."
         )
