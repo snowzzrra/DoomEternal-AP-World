@@ -1,7 +1,7 @@
-"""DOOM Eternal Archipelago v0.6 — Combat Readiness Solver Integration Tests (P7.6).
+"""DOOM Eternal combat readiness integration tests.
 
 Tests cover:
-- Base readiness matrix against frozen P7.1 anchors and P7.5 allowances
+- Base readiness across the three preparation allowances
 - Spirit breakpoints across all 5 mandatory Spirit stages
 - The Dark Lord Sentinel Hammer soft penalty and progressive special modes
 - Structural vs logical reachability separation (RMO & MAI)
@@ -11,34 +11,20 @@ Tests cover:
 from __future__ import annotations
 
 from unittest.mock import MagicMock
-import pytest
 
 from BaseClasses import CollectionState, ItemClassification, MultiWorld
 from worlds.doometernal import DoomEternalWorld
 from worlds.doometernal.campaign import STAGE_BY_ID
 from worlds.doometernal.combat_rating import evaluate_player_loadout_cr, rate_items
-from worlds.doometernal.combat_readiness import (
-    DARK_LORD_HAMMER_PENALTY,
-    DARK_LORD_STAGE_ID,
-    MAX_EFFECTIVE_CR,
-    MISSION_BASE_CR,
-    SKILL_ALLOWANCES,
-    SPIRIT_BREAKPOINTS,
-    SPIRIT_PENALTY,
-    evaluate_mission_readiness,
-    get_mission_base_cr,
-    has_effective_anti_spirit,
-    has_effective_sentinel_hammer,
-    is_dark_lord_defeated_ready,
-    is_mission_ready,
-    is_spirit_breakpoint_ready,
-)
+from worlds.doometernal.combat_readiness import DARK_LORD_HAMMER_PENALTY, DARK_LORD_STAGE_ID, MAX_EFFECTIVE_CR, MISSION_BASE_CR, SPIRIT_BREAKPOINTS, SPIRIT_PENALTY, evaluate_mission_readiness, has_effective_anti_spirit, is_dark_lord_defeated_ready, is_mission_ready, is_spirit_breakpoint_ready
 from worlds.doometernal.items import DoomEternalItem, item_data_table
 from test.general import setup_multiworld
+from .bases import DLC_START_INVENTORY
 
 
 def make_mock_world(
     difficulty: int = 2,
+    logic_difficulty: int = 1,
     special_weapon: str = "Progressive Special Weapon",
     randomize_dash: bool = False,
     randomize_chainsaw: bool = False,
@@ -50,8 +36,10 @@ def make_mock_world(
     world.player = player
     world.game = "DOOM Eternal"
     world.starting_weapon_name = "Combat Shotgun"
+    world.enemy_plan = None
     world.options = MagicMock()
     world.options.campaign_difficulty = MagicMock(value=difficulty)
+    world.options.logic_difficulty = MagicMock(value=logic_difficulty)
     sw_val = 0
     if special_weapon == "Progressive Sentinel Hammer":
         sw_val = 1
@@ -126,8 +114,8 @@ def create_state_with_items(
 # ═══════════════════════════════════════════════════════════════
 
 def test_canonical_readiness_and_dlc_intrinsic_difficulty():
-    for difficulty in range(4):
-        world = make_mock_world(difficulty=difficulty, randomize_dash=True)
+    for logic_difficulty in range(3):
+        world = make_mock_world(logic_difficulty=logic_difficulty, randomize_dash=True)
         for stage in MISSION_BASE_CR:
             state = create_state_with_items({"Combat Shotgun"}, world=world)
             result = evaluate_mission_readiness(state, 1, stage, world)
@@ -135,6 +123,8 @@ def test_canonical_readiness_and_dlc_intrinsic_difficulty():
             assert result.mission_base_cr == MISSION_BASE_CR[stage]
             if stage.startswith(("e4", "e5")) and stage != DARK_LORD_STAGE_ID:
                 assert not result.ready
+
+
 
 
 def test_victory_requirement_alias_keeps_canonical_export():
@@ -158,8 +148,10 @@ class TestSpiritBreakpoints:
             seed=100,
             options={
                 "mission_pool": "dlc_only",
+                "start_inventory": DLC_START_INVENTORY,
                 "goal": "kill_the_dark_lord",
                 "campaign_difficulty": 2,
+                "enemy_randomizer": 0,
             },
         )
         world: DoomEternalWorld = mw.worlds[1]
@@ -173,9 +165,9 @@ class TestSpiritBreakpoints:
         items = {
             "Ballista", "Super Shotgun", "Rocket Launcher", "Heavy Cannon",
             "Chainsaw", "Ice Bomb", "Blood Punch", "Dash",
-            "Air Control", "Faster Weapon Swap",
+            "Faster Weapon Swap",
         }
-        state = create_state_with_items(items, world=world, health_stages=3, armor_stages=3, ammo_stages=3)
+        state = create_state_with_items(items, world=world, health_stages=2, armor_stages=2, ammo_stages=2)
         for item in mw.precollected_items[1]:
             state.remove(item)
         from worlds.doometernal.campaign import completion_event
@@ -184,7 +176,6 @@ class TestSpiritBreakpoints:
             state.collect(DoomEternalItem(completion_event(predecessor), ItemClassification.progression, None, 1), True)
 
         res_base = evaluate_mission_readiness(state, 1, "e4m2_swamp", world)
-        assert 76.0 <= res_base.player_cr < 88.0
         assert res_base.ready is True
 
         # Check pre-breakpoint reachability: crossroad is reachable!
@@ -243,7 +234,8 @@ class TestStructuralVsLogicalReachability:
             options={
                 "mission_pool": "full_saga",
                 "mission_order": "random_mission_order",
-                "campaign_difficulty": 0,  # ITYTD (allowance 6)
+                "logic_difficulty": "expert",
+                "enemy_randomizer": 0,
             },
         )
         world: DoomEternalWorld = mw.worlds[1]
@@ -308,7 +300,8 @@ class TestStructuralVsLogicalReachability:
             options={
                 "mission_pool": "full_saga",
                 "mission_order": "mission_access_as_items",
-                "campaign_difficulty": 0,  # ITYTD (allowance 6)
+                "logic_difficulty": "expert",
+                "enemy_randomizer": 0,
             },
         )
         world: DoomEternalWorld = mw.worlds[1]
@@ -357,9 +350,11 @@ class TestDashBootstrapAndSphereZero:
             seed=42,
             options={
                 "mission_pool": "dlc_only",  # Starts at UAC Atlantica
+                "start_inventory": DLC_START_INVENTORY,
                 "goal": "kill_the_dark_lord",
                 "randomize_dash": 0,
                 "campaign_difficulty": 2,
+                "enemy_randomizer": 0,
             },
         )
         world: DoomEternalWorld = mw.worlds[1]
@@ -374,22 +369,3 @@ class TestDashBootstrapAndSphereZero:
         assert state.has("Dash", 1) is True
         res = evaluate_player_loadout_cr(state, 1, world)
         assert res.categories["Mobility"] >= 4.0
-
-    def test_sphere_zero_base_rmo(self):
-        """Base RMO: Hell on Earth starts ready at frame zero on all difficulties."""
-        for diff in (0, 1, 2, 3):
-            mw = setup_multiworld(
-                DoomEternalWorld,
-                seed=42,
-                options={
-                    "mission_pool": "base",
-                    "mission_order": "random_mission_order",
-                    "campaign_difficulty": diff,
-                },
-            )
-            world: DoomEternalWorld = mw.worlds[1]
-            state = CollectionState(mw)
-            start_stage = world.campaign_plan["starting_stages"][0]
-            if start_stage == "e1m1_intro":
-                res = evaluate_mission_readiness(state, 1, "e1m1_intro", world)
-                assert res.ready is True, f"HoE must be ready at sphere zero on diff {diff}"

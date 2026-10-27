@@ -92,6 +92,10 @@ class TestDynamicProgressionClassification(unittest.TestCase):
                    "Rocket Launcher", "Ballista", "Chaingun"]
         for w_name in weapons:
             state.collect(self.mw.create_item(w_name, self.player))
+        for name in ("Progressive Health Upgrade", "Progressive Armor Upgrade", "Progressive Ammo Upgrade"):
+            for _ in range(4):
+                state.collect(self.mw.create_item(name, self.player))
+        state.collect(self.mw.create_item("Saving Throw", self.player))
         cr_before = evaluate_player_loadout_cr(state, self.player, self.world)
         self.assertEqual(cr_before.categories["Arsenal"], 35.0)
 
@@ -105,45 +109,46 @@ class TestDynamicProgressionClassification(unittest.TestCase):
     def test_case_d_orphan_mod_not_independent_gain(self) -> None:
         """Case D: An orphan mod/mastery without host weapon cannot provide CR gain."""
         state = CollectionState(self.mw)
+        state.prog_items[self.player].clear()
         state.sweep_for_advancements()
         cr_base = evaluate_player_loadout_cr(state, self.player, self.world)
-        # Collect Energy Shield (promoted to progression) without Chaingun
-        state.collect(self._create_prog_item("Energy Shield"))
+        state.collect(self._create_prog_item("Energy Shield"), prevent_sweep=True)
         cr = evaluate_player_loadout_cr(state, self.player, self.world)
         self.assertEqual(cr.categories["Defense"], cr_base.categories["Defense"])
 
-        # Once Chaingun is collected, Energy Shield activates
-        state.collect(self._create_prog_item("Chaingun"))
+        state.collect(self._create_prog_item("Chaingun"), prevent_sweep=True)
         cr_with_chaingun = evaluate_player_loadout_cr(state, self.player, self.world)
         self.assertGreater(cr_with_chaingun.categories["Defense"], cr_base.categories["Defense"])
 
     def test_case_e_capacities_only_required_copies(self) -> None:
         """Case E: Progressive capacity upgrades give exact marginal CR per promoted copy."""
         state = CollectionState(self.mw)
+        state.prog_items[self.player].clear()
         state.sweep_for_advancements()
         cr0 = evaluate_player_loadout_cr(state, self.player, self.world)
         base_def = cr0.categories["Defense"]
 
         h1 = self._create_prog_item("Progressive Health Upgrade")
-        state.collect(h1)
+        state.collect(h1, prevent_sweep=True)
         cr1 = evaluate_player_loadout_cr(state, self.player, self.world)
-        self.assertEqual(cr1.categories["Defense"], base_def + 1.75)
+        self.assertEqual(cr1.categories["Defense"], base_def + 3.5)
 
         h2 = self._create_prog_item("Progressive Health Upgrade")
-        state.collect(h2)
+        state.collect(h2, prevent_sweep=True)
         cr2 = evaluate_player_loadout_cr(state, self.player, self.world)
-        self.assertEqual(cr2.categories["Defense"], base_def + 3.5)
+        self.assertEqual(cr2.categories["Defense"], base_def + 7.0)
 
     def test_case_f_wup_exact_copies_and_cap(self) -> None:
         """Case F: WUP provides +0.25 per bundle up to +4.0 cap (16 bundles), 17th gives 0."""
         state = CollectionState(self.mw)
+        state.prog_items[self.player].clear()
         for _ in range(16):
-            state.collect(self._create_prog_item("Weapon Upgrade Points (3)"))
+            state.collect(self._create_prog_item("Weapon Upgrade Points (3)"), prevent_sweep=True)
         cr16 = evaluate_player_loadout_cr(state, self.player, self.world)
         self.assertEqual(cr16.categories["Enhancements"], 4.0)
 
         # 17th bundle should give 0 marginal increase
-        state.collect(self._create_prog_item("Weapon Upgrade Points (3)"))
+        state.collect(self._create_prog_item("Weapon Upgrade Points (3)"), prevent_sweep=True)
         cr17 = evaluate_player_loadout_cr(state, self.player, self.world)
         self.assertEqual(cr17.categories["Enhancements"], 4.0)
 

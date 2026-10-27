@@ -1,7 +1,7 @@
 """
 Implements the Combat Readiness solver model:
 - Mission Base CR catalog (20 stages)
-- Skill Allowances (0: 6, 1: 10, 2: 15, 3: 20)
+- Logic preparation allowances: Relaxed 15, Standard 12, Expert 6
 - Severe Soft Penalties:
     - Missing effective Microwave Beam at mandatory Spirit breakpoint: +15
     - Missing effective Sentinel Hammer at The Dark Lord: +15
@@ -20,7 +20,6 @@ from .logic import dash_available, sentinel_hammer_available
 
 if TYPE_CHECKING:
     from BaseClasses import CollectionState
-# Canonical P7.3 stage IDs -> integer Base CR (0..100)
 MISSION_BASE_CR: dict[str, int] = {
     "e1m1_intro": 12,   # Hell on Earth
     "e1m2_war": 25,     # Exultia
@@ -43,18 +42,16 @@ MISSION_BASE_CR: dict[str, int] = {
     "e5m3_hell": 82,    # Immora
     "e5m4_boss": 80,    # The Dark Lord
 }
-# how above your cr can levels come by.
 SKILL_ALLOWANCES: dict[int, int] = {
-    0: 6,   # I'm Too Young to Die
-    1: 9,   # Hurt Me Plenty
-    2: 12,   # Ultra-Violence (default)
-    3: 15,   # Nightmare
+    0: 15,  # Relaxed
+    1: 12,  # Standard
+    2: 6,   # Expert
 }
 SPIRIT_PENALTY: int = 15
 DARK_LORD_HAMMER_PENALTY: int = 15
 MAX_EFFECTIVE_CR: int = 100
 
-# Authored presentation, independent of inventory, difficulty and campaign order.
+# Vanilla tiers anchor each seed's presentation independently of the player's inventory.
 MISSION_SKULL_TIERS = {
     "e1m1_intro": 1, "e1m2_war": 1, "e1m3_cult": 2, "e1m4_boss": 2,
     "e2m1_nest": 2, "e2m2_base": 2, "e2m3_core": 2, "e2m4_boss": 2,
@@ -104,21 +101,102 @@ class ReadinessResult:
         return self.ready
 
 
-def get_mission_base_cr(stage_id: str) -> int:
-    """Return the frozen Base CR for a canonical stage ID."""
+def get_mission_base_cr(stage_id: str, world: Any | None = None) -> int:
+    """Apply the frozen change in combat cost to the mission's preparation rating."""
     if stage_id not in MISSION_BASE_CR:
         raise KeyError(f"Unknown stage ID for Base CR: {stage_id}")
-    return MISSION_BASE_CR[stage_id]
+    base = MISSION_BASE_CR[stage_id]
+    costs = (getattr(world, "enemy_plan", None) or {}).get("combat_costs", {}).get(stage_id)
+    if costs is None:
+        return base
+    import math
+    profile = costs.get('campaign')
+    if profile is not None:
+        if (getattr(world, 'enemy_plan', None) or {}).get('revision', 0) >= 5 and profile.get('waves'):
+            return get_mission_cr_range(stage_id, world)[1]
+        bodies = max(1, profile['bodies'])
+        pressure = (8 + 8 * math.log2(1 + profile['actual'] / bodies)
+                    + 4 * math.log2(1 + profile['wave_p90'] / 10)
+                    + 3 * math.log2(1 + profile['bodies'] / 100))
+        floor = base if stage_id in {'e1m4_boss', 'e2m4_boss', 'e3m3_maykr', 'e3m4_boss', 'e4m3_mcity', 'e5m4_boss'} else 1
+        return max(floor, min(MAX_EFFECTIVE_CR, round(pressure)))
+    # Ten cost units per reference CR; doubling that budget adds twelve CR.
+    factor = max(.25, 1 + (costs["actual"] - costs["original"]) / (10 * base))
+    floor = base if stage_id in {"e1m4_boss", "e2m2_base", "e2m4_boss",
+                                "e3m3_maykr", "e3m4_boss", "e4m3_mcity", "e5m4_boss"} else 1
+    return max(floor, min(MAX_EFFECTIVE_CR, round(base + 12 * math.log2(factor))))
 
 
-def get_skill_allowance(difficulty: int) -> int:
-    """Return the frozen Skill Allowance for a CampaignDifficulty value (0..3)."""
-    if difficulty not in SKILL_ALLOWANCES:
+def get_mission_cr_range(stage_id, world, *, opening=False):
+    import math
+    profile = (getattr(world, 'enemy_plan', None) or {}).get('combat_costs', {}).get(stage_id, {}).get('campaign', {})
+    if opening:
+        if getattr(world, 'enemy_plan', None) is None:
+            return 35, 35
+        waves = profile.get('opening_waves')
+        if not waves:
+            raise ValueError('Starting mission has no verified opening encounters')
+        profile = {**profile, 'waves': waves, 'bodies': sum(wave['bodies'] for wave in waves)}
+        if 'opening_estimated_kills' in profile:
+            profile['estimated_kills'] = profile['opening_estimated_kills']
+    if not profile.get('waves'):
+        value = get_mission_base_cr(stage_id, world)
+        return value, value
+    floor = MISSION_BASE_CR[stage_id] if not opening and stage_id in {'e1m4_boss', 'e2m4_boss', 'e3m3_maykr', 'e3m4_boss', 'e4m3_mcity', 'e5m4_boss'} else 1
+    endurance = 3 * math.log2(1 + profile.get('estimated_kills', profile['bodies']) / 100)
+    ratings = [max(floor, min(MAX_EFFECTIVE_CR, round(8 + endurance
+        + 8 * math.log2(1 + wave.get('peak_cost', wave['cost']) / max(1, wave.get('peak_bodies', wave['bodies'])))
+        + 4 * math.log2(1 + wave.get('peak_cost', wave['cost']) / 10)))) for wave in profile['waves'] if wave['bodies']]
+    return (min(ratings), max(ratings)) if ratings else (floor, floor)
+
+
+def get_mission_effort_per_check(stage_id, world):
+    profile = (getattr(world, 'enemy_plan', None) or {}).get('combat_costs', {}).get(stage_id, {}).get('campaign', {})
+    if 'effort' not in profile:
+        return 0.0
+    from .generated_content import CAMPAIGN_STAGES, LOCATION_ROWS
+    from .locations import optional_location_enabled
+    regions = next(set(stage['regions']) for stage in CAMPAIGN_STAGES if stage['id'] == stage_id)
+    options = getattr(world, 'options', None)
+    checks = sum(code is not None and region in regions and (options is None or optional_location_enabled(name, options))
+                 for name, code, region in LOCATION_ROWS)
+    duration_weight = 1.5 if stage_id in {'e5m1_spear', 'e5m2_earth', 'e5m3_hell'} else 1.25 if stage_id.startswith('e4m') else 1
+    return profile['effort'] * duration_weight / max(1, checks)
+
+
+def get_mission_skull_tier(stage_id: str, world: Any | None = None) -> int:
+    if (getattr(world, 'enemy_plan', None) or {}).get('revision', 0) >= 3:
+        rating = get_mission_intrinsic_cr(stage_id, world)
+        return 1 + sum(rating >= threshold for threshold in (35, 55, 75))
+    change = get_mission_base_cr(stage_id, world) - MISSION_BASE_CR[stage_id]
+    return max(1, min(4, MISSION_SKULL_TIERS[stage_id] + round(change / 15)))
+
+
+def _enemy_counter_penalties(state, player, stage_id, world, *, opening=False):
+    from .logic import COMBAT_CAPABILITIES
+    profile = (getattr(world, 'enemy_plan', None) or {}).get('combat_costs', {}).get(stage_id, {}).get('campaign', {})
+    present = set(profile.get('opening_species' if opening else 'species', ()))
+    if (getattr(world, 'enemy_plan', None) or {}).get('revision', 0) >= 13:
+        present.difference_update({'spirit', 'stone_imp'})
+    counters = (("spirit", 15, (("Plasma Rifle", "Microwave Beam"),)),
+                ("blood_angel", 8, COMBAT_CAPABILITIES['weak_point']),
+                ("stone_imp", 6, (("Combat Shotgun", "Full Auto"),)))
+    return {species: penalty for species, penalty, alternatives in counters if species in present and not (
+        state is not None and any(all(state.has(item, player) for item in alternative) for alternative in alternatives))}
+
+
+def get_mission_intrinsic_cr(stage_id, world):
+    return min(MAX_EFFECTIVE_CR, get_mission_base_cr(stage_id, world) + sum(_enemy_counter_penalties(None, 1, stage_id, world).values()))
+
+
+def get_skill_allowance(logic_difficulty: int, campaign_difficulty: int = 1) -> int:
+    """Return the preparation allowance for a LogicDifficulty value."""
+    if logic_difficulty not in SKILL_ALLOWANCES:
         raise ValueError(
-            f"Unsupported campaign difficulty: {difficulty}. "
-            f"Supported: 0 (ITYTD: 6), 1 (HMP: 10), 2 (UV: 15), 3 (Nightmare: 20)"
+            f"Unsupported logic difficulty: {logic_difficulty}. "
+            "Supported: 0 (Relaxed), 1 (Standard), 2 (Expert)"
         )
-    return SKILL_ALLOWANCES[difficulty]
+    return max(0, SKILL_ALLOWANCES[logic_difficulty] - max(0, campaign_difficulty - 1) * 2)
 
 
 def has_effective_anti_spirit(state: CollectionState, player: int) -> bool:
@@ -137,15 +215,15 @@ def has_effective_sentinel_hammer(
 
 def _resolve_readiness_options(
     world: Any | None = None,
-    difficulty: int | None = None,
+    logic_difficulty: int | None = None,
     special_weapon: str | None = None,
 ) -> tuple[int, str]:
-    """Resolve difficulty and special weapon configuration."""
-    if difficulty is None:
-        if world is not None and hasattr(world, "options") and hasattr(world.options, "campaign_difficulty"):
-            difficulty = int(world.options.campaign_difficulty.value)
+    """Resolve logic difficulty and special weapon configuration."""
+    if logic_difficulty is None:
+        if world is not None and hasattr(world, "options") and hasattr(world.options, "logic_difficulty"):
+            logic_difficulty = int(world.options.logic_difficulty.value)
         else:
-            difficulty = 2  # default Ultra-Violence
+            logic_difficulty = 1
     if special_weapon is None:
         if world is not None and hasattr(world, "options") and hasattr(world.options, "special_weapon"):
             opt = world.options.special_weapon
@@ -158,7 +236,7 @@ def _resolve_readiness_options(
                 special_weapon = "Progressive Special Weapon"
         else:
             special_weapon = "Progressive Special Weapon"
-    return difficulty, special_weapon
+    return logic_difficulty, special_weapon
 
 
 def evaluate_mission_readiness(
@@ -167,7 +245,7 @@ def evaluate_mission_readiness(
     stage_id: str,
     world: Any | None = None,
     *,
-    difficulty: int | None = None,
+    logic_difficulty: int | None = None,
     special_weapon: str | None = None,
     context: str = "base",
     player_cr: float | None = None,
@@ -177,28 +255,41 @@ def evaluate_mission_readiness(
     ``player_cr`` may be supplied when the caller already evaluated the same
     state; it must be the exact ``evaluate_player_loadout_cr`` total.
     """
-    diff, sw = _resolve_readiness_options(world, difficulty, special_weapon)
-    allowance = get_skill_allowance(diff)
+    diff, sw = _resolve_readiness_options(world, logic_difficulty, special_weapon)
+    campaign_difficulty = getattr(getattr(getattr(world, 'options', None), 'campaign_difficulty', None), 'value', 1)
+    allowance = get_skill_allowance(diff, campaign_difficulty)
     if stage_id == DARK_LORD_STAGE_ID and context == "base":
         context = "darklord"
-    base_cr = get_mission_base_cr(stage_id)
-    if player_cr is None:
-        cr_result = evaluate_player_loadout_cr(state, player, world)
+    base_cr = get_mission_base_cr(stage_id, world)
+    if context == 'opening':
+        base_cr = get_mission_cr_range(stage_id, world, opening=True)[1]
+    native_chainsaw = (stage_id == 'e1m1_intro' and (getattr(world, 'enemy_plan', None) or {}).get('revision', 0) >= 13
+        and not getattr(getattr(getattr(world, 'options', None), 'randomize_chainsaw', None), 'value', 0))
+    if player_cr is None or native_chainsaw:
+        cr_result = evaluate_player_loadout_cr(state, player, world, native_chainsaw=native_chainsaw)
         player_cr = float(cr_result.total)
     else:
         player_cr = float(player_cr)
 
-    soft_penalty = 0
+    penalties = _enemy_counter_penalties(state, player, stage_id, world, opening=context == 'opening')
     reason = ""
     if context == "spirit_breakpoint":
-        if not has_effective_anti_spirit(state, player):
-            soft_penalty = SPIRIT_PENALTY
+        enemy_plan = getattr(world, 'enemy_plan', None) or {}
+        generated_species = enemy_plan.get('combat_costs', {}).get(stage_id, {}).get('campaign', {}).get('species', ())
+        spirit_present = enemy_plan.get('revision', 0) < 4 or 'spirit' in generated_species
+        if enemy_plan.get('revision', 0) >= 13:
+            spirit_present = False
+        if spirit_present and not has_effective_anti_spirit(state, player):
+            penalties['spirit'] = SPIRIT_PENALTY
             reason = "Missing effective Microwave Beam at mandatory Spirit breakpoint (+15 CR)"
     elif context == "dark_lord_defeated" or (stage_id == DARK_LORD_STAGE_ID and context == "boss"):
         if not has_effective_sentinel_hammer(state, player, special_weapon=sw):
-            soft_penalty = DARK_LORD_HAMMER_PENALTY
+            penalties['dark_lord'] = DARK_LORD_HAMMER_PENALTY
             reason = "Missing effective Sentinel Hammer against The Dark Lord (+15 CR)"
 
+    soft_penalty = sum(penalties.values())
+    if soft_penalty and not reason:
+        reason = f"Missing enemy counter preparation (+{soft_penalty} CR)"
     effective_cr = min(MAX_EFFECTIVE_CR, base_cr + soft_penalty)
     deficit = round(effective_cr - player_cr, 2)
     missing = []
@@ -206,15 +297,30 @@ def evaluate_mission_readiness(
     randomize_dash = bool(getattr(getattr(options, "randomize_dash", None), "value", 0))
     if stage_id in TRAVERSAL_DASH_STAGES and not dash_available(state, player, randomize_dash=randomize_dash):
         missing.append("Dash")
-    if stage_id in HOOK_TRAVERSAL_STAGES:
+    if stage_id in HOOK_TRAVERSAL_STAGES and context != 'opening':
         missing.extend(name for name in ("Super Shotgun", "Meat Hook") if not state.has(name, player))
+    enemy_plan = getattr(world, "enemy_plan", None) or {}
+    has_supply = any(operation.get("reserve") for operation in
+                     enemy_plan.get("maps", {}).get(stage_id, {}).get("operations", []))
+    from .native_enemy_plan import AMMO_FODDER
+    has_supply = has_supply or any(recipe.get('renewable') and
+        any(body['species'] in AMMO_FODDER for body in recipe['bodies'])
+        for recipe in enemy_plan.get('maps', {}).get(stage_id, {}).get('recipes', []))
+    randomize_chainsaw = bool(getattr(getattr(options, "randomize_chainsaw", None), "value", 0))
+    # The fixed Chainsaw pickup precedes the profiled Hell on Earth fights.
+    if has_supply and randomize_chainsaw:
+        from .logic import chainsaw_available
+        if not chainsaw_available(state, player, randomize_chainsaw=True):
+            missing.append("Chainsaw for ammunition supply")
+    if stage_id in HOOK_TRAVERSAL_STAGES:
         from .logic import ammo_resource_producer
         if not ammo_resource_producer(state, player,
                 randomize_chainsaw=bool(getattr(getattr(options, "randomize_chainsaw", None), "value", 0)), special_weapon=sw):
             missing.append("Ammo resource producer")
     preparation_deficit = float(len(missing))
-    if stage_id in ENDURANCE_STAGES:
-        # ponytail: provisional family/dimensional floors; revise with comparative playtest evidence.
+    enemies = getattr(world, 'enemies', {})
+    if stage_id in ENDURANCE_STAGES and context != 'opening' and not enemies.get('balance_preset'):
+        # shortcut: capacity floors need comparative gameplay calibration.
         capacities = ("Progressive Health Upgrade", "Progressive Armor Upgrade", "Progressive Ammo Upgrade")
         preparation_deficit += sum(not state.has(name, player) for name in capacities)
         preparation_deficit += not any(state.has(name, player) for name in NORMAL_RUNE_NAMES)
@@ -245,17 +351,20 @@ def is_mission_ready(
     stage_id: str,
     world: Any | None = None,
     *,
-    difficulty: int | None = None,
+    logic_difficulty: int | None = None,
     special_weapon: str | None = None,
     context: str = "base",
 ) -> bool:
     """Return whether player is logically combat-ready for a mission."""
+    plan = getattr(world, 'campaign_plan', {}) or {}
+    if stage_id in plan.get('unprepared_start_stages', ()):
+        return True
     return evaluate_mission_readiness(
         state,
         player,
         stage_id,
         world,
-        difficulty=difficulty,
+        logic_difficulty=logic_difficulty,
         special_weapon=special_weapon,
         context=context,
     ).ready
@@ -267,12 +376,12 @@ def is_spirit_breakpoint_ready(
     stage_id: str,
     world: Any | None = None,
     *,
-    difficulty: int | None = None,
+    logic_difficulty: int | None = None,
 ) -> bool:
     """Return whether player is logically combat-ready to cross a mandatory Spirit breakpoint."""
     return evaluate_mission_readiness(
         state, player, stage_id, world,
-        difficulty=difficulty, context="spirit_breakpoint",
+        logic_difficulty=logic_difficulty, context="spirit_breakpoint",
     ).ready
 
 
@@ -281,11 +390,11 @@ def is_dark_lord_defeated_ready(
     player: int,
     world: Any | None = None,
     *,
-    difficulty: int | None = None,
+    logic_difficulty: int | None = None,
     special_weapon: str | None = None,
 ) -> bool:
     """Return whether player is logically combat-ready to defeat The Dark Lord."""
     return evaluate_mission_readiness(
         state, player, DARK_LORD_STAGE_ID, world,
-        difficulty=difficulty, special_weapon=special_weapon, context="dark_lord_defeated",
+        logic_difficulty=logic_difficulty, special_weapon=special_weapon, context="dark_lord_defeated",
     ).ready

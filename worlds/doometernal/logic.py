@@ -449,10 +449,35 @@ def build_location_prerequisites(
     randomize_dash: bool = False,
     special_weapon: str = "The Crucible",
     active_battery_cost: int | None = None,
-    campaign_difficulty: int = 2,
+    logic_difficulty: int = 1,
     active_spend_groups: Sequence[Mapping[str, Any]] | None = None,
+    enemy_plan: Mapping[str, Any] | None = None,
 ) -> dict[str, LocationRequirement]:
     mastery_locations = sorted(name for name in location_names if name.endswith(MASTERY_SUFFIX))
+    generated_targets: dict[str, set[tuple[str, str]]] = {}
+    if enemy_plan:
+        from .generated_content import CHALLENGE_ENEMY_TARGETS
+        from .killsanity_plan import load_campaign_kill_sources
+        from .native_enemy_plan import native_event_identity
+        from .secret_encounter_timers import load_secret_encounter_timers
+        secrets = load_secret_encounter_timers()["maps"]
+        kill_sources = load_campaign_kill_sources()["maps"]
+        for key, plan in enemy_plan.get("maps", {}).items():
+            managers = {timer["manager"] for timer in secrets.get(key, {}).get("timers", [])}
+            if not managers:
+                continue
+            locations = {row["source_id"]: row.get("location") for row in kill_sources[key]["sources"]}
+            replacements = [(recipe["binding"].get("owner"), native_event_identity(recipe),
+                             {body["species"] for body in recipe["bodies"]}) for recipe in plan["recipes"]]
+            for manager, identity, species in replacements:
+                if manager not in managers:
+                    continue
+                location = locations.get(identity)
+                if location is None:
+                    continue
+                for target in CHALLENGE_ENEMY_TARGETS:
+                    if target["map_key"] is None and species.intersection(target["species"]):
+                        generated_targets.setdefault(target["name"], set()).add(("Location", location))
     challenge_rules = {
         CRUCIBLE_CHALLENGE: LocationRequirement(
             all_of=("Progressive Special Weapon",) if special_weapon == "Progressive Special Weapon" else ("The Crucible",),
@@ -460,11 +485,20 @@ def build_location_prerequisites(
         "Cultist Base - Mission Challenge - Armored Rain": LocationRequirement(
             combat_all_of=("flame_belch",)
         ),
+        "Cultist Base - Mission Challenge - Master of Turrets": LocationRequirement(
+            combat_all_of=("weak_point",)
+        ),
         "Doom Hunter Base - Mission Challenge - Fire in the Hole": LocationRequirement(
             combat_all_of=("frag_grenade",)
         ),
         "ARC Complex - Mission Challenge - External Combustion": LocationRequirement(
             combat_all_of=("plasma_rifle",)
+        ),
+        "ARC Complex - Mission Challenge - Solitary Confinement": LocationRequirement(
+            combat_all_of=("weak_point",)
+        ),
+        "Mars Core - Mission Challenge - Disarmament": LocationRequirement(
+            combat_all_of=("weak_point",)
         ),
         "Taras Nabad - Mission Challenge - Keeping Cool": LocationRequirement(
             combat_all_of=("ice_bomb",)
@@ -518,6 +552,8 @@ def build_location_prerequisites(
         child_requirements = [table.get(child, LocationRequirement()) for child in children]
         table[aggregate_name] = LocationRequirement(
             all_requirements=tuple(child_requirements),
+            custom_rule=(None if children else lambda state, player, complete=f"{mission_prefix} - Mission Complete":
+                         state.can_reach(complete, "Location", player)),
         )
     for location_name in location_names:
         if location_name.endswith(" - Mission Complete"):
@@ -535,12 +571,12 @@ def build_location_prerequisites(
     if "The Dark Lord - Defeated" in location_names:
         from .combat_readiness import is_dark_lord_defeated_ready
         dark_lord_custom_rule = (
-            lambda state, player, sw=special_weapon, diff=campaign_difficulty: is_dark_lord_defeated_ready(
+            lambda state, player, sw=special_weapon, diff=logic_difficulty: is_dark_lord_defeated_ready(
                 state,
                 player,
                 world=getattr(getattr(state, "multiworld", None), "worlds", {}).get(player),
                 special_weapon=sw,
-                difficulty=diff,
+                logic_difficulty=diff,
             )
         )
         table["The Dark Lord - Defeated"] = LocationRequirement(
@@ -574,6 +610,8 @@ def build_location_prerequisites(
                 ("Location", "Cultist Base - Slayer Key - Giant Yellow Wall Route"),
                 ("Region", "Doom Hunter Base - Station of Redemption"),
             )
+        if candidates:
+            candidates += tuple(sorted(generated_targets.get(location_name, ())))
         reachable_any_of = tuple(
             (kind, name)
             for kind, name in candidates
@@ -594,6 +632,9 @@ def build_location_prerequisites(
         table[location_name] = LocationRequirement(
             combat_all_of=(f"mod:{mod_name}",),
             reachable_any_of=reachable_any_of,
+            # reserve the points for every active mod so purchases cannot lock another challenge.
+            custom_rule=lambda state, player, bundles=3 * len(mastery_locations):
+                state.count("Weapon Upgrade Points (3)", player) >= bundles,
         )
     return table
 

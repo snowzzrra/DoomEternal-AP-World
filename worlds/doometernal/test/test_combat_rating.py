@@ -1,26 +1,10 @@
-"""P7.4 — Combat Rating parity and CollectionState integration tests.
-
-Tests against the frozen P7.1 numeric model from
-"""
+"""Combat rating and CollectionState integration tests."""
 from __future__ import annotations
 
 import pytest
-from worlds.doometernal.combat_rating import (
-    ALL_MASTERY_NAMES,
-    CATEGORY_CAPS,
-    WEAPON_BASE,
-    rate_items,
-    rate_collection_state,
-    evaluate_player_loadout_cr,
-)
+from worlds.doometernal.combat_rating import ALL_MASTERY_NAMES, CATEGORY_CAPS, rate_items, rate_collection_state, evaluate_player_loadout_cr
 
 EPSILON = 1e-9
-
-
-# ═══════════════════════════════════════════════════════════════
-# §1 — P7.1 Parity Matrix (frozen scenarios A through N)
-# ═══════════════════════════════════════════════════════════════
-
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -77,13 +61,13 @@ class TestSpecialModeMatrix:
 class TestFasterWeaponSwap:
 
     def test_fws_normal_arsenal_only(self):
-        """Ballista + Hammer: FWS bonus uses normal Arsenal 12, not special."""
+        normal = rate_items({"Ballista", "Faster Weapon Swap"})
         r = rate_items(
             {"Ballista", "Faster Weapon Swap"},
             special_mode="progressive_hammer", special_stage=1,
         )
-        # Normal Arsenal = 12 (Ballista), capped at 35. FWS = min(6, 0.15 * 12) = 1.8
-        assert r["raw"]["Enhancements"] == pytest.approx(1.8, abs=EPSILON)
+        assert r["raw"]["Enhancements"] == normal["raw"]["Enhancements"]
+
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -153,7 +137,7 @@ class TestCollectionStateIntegration:
         from worlds.doometernal import DoomEternalWorld
         multiworld = setup_multiworld(
             DoomEternalWorld, seed=42,
-            options={"mission_pool": "full_saga", "mission_count": 3},
+            options={"mission_pool": "full_saga", "mission_count": 6},
         )
         return multiworld, multiworld.worlds[1]
 
@@ -242,4 +226,3 @@ class TestCollectionStateIntegration:
         _ = self._eval(state, world)
         rng_state_after = mw.random.getstate()
         assert rng_state_before == rng_state_after, "Evaluating CR must not consume RNG"
-

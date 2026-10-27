@@ -41,8 +41,6 @@ WEAPON_UPGRADE_POINTS_ID = 7770903
 WEAPON_UPGRADE_POINTS_NAME = "Weapon Upgrade Points (3)"
 WEAPON_UPGRADE_POINTS_PER_ITEM = 3
 WEAPON_UPGRADE_POINTS_ITEM_COUNT = 39
-# 13 normal mod families cost 9 each (28 nodes, 117 points). Finite useful
-# currency replaces padding; no current access rule depends on weapon upgrades.
 WEAPON_UPGRADE_POINTS_TOTAL = 117
 SPECIAL_WEAPON_ITEM_NAMES = frozenset({
     "Progressive Special Weapon",
@@ -185,6 +183,9 @@ item_data_table: dict[str, ItemData] = {
     "One Extra Life": ItemData(7770040, ItemClassification.useful),
     "Armor Shard": ItemData(7770041, ItemClassification.filler),
     "Ammo Cache": ItemData(7770042, ItemClassification.filler),
+    "Berserk": ItemData(7770910, ItemClassification.filler),
+    "Onslaught": ItemData(7770911, ItemClassification.filler),
+    "Overdrive": ItemData(7770912, ItemClassification.filler),
     # Traps
     "Imp Trap": ItemData(7770043, ItemClassification.trap),
     "Carcass Trap": ItemData(7770044, ItemClassification.trap),
@@ -270,6 +271,18 @@ DEVINV_START_INVENTORY_ITEM_NAMES = frozenset({
 DEVINV_NON_PERSISTENT_USEFUL_ITEM_NAMES = frozenset({
     "Extra Life", "Extra Life Pack", "One Extra Life",
 })
+
+POOL_ITEM_LIMITS = {
+    name: 1 for name in DEVINV_START_INVENTORY_ITEM_NAMES | set(world_pool_weapon_item_names)
+    if name not in {"Blood Punch", "Ammo Refill", "Sentinel Battery", "Sentinel Battery Bundle"}
+    and not name.startswith("Slayer Gate Key ")
+}
+POOL_ITEM_LIMITS.update({f"Progressive {stat} Upgrade": 4 for stat in ("Health", "Armor", "Ammo")})
+POOL_ITEM_LIMITS.update(SPECIAL_WEAPON_POOL_COUNTS)
+POOL_ITEM_LIMITS["Progressive Blood Punch"] = 4
+POOL_ITEM_LIMITS[WEAPON_UPGRADE_POINTS_NAME] = WEAPON_UPGRADE_POINTS_ITEM_COUNT
+FILLER_WEIGHT_NAMES = frozenset(name for name, item in item_data_table.items()
+                              if item.classification == ItemClassification.filler) | {"Extra Life", "Ammo Refill"}
 
 # Canonical eligibility for the parent Dossier > Suit page. Crystal
 # progressives are displayed there; Frag and Ice have vanilla Suit-family

@@ -1,4 +1,4 @@
-"""DOOM Eternal Archipelago v0.6 — Dynamic Progression Classification Authority.
+"""DOOM Eternal dynamic progression classification.
 
 Dynamic item progression classification:
 - Derives required readiness targets from active campaign plan (RMO, MAI, Vanilla).
@@ -35,7 +35,6 @@ from .logic import (
     MASTERY_SUFFIX,
     build_location_prerequisites,
     connection_requirement,
-    effective_victory_requirements,
     required_item_names,
 )
 from .generated_content import CAMPAIGN_CONNECTIONS
@@ -152,11 +151,11 @@ def apply_dynamic_progression_classification(world: DoomEternalWorld) -> Classif
         randomize_dash=bool(world.options.randomize_dash.value),
         special_weapon=(world.options.special_weapon.current_option_name
                         if world.options.use_dlc_content.value else "The Crucible"),
-        campaign_difficulty=world.options.campaign_difficulty.value,
+        logic_difficulty=world.options.logic_difficulty.value,
         active_spend_groups=getattr(world, "active_spend_groups", None),
+        enemy_plan=getattr(world, "enemy_plan", None),
     )
     hard_items = set().union(*(required_item_names(req) for req in requirements.values()))
-    # TAG2 traversal requires Hook independently of entry CR and mastery.
     if any(STAGE_BY_ID[stage_id]["source"] == "tag2"
            for stage_id in world.campaign_plan.get("active_normal_mission_ids", ())):
         hard_items.add("Meat Hook")
@@ -166,6 +165,19 @@ def apply_dynamic_progression_classification(world: DoomEternalWorld) -> Classif
                 condition,
                 randomize_dash=bool(world.options.randomize_dash.value),
             )))
+    if world.options.item_pool_counts.value:
+        available = {item.name for item in mw.itempool if item.player == player}
+        available.update(item.name for item in mw.precollected_items[player])
+        if "Progressive Blood Punch" in available:
+            available.add("Blood Punch")
+        if not world.options.randomize_chainsaw.value:
+            available.add("Chainsaw")
+        if not world.options.randomize_dash.value:
+            available.add("Dash")
+        from .items import item_data_table
+        missing = sorted(name for name in hard_items if name in item_data_table and name not in available)
+        if missing:
+            raise ValueError(f"Item Pool Overrides exclude active requirements: {', '.join(missing)}")
     combat_baselines = {
         "Combat Shotgun", "Heavy Cannon", "Plasma Rifle", "Rocket Launcher", "Ballista", "Chaingun",
         "Sticky Bombs", "Full Auto", "Precision Bolt", "Micro Missiles", "Heat Blast", "Microwave Beam",
@@ -205,6 +217,8 @@ def apply_dynamic_progression_classification(world: DoomEternalWorld) -> Classif
             battery_required -= 1
 
     bootstrap_copies = Counter(world.campaign_plan.get("bootstrap_placed_items", ()))
+    arsenal = set(getattr(world, 'frontloaded_arsenal', ()))
+    bootstrap_copies.update(arsenal)
     for item in mw.itempool:
         if item.player == player and bootstrap_copies[item.name] > 0:
             bootstrap_copies[item.name] -= 1
@@ -213,7 +227,8 @@ def apply_dynamic_progression_classification(world: DoomEternalWorld) -> Classif
                 item.classification = ItemClassification.progression
                 ledger.promotions.append(PromotionRecord(
                     item.name, 1, original, ItemClassification.progression,
-                    "starting_stage_witness", 0.0, "Concrete starting-stage readiness witness", (),
+                    "early_arsenal" if item.name in arsenal else "starting_stage_witness", 0.0,
+                    "Early arsenal" if item.name in arsenal else "Concrete starting-stage readiness witness", (),
                 ))
 
     # 2. Baseline progression-only state
@@ -221,16 +236,7 @@ def apply_dynamic_progression_classification(world: DoomEternalWorld) -> Classif
     cr_initial = evaluate_player_loadout_cr(state, player, world)
     ledger.initial_player_cr = cr_initial.total
 
-    # 3. WUP for Mastery accessibility (§10)
-    # Check if Complete All Weapon Mastery Challenges is an active victory requirement
-    active_loc_names = {loc.name for loc in mw.get_locations(player)}
-    eff_victories = effective_victory_requirements(
-        set(world.options.additional_victory_requirements.value),
-        active_loc_names,
-        use_dlc_content=bool(world.options.use_dlc_content.value),
-        goal=world.options.goal.current_option_name,
-    )
-    mastery_req_active = "Complete All Weapon Mastery Challenges" in eff_victories
+    active_mastery_count = sum(name.endswith(MASTERY_SUFFIX) for name in active_locations)
 
     # Find unpromoted useful items in player's pool
     useful_items: dict[str, list[DoomEternalItem]] = {}
@@ -238,14 +244,13 @@ def apply_dynamic_progression_classification(world: DoomEternalWorld) -> Classif
         if item.player == player and not item.advancement and item.classification == ItemClassification.useful:
             useful_items.setdefault(item.name, []).append(item)
 
-    # Promote WUP for mastery accessibility if required
     wup_name = "Weapon Upgrade Points (3)"
-    if mastery_req_active and wup_name in useful_items:
-        active_mastery_count = getattr(world, "active_masteries_count", 13)
-        needed_wup_bundles = 3 * active_mastery_count
+    needed_wup_bundles = max(0, 3 * active_mastery_count - state.count(wup_name, player))
+    if needed_wup_bundles > len(useful_items.get(wup_name, ())):
+        raise ValueError("The active Weapon Mastery Challenges need more Weapon Upgrade Points")
+    if needed_wup_bundles:
         wup_list = useful_items[wup_name]
-        promoted_count = min(needed_wup_bundles, len(wup_list))
-        for idx in range(promoted_count):
+        for idx in range(needed_wup_bundles):
             item_to_promote = wup_list.pop(0)
             item_to_promote.classification = ItemClassification.progression
             state.collect(item_to_promote, prevent_sweep=True)
@@ -256,7 +261,7 @@ def apply_dynamic_progression_classification(world: DoomEternalWorld) -> Classif
                 final_classification=ItemClassification.progression,
                 reason="mastery_accessibility",
                 marginal_cr=0.0,
-                target_description="Victory: Complete All Weapon Mastery Challenges",
+                target_description="Weapon Mastery Challenges",
                 dependency_closure=(),
             ))
         if not wup_list:
