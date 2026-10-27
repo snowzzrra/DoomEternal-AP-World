@@ -16,6 +16,29 @@ from .bases import DLC_START_INVENTORY
 
 
 class TestMidpointGeneration(unittest.TestCase):
+    def test_unprepared_start_keeps_inventory_and_progression_without_refusing_generation(self):
+        from worlds.doometernal.combat_readiness import is_mission_ready
+        mw = setup_multiworld(DoomEternalWorld, seed=429261552, options={
+            'mission_pool': 'custom', 'mission_count': 6, 'goal': 'kill_the_icon_of_sin',
+            'custom_missions': {'Cultist Base', 'Doom Hunter Base', 'Super Gore Nest',
+                                'ARC Complex', 'Mars Core', 'Taras Nabad'},
+            'mission_order': 'vanilla_order', 'campaign_difficulty': 'nightmare',
+            'logic_difficulty': 'expert', 'starting_weapon': 'heavy_cannon',
+            'randomize_dash': True, 'randomize_chainsaw': True,
+        })
+        world = mw.worlds[1]
+        plan = world.campaign_plan
+        self.assertEqual(plan['unprepared_start_stages'], ['e1m3_cult'])
+        self.assertEqual(Counter(item.name for item in mw.precollected_items[1]), Counter({'Heavy Cannon': 1}))
+        self.assertFalse(plan['bootstrap_placed_items'])
+        state = CollectionState(mw)
+        self.assertFalse(evaluate_mission_readiness(state, 1, 'e1m3_cult', world, context='opening').ready)
+        self.assertTrue(is_mission_ready(state, 1, 'e1m3_cult', world, context='opening'))
+        self.assertTrue(mw.get_entrance('Mission Select: Cultist Base', 1).can_reach(state))
+        self.assertFalse(mw.get_entrance('Mission Select: Doom Hunter Base', 1).can_reach(state))
+        distribute_items_restrictive(mw)
+        self.assertTrue(mw.can_beat_game())
+
     def test_dlc_mission_gate_keys_follow_missions_with_dlc_gear_disabled(self):
         mw = setup_multiworld(DoomEternalWorld, seed=141104560, options={
             'mission_pool': 'full_saga', 'goal': 'complete_the_full_saga',

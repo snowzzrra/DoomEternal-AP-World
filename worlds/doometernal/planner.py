@@ -205,6 +205,8 @@ def derive_readiness_targets(options, plan: Mapping[str, Any]) -> list[Readiness
     seen: set[tuple[str, str]] = set()
 
     def add_target(stage_id: str, context: str = "base", desc: str = "") -> None:
+        if context in {'base', 'opening'} and stage_id in (plan or {}).get('unprepared_start_stages', ()):
+            return
         key = (stage_id, context)
         if key not in seen:
             seen.add(key)

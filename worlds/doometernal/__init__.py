@@ -150,34 +150,12 @@ class DoomEternalWorld(World):
         enemy_seed = self.random.getrandbits(128)
         self.enemy_plan = build_native_recipes(self.enemies, self.campaign_plan, seed=enemy_seed)
         if self.enemy_plan is not None:
-            from .campaign import ReadinessBootstrapError
-            from .native_enemy_safety import OPENING_REGIONS
-            candidate = self.campaign_plan
-            starts = [candidate['bootstrap_stage']]
-            if candidate.get('opening_stage') and self.options.mission_order.value in (1, 2):
-                starts.extend(stage for stage in candidate['sequence'] if stage in OPENING_REGIONS
-                              and stage != starts[0])
-            for start in starts:
-                trial = candidate
-                if start != candidate['bootstrap_stage']:
-                    trial = {**candidate, 'opening_stage': start, 'bootstrap_stage': start,
-                             'sequence': [start] + [stage for stage in candidate['sequence'] if stage != start],
-                             'starting_stages': ([start] + [stage for stage in candidate['starting_stages']
-                                                           if stage != start])[:len(candidate['starting_stages'])]}
-                    if self.options.mission_order.value == 2:
-                        trial['enemy_progression_bands'] = {stage: 0 if stage in trial['starting_stages'] else band
-                            for stage, band in candidate['enemy_progression_bands'].items()}
-                    self.enemy_plan = build_native_recipes(self.enemies, trial, seed=enemy_seed)
-                self.random.setstate(planning_state)
-                try:
-                    self.campaign_plan = make_plan(self.options, self.random, world=self, candidate=trial)
-                except ReadinessBootstrapError:
-                    if start == starts[-1]:
-                        raise
-                else:
-                    break
+            self.random.setstate(planning_state)
+            self.campaign_plan = make_plan(self.options, self.random, world=self, candidate=self.campaign_plan)
             self.enemy_plan = build_native_recipes(self.enemies, self.campaign_plan, seed=enemy_seed)
-        if self.campaign_plan.get('opening_stage'):
+        self.campaign_plan['opening_placed_items'] = []
+        if (self.campaign_plan.get('opening_stage') and self.campaign_plan['opening_stage'] not in
+                self.campaign_plan.get('unprepared_start_stages', ())):
             from .campaign import solve_stage_bootstrap
             from .native_enemy_safety import OPENING_REGIONS
             from .planner import FastState
@@ -193,7 +171,7 @@ class DoomEternalWorld(World):
             capacity = sum(data.region in OPENING_REGIONS[stage] for data in location_data_table.values())
             preparation = solve_stage_bootstrap(stage, self, state, pool, capacity=capacity)
             if preparation['bootstrap_cost'] != 0:
-                raise ValueError(f'The first mission {stage} cannot provide its required arsenal through {capacity} opening checks: {preparation}; owned={dict(owned)}')
+                plan.setdefault('unprepared_start_stages', []).append(stage)
             plan['opening_placed_items'] = list(preparation['placed_items'])
         from .killsanity_plan import build_campaign_kill_budget, build_killsanity_plan
         kill_budget = dict(estimated_kills=0, finite_sources=[])

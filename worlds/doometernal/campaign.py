@@ -45,9 +45,6 @@ STAGE_BY_NAME = {stage["name"]: stage for stage in CAMPAIGN_STAGES}
 REGION_STAGE = {region: stage["id"] for stage in CAMPAIGN_STAGES for region in stage["regions"]}
 
 
-class ReadinessBootstrapError(ValueError):
-    pass
-
 BASE_GATE_STAGE_IDS = (
     "e1m2_war",
     "e1m3_cult",
@@ -241,28 +238,7 @@ def solve_stage_bootstrap(
         )
     }
 
-    # Categories
-    all_weapons = []
-    for w in ["Super Shotgun", "Ballista", "Chaingun", "Rocket Launcher", "Plasma Rifle", "Heavy Cannon",
-              "The Crucible", "Sentinel Hammer", "Progressive Special Weapon", "Combat Shotgun"]:
-        cnt = combat_pool.get(w, 0)
-        if cnt > 0:
-            if "Progressive" in w:
-                all_weapons.extend([w] * min(cnt, 2))
-            else:
-                all_weapons.append(w)
-    all_mods = [
-        m for m in ["Energy Shield", "Lock-on Burst", "Arbalest", "Precision Bolt", "Microwave Beam",
-                    "Sticky Bombs", "Mobile Turret", "Heat Blast", "Remote Detonate", "Full Auto",
-                    "Micro Missiles", "Destroyer Blade", "Meat Hook"]
-        if combat_pool.get(m, 0) > 0
-    ]
-    all_equip = [
-        e for e in ["Dash", "Chainsaw", "Ice Bomb", "Flame Belch", "Frag Grenade", "Progressive Blood Punch"]
-        if combat_pool.get(e, 0) > 0
-    ]
-
-    primary_candidates = all_weapons + all_mods + all_equip
+    primary_candidates = sorted(combat_pool)
 
     eval_cache: dict[tuple, tuple] = {}
     dep_cache: dict[tuple, tuple] = {}
@@ -289,17 +265,6 @@ def solve_stage_bootstrap(
             dep_cache[key] = cached
         return cached
 
-    def iter_placed_combos(k, candidates):
-        other_cands = [c for c in candidates if c not in all_weapons]
-        max_w = min(k, len(all_weapons), 3)
-        min_w = 2 if k >= 4 else (1 if k >= 2 else 0)
-        for n_w in range(max_w, min_w - 1, -1):
-            for w_combo in itertools.combinations(all_weapons, n_w):
-                rem_k = k - n_w
-                if rem_k <= len(other_cands):
-                    for other_combo in itertools.combinations(other_cands, rem_k):
-                        yield w_combo + other_combo
-
     best_zero = None
     def preference(package):
         weapons = (sum(name in WEAPON_NAMES for name in package[2])
@@ -307,12 +272,13 @@ def solve_stage_bootstrap(
         return package[0], -weapons, package[1], package[2]
     target_cr = res_0.effective_cr - res_0.allowance
     upper_state = base_state.copy()
-    for candidate in set(primary_candidates):
-        upper_state.collect(candidate)
+    for item, count in combat_pool.items():
+        for _ in range(count):
+            upper_state.collect(item)
     max_total_cr = evaluate_player_loadout_cr(upper_state, player, world_context).total
     if target_cr <= max_total_cr:
         for k in range(1, free_capacity + 1):
-            for combo in iter_placed_combos(k, primary_candidates):
+            for combo in itertools.combinations_with_replacement(primary_candidates, k):
                 valid, full = resolve_cached(combo, combat_pool)
                 if not valid or len(full) > free_capacity:
                     continue
@@ -678,12 +644,6 @@ def make_plan(options, rng, world=None, *, candidate=None):
         if not candidate_results:
             raise ValueError('This mission pool has no verified opening for progressive enemizer without starting equipment')
         min_cost = min(result["bootstrap_cost"] for result in candidate_results.values())
-        if min_cost >= 999:
-            unresolved = sorted(s for s in candidate_results if candidate_results[s]["bootstrap_cost"] >= 999)
-            raise ReadinessBootstrapError(
-                "DOOM Eternal cannot solve a readiness bootstrap for any starting stage: "
-                + ", ".join(unresolved)
-            )
         tied_candidates = [s for s in candidate_results if candidate_results[s]["bootstrap_cost"] == min_cost]
         if use_opening and order_mode == 2 and candidate is None:
             checks = {stage: sum(code is not None and region in OPENING_REGIONS.get(stage, ())
@@ -727,11 +687,13 @@ def make_plan(options, rng, world=None, *, candidate=None):
                 access.append(goal_stage)
             sequence = starts + other_stages + ([goal_stage] if goal_stage else [])
 
-    if chosen_result["bootstrap_cost"] >= 999:
-        raise ReadinessBootstrapError(
-            f"DOOM Eternal cannot plan a readiness bootstrap for starting stage "
-            f"'{chosen_start}'; refusing a sentinel bootstrap plan."
-        )
+    unprepared_start = chosen_result["bootstrap_cost"] >= 999
+    if unprepared_start:
+        initial = _start_stage_readiness(get_candidate_base_state(chosen_start), player, chosen_start, world_context)
+        chosen_result = {**chosen_result, 'bootstrap_cost': 0, 'placed_items': (),
+            'final_cr': initial.player_cr, 'effective_cr': initial.effective_cr,
+            'overshoot': initial.allowance - initial.deficit}
+        logging.info('DOOM Eternal starting mission %s has no guaranteed combat preparation; keeping the configured loadout.', chosen_start)
 
     # 6. Bootstrap inventory
     bootstrap_inventory = {}
@@ -783,6 +745,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
         "sequence": sequence,
         "enemy_progression_bands": enemy_bands,
         "starting_stages": starts,
+        **({'unprepared_start_stages': [chosen_start]} if unprepared_start else {}),
         "starting_weapon": starting_weapon,
         "goal_stage": goal_stage,
         "goal_as_item": goal_as_item,

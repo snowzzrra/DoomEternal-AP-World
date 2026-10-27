@@ -356,6 +356,9 @@ def is_mission_ready(
     context: str = "base",
 ) -> bool:
     """Return whether player is logically combat-ready for a mission."""
+    plan = getattr(world, 'campaign_plan', {}) or {}
+    if stage_id in plan.get('unprepared_start_stages', ()):
+        return True
     return evaluate_mission_readiness(
         state,
         player,
