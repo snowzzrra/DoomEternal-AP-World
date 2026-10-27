@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Any, Sequence
 
 from BaseClasses import CollectionState, ItemClassification
 
+from Options import OptionError
 from .campaign import STAGE_BY_ID
 from .combat_rating import (
     CATEGORY_CAPS,
@@ -177,7 +178,7 @@ def apply_dynamic_progression_classification(world: DoomEternalWorld) -> Classif
         from .items import item_data_table
         missing = sorted(name for name in hard_items if name in item_data_table and name not in available)
         if missing:
-            raise ValueError(f"Item Pool Overrides exclude active requirements: {', '.join(missing)}")
+            raise OptionError(f"Item Pool Overrides exclude active requirements: {', '.join(missing)}")
     combat_baselines = {
         "Combat Shotgun", "Heavy Cannon", "Plasma Rifle", "Rocket Launcher", "Ballista", "Chaingun",
         "Sticky Bombs", "Full Auto", "Precision Bolt", "Micro Missiles", "Heat Blast", "Microwave Beam",
@@ -247,7 +248,7 @@ def apply_dynamic_progression_classification(world: DoomEternalWorld) -> Classif
     wup_name = "Weapon Upgrade Points (3)"
     needed_wup_bundles = max(0, 3 * active_mastery_count - state.count(wup_name, player))
     if needed_wup_bundles > len(useful_items.get(wup_name, ())):
-        raise ValueError("The active Weapon Mastery Challenges need more Weapon Upgrade Points")
+        raise OptionError("The active Weapon Mastery Challenges need more Weapon Upgrade Points")
     if needed_wup_bundles:
         wup_list = useful_items[wup_name]
         for idx in range(needed_wup_bundles):

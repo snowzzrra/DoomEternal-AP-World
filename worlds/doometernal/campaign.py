@@ -3,7 +3,9 @@ from collections import Counter
 from dataclasses import replace
 import itertools
 import logging
+from Options import OptionError
 from .generated_content import CAMPAIGN_STAGES, FORTRESS_SPEND_GROUPS, FORTRESS_POLICY, LOCATION_ROWS, RESOURCE_NEUTRAL_LOCATION_NAMES
+from .fortress_economy import battery_surplus_limit
 from .logic import goal_endpoint_event_name, mission_clear_event_name, CRUCIBLE_CHALLENGE, crucible_challenge_enabled
 from .items import suit_perk_item_names
 from .options import MissionCount, resolve_praetor_suit_upgrade_count
@@ -95,7 +97,7 @@ def get_short_world_scaling(
     active_masteries = mastery_resource_family_count(n) if include_weapon_masteries else 0
 
     cost = sum(group["cost"] for group in active_sg)
-    surplus = (cost * FORTRESS_POLICY["battery_surplus_percent"] + 99) // 100
+    surplus = battery_surplus_limit(cost, FORTRESS_POLICY["battery_surplus_percent"])
     return active_sg, active_masteries, surplus
 
 
@@ -360,7 +362,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
     goal_name = options.goal.current_option_name
     order_mode = options.mission_order.value  # 0: Vanilla, 1: RMO, 2: MAI
     if goal_name == "Acquire the Unmaykr" and not options.include_slayer_gates.value:
-        raise ValueError("Acquire the Unmaykr requires Include Slayer Gates; choose another Goal or enable Slayer Gates.")
+        raise OptionError("Acquire the Unmaykr requires Include Slayer Gates; choose another Goal or enable Slayer Gates.")
 
     # 1. Candidate resolution
     if pool_name == "Base":
@@ -380,9 +382,9 @@ def make_plan(options, rng, world=None, *, candidate=None):
         ]
         dark_lord_candidate = bool(options.custom_dark_lord.value)
         if len(candidate_normal_ids) < MissionCount.range_start:
-            raise ValueError(f"DOOM Eternal Custom Mission Pool requires at least {MissionCount.range_start} normal missions to fit the upgrade pool.")
+            raise OptionError(f"DOOM Eternal Custom Mission Pool requires at least {MissionCount.range_start} normal missions to fit the upgrade pool.")
     else:
-        raise ValueError(f"Unknown Mission Pool: {pool_name}")
+        raise OptionError(f"Unknown Mission Pool: {pool_name}")
 
     goal_forced_active = False
     forced_normal_ids = set()
@@ -402,7 +404,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
             goal_forced_active = True
     elif goal_name == "Acquire the Unmaykr":
         if pool_name == "DLC Only":
-            raise ValueError("DOOM Eternal Goal 'Acquire the Unmaykr' requires Base Slayer Gates and cannot be generated with DLC Only.")
+            raise OptionError("DOOM Eternal Goal 'Acquire the Unmaykr' requires Base Slayer Gates and cannot be generated with DLC Only.")
         for gate_id in BASE_GATE_STAGE_IDS:
             if gate_id not in candidate_normal_ids:
                 candidate_normal_ids.append(gate_id)
@@ -554,7 +556,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
     candidates = [name for name in suit_perk_item_names if name not in fixed_suits and overrides.get(name, 1) > 0]
     if suit_option >= 0 and (len(explicit_suits | requested_suits) > max(effective_suit_count, len(requested_suits))
                             or len(candidates) < suit_count - len(fixed_suits)):
-        raise ValueError("Praetor Suit count conflicts with Item Pool Overrides")
+        raise OptionError("Praetor Suit count conflicts with Item Pool Overrides")
     chosen_suits = fixed_suits | set(rng.sample(
         candidates,
         min(len(candidates), suit_count - len(fixed_suits)),
@@ -584,7 +586,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
         if shortfall <= 0:
             break
         if not is_compact_campaign(active_normal_ids):
-            raise ValueError('DOOM Eternal items do not fit the enabled checks; include more missions or checks, '
+            raise OptionError('DOOM Eternal items do not fit the enabled checks; include more missions or checks, '
                              'or reduce explicit Item Pool Overrides')
         if battery_surplus:
             battery_surplus = max(0, battery_surplus - shortfall)
@@ -593,7 +595,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
         elif active_masteries_count:
             active_masteries_count -= 1
         else:
-            raise ValueError('DOOM Eternal upgrades do not fit the enabled checks; include more missions or checks, '
+            raise OptionError('DOOM Eternal upgrades do not fit the enabled checks; include more missions or checks, '
                              'or reduce explicit Item Pool Overrides')
     chosen_suits = {name for name in chosen_suits if semantic_pool.total_counts.get(name, 0)}
     if semantic_pool.auto_adjustments:
@@ -642,7 +644,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
                               and (candidate is None or not candidate.get('opening_stage')
                                    or s_id == candidate['opening_stage'])}
         if not candidate_results:
-            raise ValueError('This mission pool has no verified opening for progressive enemizer without starting equipment')
+            raise OptionError('This mission pool has no verified opening for progressive enemizer without starting equipment')
         min_cost = min(result["bootstrap_cost"] for result in candidate_results.values())
         tied_candidates = [s for s in candidate_results if candidate_results[s]["bootstrap_cost"] == min_cost]
         if use_opening and order_mode == 2 and candidate is None:

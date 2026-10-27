@@ -13,6 +13,27 @@ from worlds.doometernal.planner import STAGE_SLAYER_GATE_KEYS
 class TestShortWorldGeneration(unittest.TestCase):
     """Generation and cardinality checks for supported short campaigns."""
 
+    def test_compact_campaign_battery_surplus_fits_budget(self):
+        from worlds.doometernal.fortress_economy import validate_battery_economy
+
+        mw = setup_multiworld(DoomEternalWorld, seed=1, options={
+            'enemy_randomizer': False, 'mission_order': 'vanilla_order',
+            'starting_weapon': 'ballista', 'include_weapon_mastery_challenges': False,
+            'goal': 'kill_the_icon_of_sin', 'custom_dark_lord': False,
+            'mission_pool': 'custom',
+            'custom_missions': {'Final Sin', 'The World Spear', 'Reclaimed Earth',
+                                'Immora', 'The Blood Swamps', 'Sentinel Prime'},
+        })
+        slot_data = mw.worlds[1].fill_slot_data()
+        economy = slot_data['campaign_plan']['battery_economy']
+        self.assertEqual(economy, {
+            'cost': 16, 'surplus': 1, 'total': 17,
+            'surplus_percent': 25, 'native_first_battery': 0,
+        })
+        validate_battery_economy(economy, cost=16, percent=25, native_first_battery=0)
+        self.assertEqual(sum(item.name == 'Sentinel Battery' for item in mw.itempool), 17)
+        self.assertEqual(len(mw.itempool), len(mw.get_unfilled_locations(1)))
+
 
     def test_full_saga_baseline(self) -> None:
         """Full Saga exports the selected missions, resources and active checks."""
