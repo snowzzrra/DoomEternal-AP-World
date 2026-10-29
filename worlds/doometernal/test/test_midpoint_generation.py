@@ -184,7 +184,7 @@ class TestMidpointGeneration(unittest.TestCase):
                 counts = Counter(item.name for item in mw.itempool + mw.precollected_items[1] + [
                     loc.item for loc in mw.get_filled_locations(1) if loc.address is not None])
                 for name, quantity in plan["semantic_counts"].items():
-                    self.assertEqual(counts[name], quantity, name)
+                    self.assertEqual(counts[name], quantity + options.get('start_inventory', {}).get(name, 0), name)
                 if options.get("randomize_dash") is False:
                     self.assertEqual(plan["fixed_dash_completion_stage"], plan["sequence"][0])
                 if len(plan["active_normal_mission_ids"]) < 9:
@@ -192,11 +192,11 @@ class TestMidpointGeneration(unittest.TestCase):
                     for stat in ("Health", "Armor", "Ammo"):
                         self.assertGreaterEqual(counts[f"Progressive {stat} Upgrade"], 4)
                 self.assertEqual(len(suit_perk_item_names), 17)
-                presentation = world.fill_slot_data()["mission_presentation_v2"]
-                for stage, rating in presentation.items():
-                    self.assertEqual(rating["skull_tier"], get_mission_skull_tier(stage, world))
-                    self.assertNotIn("expected_player_cr", rating)
                 distribute_items_restrictive(mw)
+                presentation = world.fill_slot_data()["stage_profiles"]
+                for stage, rating in presentation.items():
+                    self.assertEqual(rating["skulls"], get_mission_skull_tier(stage, world))
+                    self.assertNotIn("expected_player_cr", rating)
                 self.assertTrue(mw.can_beat_game())
                 state = CollectionState(mw)
                 physical_items = Counter(

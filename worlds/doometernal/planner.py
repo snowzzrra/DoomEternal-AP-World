@@ -441,6 +441,10 @@ def select_readiness_items(
 # Canonical semantic pool
 # ═══════════════════════════════════════════════════════════════
 
+class PoolConfigurationError(ValueError):
+    pass
+
+
 @dataclass
 class SemanticPool:
     """Concrete multiset authority for one generated world."""
@@ -486,6 +490,16 @@ def special_weapon_pool_count(special_name: str, *, use_dlc: bool, n_normals: in
     return SPECIAL_WEAPON_POOL_COUNTS.get(special_name, 1)
 
 
+def _deplete_starting_pool(counts, requested):
+    for name, quantity in requested.items():
+        if quantity > counts.get(name, 0):
+            raise PoolConfigurationError(
+                f"DOOM Eternal start_inventory_from_pool '{name}' requests {quantity} copies; "
+                f"only {counts.get(name, 0)} eligible pool copies are available"
+            )
+        counts[name] -= quantity
+
+
 def build_semantic_counts(
     options,
     *,
@@ -506,7 +520,8 @@ def build_semantic_counts(
     Compact short worlds include a family floor and select additional copies
     with the production readiness evaluator. Full-length campaigns use full-size economies.
     """
-    start_inv = Counter(options.start_inventory.value)
+    from_pool = Counter(getattr(getattr(options, "start_inventory_from_pool", None), "value", {}))
+    start_inv = Counter(options.start_inventory.value) + from_pool
     n_normals = len(active_normal_ids)
     compact = is_compact_campaign(active_normal_ids)
     profile = _option_value(options, "resource_profile", 0)
@@ -519,39 +534,39 @@ def build_semantic_counts(
     optional_caps: Counter[str] = Counter()  # extra selectable copies beyond floor
     mandatory_mods: set[str] = set()
     for name, quantity in (suit_counts or {}).items():
-        base_pool[name] = max(0, quantity - start_inv.get(name, 0))
+        base_pool[name] = quantity
     for name in (*NORMAL_RUNES_ORDERED, *(SUPPORT_RUNES_ORDERED if use_dlc else ())):
-        base_pool[name] = max(0, 1 - start_inv.get(name, 0))
+        base_pool[name] = 1
     for stat in _CAPACITY_STATS:
         name = f"Progressive {stat} Upgrade"
-        base_pool[name] = max(0, _CAPACITY_MAX_STAGES - start_inv.get(name, 0))
+        base_pool[name] = _CAPACITY_MAX_STAGES
 
     if compact:
         mod_floor = min(12, max(6, 2 * n_normals)) if profile == 1 else (0 if lean else 6)
         for mod in ALL_MODS_ORDERED[:mod_floor]:
-            base_pool[mod] = max(0, 1 - start_inv.get(mod, 0))
+            base_pool[mod] = 1
 
     # --- Weapons (guarantee: 7 normal + BFG-9000) -------------------------
     for weapon in world_pool_weapon_item_names:
         if weapon == starting_weapon:
             continue
-        base_pool[weapon] = max(0, 1 - start_inv.get(weapon, 0))
-    base_pool["The Unmaykr"] = max(0, 1 - start_inv.get("The Unmaykr", 0))
+        base_pool[weapon] = 1
+    base_pool["The Unmaykr"] = 1
 
     # --- Core equipment ---------------------------------------------------
     for equipment in CORE_EQUIPMENT:
         quantity = 4 if equipment == "Progressive Blood Punch" else 1
-        base_pool[equipment] = max(0, quantity - start_inv.get(equipment, 0))
+        base_pool[equipment] = quantity
 
     # Independent attachment: TAG2 readiness requires it even with masteries off.
-    base_pool["Meat Hook"] = max(0, 1 - start_inv.get("Meat Hook", 0))
+    base_pool["Meat Hook"] = 1
     mandatory_mods.add("Meat Hook")
 
     # --- Randomized capabilities -----------------------------------------
     if _option_value(options, "randomize_chainsaw") or start_inv.get("Chainsaw"):
-        base_pool["Chainsaw"] = max(0, 1 - start_inv.get("Chainsaw", 0))
+        base_pool["Chainsaw"] = 1
     if _option_value(options, "randomize_dash") or start_inv.get("Dash"):
-        base_pool["Dash"] = max(0, 1 - start_inv.get("Dash", 0))
+        base_pool["Dash"] = 1
 
     # --- Special weapons ---------------------------------------------------
     special_opt = getattr(options, "special_weapon", None)
@@ -559,7 +574,7 @@ def build_semantic_counts(
         special_opt, "current_option_name", "Progressive Special Weapon"
     )
     special_policy = special_weapon_pool_count(special_name, use_dlc=use_dlc, n_normals=n_normals)
-    base_pool[special_name] = max(0, special_policy - start_inv.get(special_name, 0))
+    base_pool[special_name] = special_policy
 
     # --- Slayer Gate Keys --------------------------------------------------
     for stage_id, key_name in STAGE_SLAYER_GATE_KEYS.items():
@@ -567,18 +582,16 @@ def build_semantic_counts(
             continue
         if stage_id not in active_normal_ids:
             continue
-        base_pool[key_name] = max(0, 1 - start_inv.get(key_name, 0))
+        base_pool[key_name] = 1
 
     # --- Battery economy ---------------------------------------------------
     battery_cost = sum(group["cost"] for group in active_sg)
     battery_total = battery_cost + battery_surplus
     if start_inv.get("Sentinel Battery Bundle"):
-        raise ValueError("Sentinel Battery Bundle belongs to legacy rooms; use individual Sentinel Battery items")
+        raise PoolConfigurationError("Sentinel Battery Bundle belongs to legacy rooms; use individual Sentinel Battery items")
     if start_inv.get("Sentinel Battery", 0) > battery_total:
-        raise ValueError(f"Sentinel Battery starting inventory exceeds the {battery_total}-unit economy")
-    base_pool["Sentinel Battery"] = max(
-        0, battery_total - start_inv.get("Sentinel Battery", 0)
-    )
+        raise PoolConfigurationError(f"Sentinel Battery starting inventory exceeds the {battery_total}-unit economy")
+    base_pool["Sentinel Battery"] = battery_total
 
     # --- Weapon Masteries (content scaling) & prerequisite mods ------------
     family_masteries: list[str] = []
@@ -589,32 +602,32 @@ def build_semantic_counts(
     requested_masteries = sorted(name for name in ALL_MASTERY_NAMES if start_inv.get(name))
     selected_masteries = family_masteries + [m for m in requested_masteries if m not in family_masteries]
     for mastery_name in selected_masteries:
-        base_pool[mastery_name] = max(0, 1 - start_inv.get(mastery_name, 0))
+        base_pool[mastery_name] = 1
         for dep in ITEM_DEPENDENCIES.get(mastery_name, ()):
             if dep == starting_weapon or dep not in item_data_table:
                 continue
             if dep in ALL_MOD_NAMES:
                 mandatory_mods.add(dep)
-            base_pool[dep] = max(base_pool[dep], max(0, 1 - start_inv.get(dep, 0)))
+            base_pool[dep] = max(base_pool[dep], 1)
 
     # --- Manually requested mod families -----------------------------------
     requested_mods = [mod for mod in ALL_MODS_ORDERED if start_inv.get(mod)]
     for mod in requested_mods:
         mandatory_mods.add(mod)
-        base_pool[mod] = max(base_pool[mod], max(0, 1 - start_inv.get(mod, 0)))
+        base_pool[mod] = max(base_pool[mod], 1)
         for dep in ITEM_DEPENDENCIES.get(mod, ()):
             if dep == starting_weapon or dep not in item_data_table:
                 continue
             if dep in ALL_MOD_NAMES:
                 mandatory_mods.add(dep)
-            base_pool[dep] = max(base_pool[dep], max(0, 1 - start_inv.get(dep, 0)))
+            base_pool[dep] = max(base_pool[dep], 1)
 
     # --- Mechanically required challenge mods ------------------------------
     for stage_id, mods in HARD_MOD_BY_STAGE.items():
         if stage_id in active_normal_ids:
             for mod in mods:
                 mandatory_mods.add(mod)
-                base_pool[mod] = max(base_pool[mod], max(0, 1 - start_inv.get(mod, 0)))
+                base_pool[mod] = max(base_pool[mod], 1)
 
     # --- WUP economy -------------------------------------------------------
     active_family_count = len(family_masteries)
@@ -626,7 +639,7 @@ def build_semantic_counts(
         # Full-length campaigns keep the integral 39-bundle / 117-point
         # normal-upgrade baseline even when Mastery Challenges are disabled.
         wup_policy = WEAPON_UPGRADE_POINTS_ITEM_COUNT
-    base_pool[WEAPON_UPGRADE_POINTS_NAME] = max(0, wup_policy - start_inv.get(WEAPON_UPGRADE_POINTS_NAME, 0))
+    base_pool[WEAPON_UPGRADE_POINTS_NAME] = wup_policy
 
     if not compact and not lean:
         mod_quota = 12
@@ -637,41 +650,41 @@ def build_semantic_counts(
                 break
             selected_mods.add(mod)
         for mod in selected_mods:
-            base_pool[mod] = max(base_pool[mod], max(0, 1 - start_inv.get(mod, 0)))
+            base_pool[mod] = max(base_pool[mod], 1)
         for rune in NORMAL_RUNES_ORDERED:
-            base_pool[rune] = max(base_pool[rune], max(0, 1 - start_inv.get(rune, 0)))
+            base_pool[rune] = max(base_pool[rune], 1)
         if use_dlc:
             for support in SUPPORT_RUNES_ORDERED:
-                base_pool[support] = max(base_pool[support], max(0, 1 - start_inv.get(support, 0)))
+                base_pool[support] = max(base_pool[support], 1)
         for stat in _CAPACITY_STATS:
             stat_name = f"Progressive {stat} Upgrade"
-            requested = start_inv.get(stat_name, 0)
-            base_pool[stat_name] = max(base_pool[stat_name], max(0, _CAPACITY_MAX_STAGES - requested))
+            base_pool[stat_name] = max(base_pool[stat_name], _CAPACITY_MAX_STAGES)
 
     # --- Optional selection universes --------------------------------------
     for mod in ALL_MODS_ORDERED:
         if mod in mandatory_mods:
             optional_caps[mod] = 0
         else:
-            optional_caps[mod] = max(0, 1 - start_inv.get(mod, 0) - base_pool.get(mod, 0))
+            optional_caps[mod] = max(0, 1 - base_pool.get(mod, 0))
     if compact or lean:
         for rune in NORMAL_RUNES_ORDERED:
-            optional_caps[rune] = max(0, 1 - start_inv.get(rune, 0) - base_pool.get(rune, 0))
+            optional_caps[rune] = max(0, 1 - base_pool.get(rune, 0))
         if use_dlc:
             for support in SUPPORT_RUNES_ORDERED:
-                optional_caps[support] = max(0, 1 - start_inv.get(support, 0) - base_pool.get(support, 0))
+                optional_caps[support] = max(0, 1 - base_pool.get(support, 0))
         for stat in _CAPACITY_STATS:
             stat_name = f"Progressive {stat} Upgrade"
             optional_caps[stat_name] = max(
-                0, _CAPACITY_MAX_STAGES - start_inv.get(stat_name, 0) - base_pool.get(stat_name, 0)
+                0, _CAPACITY_MAX_STAGES - base_pool.get(stat_name, 0)
             )
 
     for name, quantity in overrides.items():
         if quantity and ((name in SUPPORT_RUNE_NAMES and not use_dlc)
                          or (name in SPECIAL_WEAPON_POOL_COUNTS and name != special_name)):
-            raise ValueError(f"Item Pool Overrides: {name} is unavailable in this campaign")
-        base_pool[name] = max(0, quantity - start_inv.get(name, 0) - int(name == starting_weapon))
+            raise PoolConfigurationError(f"Item Pool Overrides: {name} is unavailable in this campaign")
+        base_pool[name] = max(0, quantity - int(name == starting_weapon))
         optional_caps[name] = 0
+    _deplete_starting_pool(base_pool, from_pool)
     available = Counter(base_pool) + start_inv
     if starting_weapon:
         available[starting_weapon] += 1
@@ -684,7 +697,7 @@ def build_semantic_counts(
             if available[dependency] > 0:
                 continue
             if dependency in overrides:
-                raise ValueError(f"Item Pool Overrides: {name} requires {dependency}")
+                raise PoolConfigurationError(f"Item Pool Overrides: {name} requires {dependency}")
             base_pool[dependency] = available[dependency] = 1
     required_mods = {mod for mod, _ in ORDERED_MASTERY_CHALLENGES[:active_masteries_count]}
     required_mods.update(mod for stage_id, mods in HARD_MOD_BY_STAGE.items() if stage_id in active_normal_ids for mod in mods)
@@ -692,9 +705,9 @@ def build_semantic_counts(
         required_mods.add("Meat Hook")
     for mod in required_mods:
         if available[mod] <= 0:
-            raise ValueError(f"Item Pool Overrides: {mod} is required by active challenges")
+            raise PoolConfigurationError(f"Item Pool Overrides: {mod} is required by active challenges")
     if available[WEAPON_UPGRADE_POINTS_NAME] < 3 * max(active_masteries_count, requested_mastery_count):
-        raise ValueError("Item Pool Overrides: Weapon Upgrade Points do not cover active mastery challenges")
+        raise PoolConfigurationError("Item Pool Overrides: Weapon Upgrade Points do not cover active mastery challenges")
 
     # --- Baseline logical state (mirrors dynamic classification) -----------
     baseline: Counter[str] = Counter()
@@ -751,7 +764,7 @@ def build_semantic_counts(
         pool.readiness_final_deficit = selection.final_deficit
         pool.readiness_evaluations = selection.evaluations
         if not selection.satisfied:
-            raise ValueError(f"Item Pool Overrides cannot satisfy campaign readiness (deficit {selection.final_deficit:g})")
+            raise PoolConfigurationError(f"Item Pool Overrides cannot satisfy campaign readiness (deficit {selection.final_deficit:g})")
 
     # --- Final concrete multiset -------------------------------------------
     used = selection.counts
@@ -765,7 +778,7 @@ def build_semantic_counts(
         pool_copies = min(pool_copies, base_copies + optional_caps.get(name, 0))
         if pool_copies > 0:
             pool.placement_counts[name] = pool_copies
-    if placement_budget is not None and sum(pool.placement_counts.values()) > placement_budget:
+    if placement_budget is not None and sum(pool.placement_counts.values()) + sum(from_pool.values()) > placement_budget:
         from .locations import location_data_table, optional_location_enabled
         from .logic import build_location_prerequisites, connection_requirement, required_item_names
         from .generated_content import CAMPAIGN_CONNECTIONS
@@ -793,7 +806,7 @@ def build_semantic_counts(
                     condition, randomize_dash=bool(_option_value(options, "randomize_dash")))))
         if "Blood Punch" in hard_items:
             hard_items.add("Progressive Blood Punch")
-        locked = set(overrides)
+        locked = set(overrides) | set(start_inv)
         if _option_value(options, "praetor_suit_upgrades_in_pool", -2) != -2:
             locked.update(suit_counts or {})
         candidates = (set(ALL_MOD_NAMES) | set(ALL_MASTERY_NAMES)
@@ -808,7 +821,7 @@ def build_semantic_counts(
                     counts[name] = max(1, counts[name])
             return counts
 
-        while sum(pool.placement_counts.values()) > placement_budget:
+        while sum(pool.placement_counts.values()) + sum(from_pool.values()) > placement_budget:
             counts = inventory_counts()
             before_cr = evaluate_player_loadout_cr(FastState.from_counts(counts, player), player, world_context).total
             best = None
@@ -848,11 +861,11 @@ def build_semantic_counts(
                 max(result.effective_cr - result.player_cr - result.allowance, result.preparation_deficit)
                 if result.preparation_deficit > 0 else result.effective_cr - result.player_cr - result.allowance
                 for result in results)
-    for name in set(pool.placement_counts) | set(start_inv):
+    for name in set(pool.placement_counts) | set(from_pool):
         data = item_data_table.get(name)
         if data is None:
             continue
-        pool.total_counts[name] = pool.placement_counts.get(name, 0) + start_inv.get(name, 0)
+        pool.total_counts[name] = pool.placement_counts.get(name, 0) + from_pool.get(name, 0)
 
     for name, qty in used.items():
         if qty > 0 and name not in mandatory_mods and name != WEAPON_UPGRADE_POINTS_NAME:

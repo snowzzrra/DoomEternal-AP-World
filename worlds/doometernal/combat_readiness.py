@@ -103,23 +103,22 @@ class ReadinessResult:
 
 def get_mission_base_cr(stage_id: str, world: Any | None = None) -> int:
     """Apply the frozen change in combat cost to the mission's preparation rating."""
+    frozen = (getattr(world, "stage_profiles", None) or {}).get(stage_id)
+    if frozen is not None:
+        return frozen.cr_max
     if stage_id not in MISSION_BASE_CR:
         raise KeyError(f"Unknown stage ID for Base CR: {stage_id}")
     base = MISSION_BASE_CR[stage_id]
-    costs = (getattr(world, "enemy_plan", None) or {}).get("combat_costs", {}).get(stage_id)
+    enemy_plan = getattr(world, "enemy_plan", None) or {}
+    costs = enemy_plan.get("combat_costs", {}).get(stage_id)
     if costs is None:
         return base
     import math
     profile = costs.get('campaign')
     if profile is not None:
-        if (getattr(world, 'enemy_plan', None) or {}).get('revision', 0) >= 5 and profile.get('waves'):
+        if enemy_plan.get('revision', 0) >= 5 and profile.get('waves'):
             return get_mission_cr_range(stage_id, world)[1]
-        bodies = max(1, profile['bodies'])
-        pressure = (8 + 8 * math.log2(1 + profile['actual'] / bodies)
-                    + 4 * math.log2(1 + profile['wave_p90'] / 10)
-                    + 3 * math.log2(1 + profile['bodies'] / 100))
-        floor = base if stage_id in {'e1m4_boss', 'e2m4_boss', 'e3m3_maykr', 'e3m4_boss', 'e4m3_mcity', 'e5m4_boss'} else 1
-        return max(floor, min(MAX_EFFECTIVE_CR, round(pressure)))
+        return _campaign_pressure_cr(stage_id, base, profile)
     # Ten cost units per reference CR; doubling that budget adds twelve CR.
     factor = max(.25, 1 + (costs["actual"] - costs["original"]) / (10 * base))
     floor = base if stage_id in {"e1m4_boss", "e2m2_base", "e2m4_boss",
@@ -127,18 +126,36 @@ def get_mission_base_cr(stage_id: str, world: Any | None = None) -> int:
     return max(floor, min(MAX_EFFECTIVE_CR, round(base + 12 * math.log2(factor))))
 
 
+def _campaign_pressure_cr(stage_id, base, profile):
+    import math
+    bodies = max(1, profile['bodies'])
+    pressure = (8 + 8 * math.log2(1 + profile['actual'] / bodies)
+                + 4 * math.log2(1 + profile['wave_p90'] / 10)
+                + 3 * math.log2(1 + profile['bodies'] / 100))
+    floor = base if stage_id in {'e1m4_boss', 'e2m4_boss', 'e3m3_maykr', 'e3m4_boss', 'e4m3_mcity', 'e5m4_boss'} else 1
+    return max(floor, min(MAX_EFFECTIVE_CR, round(pressure)))
+
+
+def _opening_combat_profile(profile):
+    waves = profile.get('opening_waves')
+    if not waves:
+        raise ValueError('Starting mission has no verified opening encounters')
+    profile = {**profile, 'waves': waves, 'bodies': sum(wave['bodies'] for wave in waves)}
+    if 'opening_estimated_kills' in profile:
+        profile['estimated_kills'] = profile['opening_estimated_kills']
+    return profile
+
+
 def get_mission_cr_range(stage_id, world, *, opening=False):
+    frozen = (getattr(world, "stage_profiles", None) or {}).get(stage_id)
+    if frozen is not None:
+        return (frozen.opening_cr_min, frozen.opening_cr_max) if opening else (frozen.cr_min, frozen.cr_max)
     import math
     profile = (getattr(world, 'enemy_plan', None) or {}).get('combat_costs', {}).get(stage_id, {}).get('campaign', {})
     if opening:
         if getattr(world, 'enemy_plan', None) is None:
             return 35, 35
-        waves = profile.get('opening_waves')
-        if not waves:
-            raise ValueError('Starting mission has no verified opening encounters')
-        profile = {**profile, 'waves': waves, 'bodies': sum(wave['bodies'] for wave in waves)}
-        if 'opening_estimated_kills' in profile:
-            profile['estimated_kills'] = profile['opening_estimated_kills']
+        profile = _opening_combat_profile(profile)
     if not profile.get('waves'):
         value = get_mission_base_cr(stage_id, world)
         return value, value
@@ -151,6 +168,9 @@ def get_mission_cr_range(stage_id, world, *, opening=False):
 
 
 def get_mission_effort_per_check(stage_id, world):
+    frozen = (getattr(world, "stage_profiles", None) or {}).get(stage_id)
+    if frozen is not None:
+        return frozen.effort_per_check_milli / 1000
     profile = (getattr(world, 'enemy_plan', None) or {}).get('combat_costs', {}).get(stage_id, {}).get('campaign', {})
     if 'effort' not in profile:
         return 0.0
@@ -160,11 +180,17 @@ def get_mission_effort_per_check(stage_id, world):
     options = getattr(world, 'options', None)
     checks = sum(code is not None and region in regions and (options is None or optional_location_enabled(name, options))
                  for name, code, region in LOCATION_ROWS)
-    duration_weight = 1.5 if stage_id in {'e5m1_spear', 'e5m2_earth', 'e5m3_hell'} else 1.25 if stage_id.startswith('e4m') else 1
-    return profile['effort'] * duration_weight / max(1, checks)
+    return profile['effort'] * _mission_duration_weight(stage_id) / max(1, checks)
+
+
+def _mission_duration_weight(stage_id):
+    return 1.5 if stage_id in {'e5m1_spear', 'e5m2_earth', 'e5m3_hell'} else 1.25 if stage_id.startswith('e4m') else 1
 
 
 def get_mission_skull_tier(stage_id: str, world: Any | None = None) -> int:
+    frozen = (getattr(world, "stage_profiles", None) or {}).get(stage_id)
+    if frozen is not None:
+        return frozen.skulls
     if (getattr(world, 'enemy_plan', None) or {}).get('revision', 0) >= 3:
         rating = get_mission_intrinsic_cr(stage_id, world)
         return 1 + sum(rating >= threshold for threshold in (35, 55, 75))
@@ -172,12 +198,22 @@ def get_mission_skull_tier(stage_id: str, world: Any | None = None) -> int:
     return max(1, min(4, MISSION_SKULL_TIERS[stage_id] + round(change / 15)))
 
 
-def _enemy_counter_penalties(state, player, stage_id, world, *, opening=False):
-    from .logic import COMBAT_CAPABILITIES
+def _stage_counter_ids(stage_id, world, opening):
     profile = (getattr(world, 'enemy_plan', None) or {}).get('combat_costs', {}).get(stage_id, {}).get('campaign', {})
     present = set(profile.get('opening_species' if opening else 'species', ()))
-    if (getattr(world, 'enemy_plan', None) or {}).get('revision', 0) >= 13:
+    return present
+
+
+def _enemy_counter_penalties(state, player, stage_id, world, *, opening=False):
+    from .logic import COMBAT_CAPABILITIES
+    present = _stage_counter_ids(stage_id, world, opening)
+    enemy_plan = getattr(world, 'enemy_plan', None) or {}
+    if enemy_plan.get('revision', 0) >= 13:
         present.difference_update({'spirit', 'stone_imp'})
+    field = 'opening_counter_ids' if opening else 'counter_ids'
+    frozen = getattr(world, "stage_profiles", {}).get(stage_id)
+    if frozen is not None:
+        present = getattr(frozen, field)
     counters = (("spirit", 15, (("Plasma Rifle", "Microwave Beam"),)),
                 ("blood_angel", 8, COMBAT_CAPABILITIES['weak_point']),
                 ("stone_imp", 6, (("Combat Shotgun", "Full Auto"),)))
@@ -187,6 +223,35 @@ def _enemy_counter_penalties(state, player, stage_id, world, *, opening=False):
 
 def get_mission_intrinsic_cr(stage_id, world):
     return min(MAX_EFFECTIVE_CR, get_mission_base_cr(stage_id, world) + sum(_enemy_counter_penalties(None, 1, stage_id, world).values()))
+
+
+def _native_chainsaw_before_combat(stage_id, world):
+    frozen = (getattr(world, "stage_profiles", None) or {}).get(stage_id)
+    if frozen is not None:
+        return frozen.native_chainsaw_before_combat
+    return (stage_id == 'e1m1_intro' and (getattr(world, 'enemy_plan', None) or {}).get('revision', 0) >= 13
+            and not getattr(getattr(getattr(world, 'options', None), 'randomize_chainsaw', None), 'value', 0))
+
+
+def _renewable_ammo(stage_id, world):
+    frozen = (getattr(world, "stage_profiles", None) or {}).get(stage_id)
+    if frozen is not None:
+        return frozen.renewable_ammo
+    from .native_enemy_plan import AMMO_FODDER
+    stage = (getattr(world, "enemy_plan", None) or {}).get("maps", {}).get(stage_id, {})
+    return any(operation.get("reserve") for operation in stage.get("operations", [])) or any(
+        recipe.get('renewable') and any(body['species'] in AMMO_FODDER for body in recipe['bodies'])
+        for recipe in stage.get('recipes', []))
+
+
+def _breakpoint_spirit_present(stage_id, world):
+    if getattr(world, "stage_profiles", None):
+        return world.enemy_plan is None or 'spirit' in world.stage_profiles[stage_id].counter_ids
+    enemy_plan = getattr(world, 'enemy_plan', None) or {}
+    if enemy_plan.get('revision', 0) >= 13:
+        return False
+    generated_species = enemy_plan.get('combat_costs', {}).get(stage_id, {}).get('campaign', {}).get('species', ())
+    return enemy_plan.get('revision', 0) < 4 or 'spirit' in generated_species
 
 
 def get_skill_allowance(logic_difficulty: int, campaign_difficulty: int = 1) -> int:
@@ -263,8 +328,7 @@ def evaluate_mission_readiness(
     base_cr = get_mission_base_cr(stage_id, world)
     if context == 'opening':
         base_cr = get_mission_cr_range(stage_id, world, opening=True)[1]
-    native_chainsaw = (stage_id == 'e1m1_intro' and (getattr(world, 'enemy_plan', None) or {}).get('revision', 0) >= 13
-        and not getattr(getattr(getattr(world, 'options', None), 'randomize_chainsaw', None), 'value', 0))
+    native_chainsaw = _native_chainsaw_before_combat(stage_id, world)
     if player_cr is None or native_chainsaw:
         cr_result = evaluate_player_loadout_cr(state, player, world, native_chainsaw=native_chainsaw)
         player_cr = float(cr_result.total)
@@ -274,12 +338,7 @@ def evaluate_mission_readiness(
     penalties = _enemy_counter_penalties(state, player, stage_id, world, opening=context == 'opening')
     reason = ""
     if context == "spirit_breakpoint":
-        enemy_plan = getattr(world, 'enemy_plan', None) or {}
-        generated_species = enemy_plan.get('combat_costs', {}).get(stage_id, {}).get('campaign', {}).get('species', ())
-        spirit_present = enemy_plan.get('revision', 0) < 4 or 'spirit' in generated_species
-        if enemy_plan.get('revision', 0) >= 13:
-            spirit_present = False
-        if spirit_present and not has_effective_anti_spirit(state, player):
+        if _breakpoint_spirit_present(stage_id, world) and not has_effective_anti_spirit(state, player):
             penalties['spirit'] = SPIRIT_PENALTY
             reason = "Missing effective Microwave Beam at mandatory Spirit breakpoint (+15 CR)"
     elif context == "dark_lord_defeated" or (stage_id == DARK_LORD_STAGE_ID and context == "boss"):
@@ -299,16 +358,9 @@ def evaluate_mission_readiness(
         missing.append("Dash")
     if stage_id in HOOK_TRAVERSAL_STAGES and context != 'opening':
         missing.extend(name for name in ("Super Shotgun", "Meat Hook") if not state.has(name, player))
-    enemy_plan = getattr(world, "enemy_plan", None) or {}
-    has_supply = any(operation.get("reserve") for operation in
-                     enemy_plan.get("maps", {}).get(stage_id, {}).get("operations", []))
-    from .native_enemy_plan import AMMO_FODDER
-    has_supply = has_supply or any(recipe.get('renewable') and
-        any(body['species'] in AMMO_FODDER for body in recipe['bodies'])
-        for recipe in enemy_plan.get('maps', {}).get(stage_id, {}).get('recipes', []))
     randomize_chainsaw = bool(getattr(getattr(options, "randomize_chainsaw", None), "value", 0))
     # The fixed Chainsaw pickup precedes the profiled Hell on Earth fights.
-    if has_supply and randomize_chainsaw:
+    if _renewable_ammo(stage_id, world) and randomize_chainsaw:
         from .logic import chainsaw_available
         if not chainsaw_available(state, player, randomize_chainsaw=True):
             missing.append("Chainsaw for ammunition supply")

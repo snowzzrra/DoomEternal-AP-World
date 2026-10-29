@@ -37,6 +37,7 @@ def make_mock_world(
     world.game = "DOOM Eternal"
     world.starting_weapon_name = "Combat Shotgun"
     world.enemy_plan = None
+    world.stage_profiles = {}
     world.options = MagicMock()
     world.options.campaign_difficulty = MagicMock(value=difficulty)
     world.options.logic_difficulty = MagicMock(value=logic_difficulty)
@@ -369,3 +370,52 @@ class TestDashBootstrapAndSphereZero:
         assert state.has("Dash", 1) is True
         res = evaluate_player_loadout_cr(state, 1, world)
         assert res.categories["Mobility"] >= 4.0
+
+
+def frozen_readiness_world():
+    from worlds.doometernal.slot_data_contract import StageProfile
+
+    world = make_mock_world(randomize_chainsaw=True)
+    world.stage_profiles = {"e1m1_intro": StageProfile(
+        cr_min=27, cr_max=48, opening_cr_min=12, opening_cr_max=18,
+        counter_ids=("blood_angel",), opening_counter_ids=("stone_imp",),
+        renewable_ammo=True, native_chainsaw_before_combat=True, skulls=3, effort_per_check_milli=1234)}
+    return world
+
+
+def test_combat_getters_use_frozen_stage_profiles():
+    from worlds.doometernal.combat_readiness import (
+        get_mission_base_cr, get_mission_cr_range, get_mission_effort_per_check, get_mission_skull_tier,
+        _native_chainsaw_before_combat, _renewable_ammo,
+    )
+
+    world = frozen_readiness_world()
+    assert get_mission_base_cr("e1m1_intro", world) == 48
+    assert get_mission_cr_range("e1m1_intro", world) == (27, 48)
+    assert get_mission_cr_range("e1m1_intro", world, opening=True) == (12, 18)
+    assert get_mission_effort_per_check("e1m1_intro", world) == 1.234
+    assert get_mission_skull_tier("e1m1_intro", world) == 3
+    assert _native_chainsaw_before_combat("e1m1_intro", world)
+    assert _renewable_ammo("e1m1_intro", world)
+
+
+def test_frozen_counter_requirements_still_follow_inventory():
+    from types import SimpleNamespace
+    from worlds.doometernal.combat_readiness import _enemy_counter_penalties
+
+    world = frozen_readiness_world()
+    missing = SimpleNamespace(has=lambda *args: False)
+    complete = SimpleNamespace(has=lambda *args: True)
+    assert _enemy_counter_penalties(missing, 1, "e1m1_intro", world) == {"blood_angel": 8}
+    assert _enemy_counter_penalties(missing, 1, "e1m1_intro", world, opening=True) == {"stone_imp": 6}
+    assert _enemy_counter_penalties(complete, 1, "e1m1_intro", world) == {}
+    assert _enemy_counter_penalties(complete, 1, "e1m1_intro", world, opening=True) == {}
+
+
+def test_frozen_vanilla_breakpoints_keep_native_spirits():
+    from worlds.doometernal.combat_readiness import _breakpoint_spirit_present
+
+    world = frozen_readiness_world()
+    assert _breakpoint_spirit_present("e1m1_intro", world)
+    world.enemy_plan = {"revision": 13}
+    assert not _breakpoint_spirit_present("e1m1_intro", world)

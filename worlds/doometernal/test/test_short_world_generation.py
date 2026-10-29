@@ -1,4 +1,5 @@
 import unittest
+from Fill import distribute_items_restrictive
 from test.general import gen_steps, setup_multiworld
 from worlds.doometernal import DoomEternalWorld
 from worlds.doometernal.campaign import (
@@ -24,8 +25,7 @@ class TestShortWorldGeneration(unittest.TestCase):
             'custom_missions': {'Final Sin', 'The World Spear', 'Reclaimed Earth',
                                 'Immora', 'The Blood Swamps', 'Sentinel Prime'},
         })
-        slot_data = mw.worlds[1].fill_slot_data()
-        economy = slot_data['campaign_plan']['battery_economy']
+        economy = mw.worlds[1].campaign_plan['battery_economy']
         self.assertEqual(economy, {
             'cost': 16, 'surplus': 1, 'total': 17,
             'surplus_percent': 25, 'native_first_battery': 0,
@@ -47,7 +47,7 @@ class TestShortWorldGeneration(unittest.TestCase):
             },
         )
         world: DoomEternalWorld = mw.worlds[1]
-        unfilled = [loc for loc in mw.get_locations(1) if not loc.item]
+        unfilled = mw.get_unfilled_locations(1)
 
         self.assertEqual(len(unfilled), len(mw.itempool))
 
@@ -65,16 +65,17 @@ class TestShortWorldGeneration(unittest.TestCase):
         self.assertEqual(len(mastery_locs), 13)
 
         hub_locs = [loc for loc in unfilled if "Fortress of Doom" in loc.parent_region.name]
-        self.assertEqual(len(hub_locs), 20)  # 6 non-consumer + 13 consumer + Unmaykr (13 consumers + 7 other)
+        self.assertEqual(len(hub_locs), 20)
 
         gate_keys = [name for name in item_names if "Slayer Gate Key" in name]
         self.assertEqual(len(gate_keys), 8)
 
+        self.assertEqual(sum(loc.address is not None for loc in mw.get_locations(1)), len(unfilled))
+        distribute_items_restrictive(mw)
         slot_data = world.fill_slot_data()
-        self.assertEqual(slot_data["mission_pool"], "full_saga")
-        self.assertTrue(slot_data["dark_lord_enabled"])
-        self.assertEqual(slot_data["effective_mission_count"], 19)
-        self.assertEqual(slot_data["active_location_count"], len(unfilled))
+        self.assertEqual(slot_data["tracker_options"]["mission_pool"], world.options.mission_pool.value)
+        self.assertIn("e5m4_boss", slot_data["campaign"]["sequence"])
+        self.assertEqual(sum(stage != "e5m4_boss" for stage in slot_data["campaign"]["sequence"]), 19)
 
 
     def test_base_campaign_mission_count_6(self) -> None:
@@ -185,8 +186,8 @@ class TestShortWorldGeneration(unittest.TestCase):
 
 
 
-    def test_start_inventory_preserves_cardinality_and_reserves_items(self) -> None:
-        """Items in start_inventory are reserved into quotas without increasing pool cardinality."""
+    def test_start_inventory_preserves_cardinality_and_pool_copies(self) -> None:
+        """Extra starting ownership preserves the planned copies and pool size."""
         mw = setup_multiworld(
             DoomEternalWorld,
             steps=gen_steps[:-1],
@@ -214,6 +215,11 @@ class TestShortWorldGeneration(unittest.TestCase):
         self.assertEqual(start_inv["Lock-on Burst"], 1)
         self.assertEqual(start_inv["Sentinel Battery"], 2)
         self.assertEqual(len(mw.itempool), len(unfilled))
+        pool_items = mw.itempool + [loc.item for loc in mw.get_filled_locations(1) if loc.address is not None]
+        self.assertEqual(sum(item.name == "Lock-on Burst" for item in pool_items),
+                         world.campaign_plan["semantic_counts"]["Lock-on Burst"])
+        self.assertEqual(sum(item.name == "Sentinel Battery" for item in pool_items),
+                         world.campaign_plan["battery_economy"]["total"])
 
     def test_mai_access_cardinality_goal_mission_as_item_toggle(self) -> None:
         """Goal Mission as Item toggles whether the final goal stage generates an Access item."""

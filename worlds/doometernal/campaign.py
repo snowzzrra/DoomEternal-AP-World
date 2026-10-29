@@ -480,7 +480,9 @@ def make_plan(options, rng, world=None, *, candidate=None):
         bool(options.include_weapon_mastery_challenges.value),
     )
 
-    # Resolve generated starting weapon
+    start_inventory = Counter(options.start_inventory.value) + Counter(
+        getattr(getattr(options, "start_inventory_from_pool", None), "value", {}))
+
     starting_weapon = options.starting_weapon.selected_weapon_name
     if starting_weapon is None:
         eligible_weapons = [
@@ -488,14 +490,14 @@ def make_plan(options, rng, world=None, *, candidate=None):
                 "Combat Shotgun", "Heavy Cannon", "Plasma Rifle",
                 "Rocket Launcher", "Super Shotgun", "Ballista", "Chaingun"
             )
-            if not options.start_inventory.value.get(w, 0)
+            if not start_inventory.get(w, 0)
         ]
         starting_weapon = rng.choice(eligible_weapons or ["Combat Shotgun"])
 
     # Build base items for bootstrap evaluation
     player = getattr(world, "player", 1)
     base_items = []
-    for name, qty in options.start_inventory.value.items():
+    for name, qty in start_inventory.items():
         base_items.extend([name] * qty)
     base_items.append(starting_weapon)
     if options.reveal_ap_locations_on_automap.value:
@@ -549,7 +551,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
     effective_suit_count = (len(suit_perk_item_names)
                             if suit_option == -2 else resolve_praetor_suit_upgrade_count(suit_option, rng))
     overrides = options.item_pool_counts.value
-    requested_suits = {name for name in suit_perk_item_names if options.start_inventory.value.get(name)}
+    requested_suits = {name for name in suit_perk_item_names if start_inventory.get(name)}
     explicit_suits = {name for name in suit_perk_item_names if overrides.get(name, 0) > 0}
     fixed_suits = requested_suits | explicit_suits
     suit_count = max(effective_suit_count, len(fixed_suits))
@@ -582,7 +584,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
             compact_runes=compact_runes,
             placement_budget=max(0, resource_budget - access_count),
         )
-        shortfall = sum(semantic_pool.placement_counts.values()) - max(0, resource_budget - access_count)
+        shortfall = sum(semantic_pool.total_counts.values()) - max(0, resource_budget - access_count)
         if shortfall <= 0:
             break
         if not is_compact_campaign(active_normal_ids):
@@ -590,7 +592,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
                              'or reduce explicit Item Pool Overrides')
         if battery_surplus:
             battery_surplus = max(0, battery_surplus - shortfall)
-        elif active_sg and sum(group['cost'] for group in active_sg[:-1]) >= options.start_inventory.value.get('Sentinel Battery', 0):
+        elif active_sg and sum(group['cost'] for group in active_sg[:-1]) >= start_inventory.get('Sentinel Battery', 0):
             active_sg = active_sg[:-1]
         elif active_masteries_count:
             active_masteries_count -= 1
@@ -640,7 +642,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
     else:
         candidate_results = {s_id: evaluate_start_stage(s_id) for s_id in ordinary
                               if STAGE_BY_ID[s_id]["kind"] == "mission"
-                              and (not use_opening or options.start_inventory.value or s_id in OPENING_REGIONS)
+                              and (not use_opening or start_inventory or s_id in OPENING_REGIONS)
                               and (candidate is None or not candidate.get('opening_stage')
                                    or s_id == candidate['opening_stage'])}
         if not candidate_results:

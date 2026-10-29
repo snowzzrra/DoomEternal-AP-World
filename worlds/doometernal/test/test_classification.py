@@ -222,7 +222,7 @@ class TestMinimalReadinessBootstrap(unittest.TestCase):
 
 
     def test_user_start_inventory_priority(self) -> None:
-        """User start_inventory items are never duplicated by the bootstrap solver."""
+        """Extra starting ownership preserves future weapon copies."""
         class MockOptions:
             include_slayer_gates = type("Opts", (), {"value": 1})()
             campaign_difficulty = type("Opts", (), {"value": 0})()
@@ -234,7 +234,7 @@ class TestMinimalReadinessBootstrap(unittest.TestCase):
 
         opts = MockOptions()
         pool_counts = build_pool_candidate_counts(opts, ["e4m3_mcity"], "Combat Shotgun", (), 0)
-        self.assertEqual(pool_counts.get("Super Shotgun", 0), 0)
+        self.assertEqual(pool_counts.get("Super Shotgun", 0), 1)
 
     def test_item_count_conservation(self) -> None:
         """Item pool count + precollected items match locations exactly, with no phantom items."""

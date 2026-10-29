@@ -1,5 +1,7 @@
 
 
+import pytest
+
 from test.general import setup_multiworld
 from worlds.doometernal import DoomEternalWorld
 from worlds.doometernal.options import ItemPoolCounts, ResourceProfile
@@ -13,6 +15,18 @@ from worlds.doometernal.items import suit_perk_item_names
 CAMPAIGN = {"mission_pool": "custom", "custom_missions": {
     "Hell on Earth", "Exultia", "Cultist Base", "Super Gore Nest", "ARC Complex", "Final Sin"},
     "mission_count": 6, "goal": "kill_the_icon_of_sin", "mission_order": "random_mission_order"}
+
+
+@pytest.mark.parametrize("source,remaining", [("start_inventory", 4), ("start_inventory_from_pool", 2)])
+def test_starting_sources_keep_separate_pool_forecasts(source, remaining):
+    mw = setup_multiworld(DoomEternalWorld, steps=(), seed=705, options={**CAMPAIGN,
+        source: {"Progressive Health Upgrade": 2}})
+    pool = build_semantic_counts(
+        mw.worlds[1].options, active_normal_ids=('e1m1_intro',), starting_weapon='Combat Shotgun',
+        active_sg=(), active_masteries_count=0, battery_surplus=0, targets=(),
+    )
+    assert pool.placement_counts['Progressive Health Upgrade'] == remaining
+    assert pool.total_counts['Progressive Health Upgrade'] == 4
 
 
 

@@ -3,12 +3,16 @@ from dataclasses import dataclass
 from Options import (
     Accessibility as APAccessibility, Choice, DeathLink as APDeathLink, DeathLinkMixin,
     NamedRange, OptionDict, OptionSet, PerGameCommonOptions, ProgressionBalancing as APProgressionBalancing,
-    Range, Toggle,
+    OptionError, OptionGroup, Range, StartInventory as APStartInventory, StartInventoryPool, Toggle,
 )
 
 from .generated_content import CAMPAIGN_STAGES
 from .enemy_options import SPECIES_IDS
 from .items import FILLER_WEIGHT_NAMES, POOL_ITEM_LIMITS, SAFE_TRAP_NAMES, suit_perk_item_names
+
+
+class StartInventory(APStartInventory):
+    """Start with extra copies of these items; use start_inventory_from_pool to take copies from the pool instead."""
 
 
 class _ExactLabelChoice(Choice):
@@ -501,11 +505,11 @@ class Killsanity(Toggle):
 class KillsPerCheck(Range):
     """Send one check at each multiple of this many enemy deaths.
 
-    For example, 100 gives rewards at 100, 200, 300 kills and so on."""
+    Choose 1..1000 deaths per check. The default, 100, rewards 100, 200, 300 kills and so on."""
 
     display_name = "Kills per Check"
     range_start = 1
-    range_end = 2147483647
+    range_end = 1000
     default = 100
 
 
@@ -513,13 +517,18 @@ class KillsanityMaximumMilestones(NamedRange):
     """Choose how many kill rewards to add to your campaign.
 
     Auto: Divide estimated campaign kills plus 10% by Kills per Check, round down, and cap at 50 rewards.
-    1..65,535: Add that many kill rewards. Kills per Check sets the gap between rewards."""
+    1..2,000: Add that many kill rewards. Kills per Check sets the gap between rewards."""
 
     display_name = "Kill Rewards"
     range_start = 1
-    range_end = 65535
+    range_end = 2000
     special_range_names = {"auto": -1}
     default = -1
+
+    def __init__(self, value):
+        if value != -1 and (type(value) is not int or not self.range_start <= value <= self.range_end):
+            raise OptionError("Kill Rewards must be Auto or 1..2000")
+        super().__init__(value)
 
 
 class RevealAPLocationsOnAutomap(Toggle):
@@ -838,6 +847,8 @@ def resolve_praetor_suit_upgrade_count(option_value: int, rng, maximum: int = le
 
 @dataclass
 class DoomEternalOptions(DeathLinkMixin, PerGameCommonOptions):
+    start_inventory: StartInventory
+    start_inventory_from_pool: StartInventoryPool
     accessibility: Accessibility
     progression_balancing: ProgressionBalancing
     death_link: DeathLink
@@ -893,3 +904,29 @@ class DoomEternalOptions(DeathLinkMixin, PerGameCommonOptions):
     praetor_suit_upgrades_in_pool: PraetorSuitUpgradesInPool
     trap_percentage: TrapPercentage
     enabled_traps: EnabledTraps
+
+
+option_groups = [
+    OptionGroup("Campaign and Missions", [
+        MissionPool, CustomMissions, CustomDarkLord, MissionCount, MissionOrder, StartingMissions,
+        Goal, GoalMissionAsItem, FullSagaFinalBoss, AdditionalVictoryRequirements,
+        IncludeSlayerGates, IncludeSecretEncounters, IncludeWeaponMasteryChallenges,
+    ]),
+    OptionGroup("Items and Pool", [
+        UseDLCContent, StartingWeapon, SpecialWeapon, RandomizeChainsaw, RandomizeDash,
+        ResourceProfile, ItemPoolCounts, PraetorSuitUpgradesInPool, FillerWeights,
+        TrapPercentage, EnabledTraps, TrapWeights,
+    ]),
+    OptionGroup("Enemies", [
+        EnemyRandomizer, EnemyPreset, EnemyIntensityEarly, EnemyIntensityLate, EnemyDensity,
+        EnemyLength, EnemyVariety, EnemyCountMode, EnemyCountMultiplier, EnemySizeVariationChance,
+        EnemyWeights, EnemyHealth, EnemyDamage, EnemySpeed, EnemySize, EnemySpecialLimits,
+    ]),
+    OptionGroup("Killsanity", [Killsanity, KillsPerCheck, KillsanityMaximumMilestones]),
+    OptionGroup("Difficulty", [
+        CampaignDifficulty, LogicDifficulty, ProgressiveDifficulty, EnhancedMeleeDamage,
+        EasierSecretEncounters, MasteryRequirements,
+    ]),
+    OptionGroup("Extras", [Accessibility, ProgressionBalancing, DeathLink, DeathLinkMode, RevealAPLocationsOnAutomap]),
+    OptionGroup("Item & Location Options", [StartInventory]),
+]
