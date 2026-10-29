@@ -69,6 +69,7 @@ Output Logs/
 /datapackage
 /datapackage_export.json
 /custom_worlds
+/.serena
 # stubgen output
 /out/
 
