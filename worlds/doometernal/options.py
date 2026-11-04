@@ -10,6 +10,8 @@ from .generated_content import CAMPAIGN_STAGES
 from .enemy_options import SPECIES_IDS
 from .items import FILLER_WEIGHT_NAMES, POOL_ITEM_LIMITS, SAFE_TRAP_NAMES, suit_perk_item_names
 
+from .player_strings_generated import text as player_text
+
 
 class StartInventory(APStartInventory):
     """Start with extra copies of these items; use start_inventory_from_pool to take copies from the pool instead."""
@@ -140,6 +142,7 @@ class MissionOrder(_ExactLabelChoice):
     Random Mission Order: Play a shuffled sequence, unlocking the next mission as you progress.
     Mission Access as Items: Find an Access item to unlock each mission.
     You can replay completed missions through the Fortress of Doom."""
+
     display_name = "Mission Order"
     option_vanilla_order = 0
     option_random_mission_order = 1
@@ -152,6 +155,7 @@ class StartingMissions(Range):
     """Choose how many missions are open at the start in Mission Access as Items.
 
     1: Start with one mission. 2 or 3: Start with that many choices."""
+
     display_name = "Starting Missions"
     range_start = 1
     range_end = 3
@@ -165,6 +169,7 @@ class FullSagaFinalBoss(_ExactLabelChoice):
     Icon of Sin: End with the Icon of Sin.
     Davoth / The Dark Lord: End with Davoth.
     Vanilla Order ends with Davoth."""
+
     display_name = "Full Saga Final Boss"
     option_randomized = 0
     option_icon_of_sin = 1
@@ -179,6 +184,7 @@ class GoalMissionAsItem(Toggle):
     On: Find the boss mission's Access item to enter it.
     Off: Unlock the boss mission after completing the other missions.
     Extra victory objectives still need to be completed."""
+
     display_name = "Goal Mission as Item"
 
 
@@ -229,6 +235,7 @@ class AdditionalVictoryRequirements(OptionSet):
 
     display_name = "Additional Victory Requirements"
     valid_keys = VICTORY_REQUIREMENT_NAMES
+
     def __init__(self, value, random_str=None):
         super().__init__({"Complete All Included Missions" if key == "Complete All Enabled Missions" else key
                          for key in value}, random_str)
@@ -433,6 +440,7 @@ class EnemyDensity(_EnemyRecipeRange):
 
     display_name = "Density"
 
+
 class EnemyLength(_EnemyRecipeRange):
     """Choose the total enemies across each arena when Enemy Count is Auto.
 
@@ -527,7 +535,7 @@ class KillsanityMaximumMilestones(NamedRange):
 
     def __init__(self, value):
         if value != -1 and (type(value) is not int or not self.range_start <= value <= self.range_end):
-            raise OptionError("Kill Rewards must be Auto or 1..2000")
+            raise OptionError(player_text("apworld.errors", "kill_rewards_option_range"))
         super().__init__(value)
 
 
@@ -615,7 +623,15 @@ class _BoundedItemDict(OptionDict):
     def __init__(self, value):
         for name, count in value.items():
             if name not in self.entry_limits or type(count) is not int or not 0 <= count <= self.entry_limits[name]:
-                raise ValueError(f"{self.display_name}: invalid override {name!r}: {count!r}")
+                raise ValueError(
+                    player_text(
+                        "apworld.errors",
+                        "invalid_item_override",
+                        option=self.display_name,
+                        item=repr(name),
+                        count=repr(count),
+                    )
+                )
         super().__init__(value)
 
 
@@ -656,7 +672,7 @@ class _EnemyAttributeRanges(_BoundedItemDict):
     def __init__(self, value):
         super().__init__(value)
         if 0 in self.value.values():
-            raise ValueError("Enemy attribute percentages must be positive.")
+            raise ValueError(player_text("apworld.errors", "enemy_percentage_positive"))
 
 
 class EnemyHealth(_EnemyAttributeRanges):
@@ -834,10 +850,10 @@ class PraetorSuitUpgradesInPool(NamedRange):
 def resolve_praetor_suit_upgrade_count(option_value: int, rng, maximum: int = len(suit_perk_item_names)) -> int:
     if option_value >= 0:
         if option_value > maximum:
-            raise ValueError(f"Praetor Suit upgrade count exceeds catalog maximum {maximum}")
+            raise ValueError(player_text("apworld.errors", "suit_count_maximum", maximum=maximum))
         return option_value
     if option_value != PraetorSuitUpgradesInPool.special_range_names["random"]:
-        raise ValueError(f"Unknown Praetor Suit upgrade count: {option_value}")
+        raise ValueError(player_text("apworld.errors", "unknown_suit_count", count=option_value))
     lower = max(1, maximum // 3)
     upper = min(maximum - 1, (2 * maximum + 2) // 3)
     candidates = list(range(lower, upper + 1))

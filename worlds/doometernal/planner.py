@@ -9,6 +9,7 @@ This module is the single source of truth for:
 - compact short-world semantic pool composition,
 - the bootstrap solver's candidate-pool view.
 """
+
 from __future__ import annotations
 
 from collections import Counter
@@ -41,6 +42,8 @@ from .items import (
     world_pool_weapon_item_names,
     suit_perk_item_names,
 )
+
+from .player_strings_generated import text as player_text
 
 STAGE_BY_ID = {stage["id"]: stage for stage in CAMPAIGN_STAGES}
 
@@ -191,9 +194,11 @@ def _option_value(options, attribute: str, default: int = 0) -> int:
 # Readiness targets
 # ═══════════════════════════════════════════════════════════════
 
+
 @dataclass(frozen=True)
 class ReadinessTarget:
     """Represents a logically required readiness target in the active campaign."""
+
     stage_id: str
     context: str = "base"  # "base", "spirit_breakpoint", "dark_lord_defeated"
     description: str = ""
@@ -254,9 +259,11 @@ def derive_readiness_targets(options, plan: Mapping[str, Any]) -> list[Readiness
 # Greedy readiness package selection
 # ═══════════════════════════════════════════════════════════════
 
+
 @dataclass(frozen=True)
 class SelectionStep:
     """One activated item copy inside a dependency-complete package."""
+
     item_name: str
     copy_index: int
     package_lead: str
@@ -441,6 +448,7 @@ def select_readiness_items(
 # Canonical semantic pool
 # ═══════════════════════════════════════════════════════════════
 
+
 class PoolConfigurationError(ValueError):
     pass
 
@@ -494,8 +502,13 @@ def _deplete_starting_pool(counts, requested):
     for name, quantity in requested.items():
         if quantity > counts.get(name, 0):
             raise PoolConfigurationError(
-                f"DOOM Eternal start_inventory_from_pool '{name}' requests {quantity} copies; "
-                f"only {counts.get(name, 0)} eligible pool copies are available"
+                player_text(
+                    "apworld.errors",
+                    "starting_pool_copies",
+                    item=name,
+                    quantity=quantity,
+                    available=counts.get(name, 0),
+                )
             )
         counts[name] -= quantity
 
@@ -588,9 +601,9 @@ def build_semantic_counts(
     battery_cost = sum(group["cost"] for group in active_sg)
     battery_total = battery_cost + battery_surplus
     if start_inv.get("Sentinel Battery Bundle"):
-        raise PoolConfigurationError("Sentinel Battery Bundle belongs to legacy rooms; use individual Sentinel Battery items")
+        raise PoolConfigurationError(player_text("apworld.errors", "legacy_battery_bundle"))
     if start_inv.get("Sentinel Battery", 0) > battery_total:
-        raise PoolConfigurationError(f"Sentinel Battery starting inventory exceeds the {battery_total}-unit economy")
+        raise PoolConfigurationError(player_text("apworld.errors", "starting_battery_economy", budget=battery_total))
     base_pool["Sentinel Battery"] = battery_total
 
     # --- Weapon Masteries (content scaling) & prerequisite mods ------------
@@ -681,7 +694,7 @@ def build_semantic_counts(
     for name, quantity in overrides.items():
         if quantity and ((name in SUPPORT_RUNE_NAMES and not use_dlc)
                          or (name in SPECIAL_WEAPON_POOL_COUNTS and name != special_name)):
-            raise PoolConfigurationError(f"Item Pool Overrides: {name} is unavailable in this campaign")
+            raise PoolConfigurationError(player_text("apworld.errors", "override_unavailable", item=name))
         base_pool[name] = max(0, quantity - int(name == starting_weapon))
         optional_caps[name] = 0
     _deplete_starting_pool(base_pool, from_pool)
@@ -697,7 +710,9 @@ def build_semantic_counts(
             if available[dependency] > 0:
                 continue
             if dependency in overrides:
-                raise PoolConfigurationError(f"Item Pool Overrides: {name} requires {dependency}")
+                raise PoolConfigurationError(
+                    player_text("apworld.errors", "override_dependency", item=name, dependency=dependency)
+                )
             base_pool[dependency] = available[dependency] = 1
     required_mods = {mod for mod, _ in ORDERED_MASTERY_CHALLENGES[:active_masteries_count]}
     required_mods.update(mod for stage_id, mods in HARD_MOD_BY_STAGE.items() if stage_id in active_normal_ids for mod in mods)
@@ -705,9 +720,9 @@ def build_semantic_counts(
         required_mods.add("Meat Hook")
     for mod in required_mods:
         if available[mod] <= 0:
-            raise PoolConfigurationError(f"Item Pool Overrides: {mod} is required by active challenges")
+            raise PoolConfigurationError(player_text("apworld.errors", "override_required_mod", mod=mod))
     if available[WEAPON_UPGRADE_POINTS_NAME] < 3 * max(active_masteries_count, requested_mastery_count):
-        raise PoolConfigurationError("Item Pool Overrides: Weapon Upgrade Points do not cover active mastery challenges")
+        raise PoolConfigurationError(player_text("apworld.errors", "override_mastery_points"))
 
     # --- Baseline logical state (mirrors dynamic classification) -----------
     baseline: Counter[str] = Counter()
@@ -764,7 +779,9 @@ def build_semantic_counts(
         pool.readiness_final_deficit = selection.final_deficit
         pool.readiness_evaluations = selection.evaluations
         if not selection.satisfied:
-            raise PoolConfigurationError(f"Item Pool Overrides cannot satisfy campaign readiness (deficit {selection.final_deficit:g})")
+            raise PoolConfigurationError(
+                player_text("apworld.errors", "override_readiness", deficit=format(selection.final_deficit, "g"))
+            )
 
     # --- Final concrete multiset -------------------------------------------
     used = selection.counts

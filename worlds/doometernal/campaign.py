@@ -1,4 +1,5 @@
 """Seed-time unified campaign decisions, active content filtering, and structural CollectionState rules."""
+
 from collections import Counter
 from dataclasses import replace
 import itertools
@@ -42,6 +43,8 @@ from .planner import (
     ReadinessTarget,
 )
 
+from .player_strings_generated import text as player_text
+
 STAGE_BY_ID = {stage["id"]: stage for stage in CAMPAIGN_STAGES}
 STAGE_BY_NAME = {stage["name"]: stage for stage in CAMPAIGN_STAGES}
 REGION_STAGE = {region: stage["id"] for stage in CAMPAIGN_STAGES for region in stage["regions"]}
@@ -72,6 +75,7 @@ FORTRESS_BOOTSTRAP_LOCATIONS = frozenset(
 
 
 SPEND_GROUP_BY_ID = {sg["id"]: sg for sg in FORTRESS_SPEND_GROUPS}
+
 
 def completion_event(stage_id):
     stage = STAGE_BY_ID[stage_id]
@@ -144,6 +148,7 @@ def resolve_dependencies(package, base_state, player, pool_counts):
 
 SPIRIT_STAGE_IDS = frozenset(SPIRIT_BREAKPOINTS.values())
 
+
 def _start_stage_readiness(state, player, stage_id, world_context):
     """Readiness for entry, traversal and mandatory encounters in the starting mission."""
     context = "dark_lord_defeated" if stage_id == "e5m4_boss" else "base"
@@ -171,10 +176,12 @@ def solve_stage_bootstrap(
     """Compute minimal readiness bootstrap cost and items for stage_id."""
     player = base_state.player
     free_capacity = len(FORTRESS_BOOTSTRAP_LOCATIONS) if capacity is None else capacity
+
     def readiness(state):
         if capacity is None:
             return _start_stage_readiness(state, player, stage_id, world_context)
         return evaluate_mission_readiness(state, player, stage_id, world_context)
+
     res_0 = readiness(base_state)
     if res_0.ready:
         return {
@@ -268,10 +275,12 @@ def solve_stage_bootstrap(
         return cached
 
     best_zero = None
+
     def preference(package):
         weapons = (sum(name in WEAPON_NAMES for name in package[2])
                    if getattr(world_context, 'enemies', {}).get('enabled') else 0)
         return package[0], -weapons, package[1], package[2]
+
     target_cr = res_0.effective_cr - res_0.allowance
     upper_state = base_state.copy()
     for item, count in combat_pool.items():
@@ -362,7 +371,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
     goal_name = options.goal.current_option_name
     order_mode = options.mission_order.value  # 0: Vanilla, 1: RMO, 2: MAI
     if goal_name == "Acquire the Unmaykr" and not options.include_slayer_gates.value:
-        raise OptionError("Acquire the Unmaykr requires Include Slayer Gates; choose another Goal or enable Slayer Gates.")
+        raise OptionError(player_text("apworld.errors", "unmaykr_requires_gates"))
 
     # 1. Candidate resolution
     if pool_name == "Base":
@@ -382,9 +391,9 @@ def make_plan(options, rng, world=None, *, candidate=None):
         ]
         dark_lord_candidate = bool(options.custom_dark_lord.value)
         if len(candidate_normal_ids) < MissionCount.range_start:
-            raise OptionError(f"DOOM Eternal Custom Mission Pool requires at least {MissionCount.range_start} normal missions to fit the upgrade pool.")
+            raise OptionError(player_text("apworld.errors", "custom_pool_minimum", minimum=MissionCount.range_start))
     else:
-        raise OptionError(f"Unknown Mission Pool: {pool_name}")
+        raise OptionError(player_text("apworld.errors", "unknown_mission_pool", pool=pool_name))
 
     goal_forced_active = False
     forced_normal_ids = set()
@@ -404,7 +413,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
             goal_forced_active = True
     elif goal_name == "Acquire the Unmaykr":
         if pool_name == "DLC Only":
-            raise OptionError("DOOM Eternal Goal 'Acquire the Unmaykr' requires Base Slayer Gates and cannot be generated with DLC Only.")
+            raise OptionError(player_text("apworld.errors", "unmaykr_requires_base"))
         for gate_id in BASE_GATE_STAGE_IDS:
             if gate_id not in candidate_normal_ids:
                 candidate_normal_ids.append(gate_id)
@@ -558,7 +567,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
     candidates = [name for name in suit_perk_item_names if name not in fixed_suits and overrides.get(name, 1) > 0]
     if suit_option >= 0 and (len(explicit_suits | requested_suits) > max(effective_suit_count, len(requested_suits))
                             or len(candidates) < suit_count - len(fixed_suits)):
-        raise OptionError("Praetor Suit count conflicts with Item Pool Overrides")
+        raise OptionError(player_text("apworld.errors", "suit_pool_conflict"))
     chosen_suits = fixed_suits | set(rng.sample(
         candidates,
         min(len(candidates), suit_count - len(fixed_suits)),
@@ -588,8 +597,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
         if shortfall <= 0:
             break
         if not is_compact_campaign(active_normal_ids):
-            raise OptionError('DOOM Eternal items do not fit the enabled checks; include more missions or checks, '
-                             'or reduce explicit Item Pool Overrides')
+            raise OptionError(player_text("apworld.errors", "item_pool_does_not_fit"))
         if battery_surplus:
             battery_surplus = max(0, battery_surplus - shortfall)
         elif active_sg and sum(group['cost'] for group in active_sg[:-1]) >= start_inventory.get('Sentinel Battery', 0):
@@ -597,15 +605,22 @@ def make_plan(options, rng, world=None, *, candidate=None):
         elif active_masteries_count:
             active_masteries_count -= 1
         else:
-            raise OptionError('DOOM Eternal upgrades do not fit the enabled checks; include more missions or checks, '
-                             'or reduce explicit Item Pool Overrides')
+            raise OptionError(player_text("apworld.errors", "upgrade_pool_does_not_fit"))
     chosen_suits = {name for name in chosen_suits if semantic_pool.total_counts.get(name, 0)}
     if semantic_pool.auto_adjustments:
         actual = sum(semantic_pool.placement_counts.values())
-        logging.info("DOOM Eternal %s resource profile: Auto adjusted %d to %d pool copies (budget %d).",
-                     profile, actual + sum(semantic_pool.auto_adjustments.values()), actual,
-                     max(0, resource_budget - access_count))
+        logging.info(
+            player_text(
+                "apworld.notices",
+                "resource_adjusted",
+                profile=profile,
+                original=actual + sum(semantic_pool.auto_adjustments.values()),
+                actual=actual,
+                budget=max(0, resource_budget - access_count),
+            )
+        )
     pool_counts = Counter(semantic_pool.placement_counts)
+
     def evaluate_start_stage(s_id: str):
         return solve_stage_bootstrap(
             s_id, world_context, get_candidate_base_state(s_id), pool_counts
@@ -646,7 +661,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
                               and (candidate is None or not candidate.get('opening_stage')
                                    or s_id == candidate['opening_stage'])}
         if not candidate_results:
-            raise OptionError('This mission pool has no verified opening for progressive enemizer without starting equipment')
+            raise OptionError(player_text("apworld.errors", "progressive_opening_unavailable"))
         min_cost = min(result["bootstrap_cost"] for result in candidate_results.values())
         tied_candidates = [s for s in candidate_results if candidate_results[s]["bootstrap_cost"] == min_cost]
         if use_opening and order_mode == 2 and candidate is None:
@@ -697,7 +712,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
         chosen_result = {**chosen_result, 'bootstrap_cost': 0, 'placed_items': (),
             'final_cr': initial.player_cr, 'effective_cr': initial.effective_cr,
             'overshoot': initial.allowance - initial.deficit}
-        logging.info('DOOM Eternal starting mission %s has no guaranteed combat preparation; keeping the configured loadout.', chosen_start)
+        logging.info(player_text("apworld.notices", "unprepared_start", mission=chosen_start))
 
     # 6. Bootstrap inventory
     bootstrap_inventory = {}

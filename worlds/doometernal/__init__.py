@@ -72,6 +72,8 @@ from .settings import DoomEternalSettings
 from .slot_data import REQUIRED_CAPABILITIES, build_slot_data
 from .slot_data_contract import ContractError, catalog_tables, load_slot_catalog, validate_slot_data
 
+from .player_strings_generated import text as player_text
+
 
 
 
@@ -80,8 +82,8 @@ class DoomEternalWeb(WebWorld):
     option_groups = option_groups
     tutorials: list[Tutorial] = [  # noqa: RUF012
         Tutorial(
-            "DOOM Eternal Setup Guide",
-            "A guide to installing and connecting DOOM Eternal for Archipelago.",
+            player_text("apworld.web", "tutorial_title"),
+            player_text("apworld.web", "tutorial_description"),
             "English",
             "setup_en.md",
             "setup/en",
@@ -91,10 +93,13 @@ class DoomEternalWeb(WebWorld):
 
 
 class DoomEternalWorld(World):
-    """
-    Rip and tear, until it is done.
-    Doom Eternal Randomizer for Archipelago.
-    """
+    __doc__ = (
+        "\n    "
+        + player_text("apworld.web", "tagline")
+        + "\n    "
+        + player_text("apworld.web", "world_description")
+        + "\n    "
+    )
 
     game: ClassVar[str] = GAME_NAME
     web = DoomEternalWeb()
@@ -123,7 +128,7 @@ class DoomEternalWorld(World):
         options = slot_data.get("tracker_options")
         names = tuple(DoomEternalOptions.__annotations__)
         if not isinstance(options, dict) or set(options) != set(names):
-            raise OptionError("DOOM Eternal room has no complete tracker options; generate a room with UT support")
+            raise OptionError(player_text("apworld.errors", "tracker_options_missing"))
         try:
             restored = {name: self.options_dataclass.type_hints[name].from_any(deepcopy(options[name])) for name in names}
         except Exception as error:
@@ -204,7 +209,7 @@ class DoomEternalWorld(World):
         for option in (self.options.start_inventory, self.options.start_inventory_from_pool):
             for name, quantity in option.value.items():
                 if type(quantity) is not int or quantity < 0:
-                    raise OptionError(f"DOOM Eternal starting inventory has invalid quantity: {name}")
+                    raise OptionError(player_text("apworld.errors", "inventory_invalid_item_quantity", item=name))
 
     def _enemy_option_values(self) -> dict[str, object]:
         names = [name for name in self.options_dataclass.type_hints if name.startswith("enemy_")]
@@ -234,7 +239,7 @@ class DoomEternalWorld(World):
         self._validate_starting_quantities()
         start_inventory = self.effective_starting_inventory()
         if start_inventory.get("Blood Punch"):
-            raise OptionError("Blood Punch belongs to legacy rooms; new seeds require Progressive Blood Punch (0..4)")
+            raise OptionError(player_text("apworld.errors", "legacy_blood_punch"))
         self.enemy_options_raw = self._enemy_option_values()
         self.enemies = self._normalize_enemy_options()
         self.enemy_plan = None
@@ -258,6 +263,7 @@ class DoomEternalWorld(World):
             from .campaign import solve_stage_bootstrap
             from .native_enemy_safety import OPENING_REGIONS
             from .planner import FastState
+
             plan = self.campaign_plan
             stage = plan['opening_stage']
             owned = self.effective_starting_inventory()
@@ -274,6 +280,7 @@ class DoomEternalWorld(World):
             plan['opening_placed_items'] = list(preparation['placed_items'])
         from .killsanity_plan import build_campaign_kill_budget
         from .killsanity_logic import build_kill_rewards
+
         kill_budget = dict(estimated_kills=0, finite_sources=[])
         if self.options.killsanity.value:
             kill_budget = build_campaign_kill_budget(
@@ -307,47 +314,42 @@ class DoomEternalWorld(World):
                 unsafe.append(name)
                 continue
             if name in SUPPORT_RUNE_ITEM_NAMES and not dlc_enabled:
-                unavailable.append(f"{name} (requires Use DLC Content ON)")
+                unavailable.append(player_text("apworld.errors", "inventory_requires_dlc", item=name))
                 continue
             if name not in DEVINV_START_INVENTORY_ITEM_NAMES:
                 if data.classification & ItemClassification.trap:
-                    unsafe.append(f"{name} (trap)")
+                    unsafe.append(player_text("apworld.errors", "inventory_trap", item=name))
                 elif data.classification & ItemClassification.filler:
-                    unsafe.append(f"{name} (filler/consumable)")
+                    unsafe.append(player_text("apworld.errors", "inventory_filler", item=name))
                 elif name in DEVINV_NON_PERSISTENT_USEFUL_ITEM_NAMES:
-                    unsafe.append(f"{name} (consumable)")
+                    unsafe.append(player_text("apworld.errors", "inventory_consumable", item=name))
                 elif name == "Victory":
-                    unsafe.append(f"{name} (goal item)")
+                    unsafe.append(player_text("apworld.errors", "inventory_goal_item", item=name))
                 else:
-                    unavailable.append(f"{name} (not in current persistent pool)")
+                    unavailable.append(player_text("apworld.errors", "inventory_not_persistent", item=name))
                 continue
             if name in SPECIAL_WEAPON_ITEM_NAMES and name != effective_special_weapon:
-                unavailable.append(f"{name} (incompatible Special Weapon mode)")
+                unavailable.append(player_text("apworld.errors", "inventory_special_weapon", item=name))
                 continue
             maximum = POOL_ITEM_LIMITS.get(name, 1)
             if name == "Sentinel Battery":
                 maximum = self.campaign_plan["battery_economy"]["total"]
             if quantity > maximum:
-                invalid_quantity.append(f"{name} (maximum {maximum})")
+                invalid_quantity.append(player_text("apworld.errors", "inventory_maximum", item=name, maximum=maximum))
         if unsafe:
-            raise OptionError(
-                "DOOM Eternal starting inventory cannot contain traps, filler/consumables, or Victory: "
-                + ", ".join(sorted(unsafe))
-            )
+            raise OptionError(player_text("apworld.errors", "inventory_unsafe", items=", ".join(sorted(unsafe))))
         if unavailable:
             raise OptionError(
-                "DOOM Eternal starting inventory item is not legal in current persistent pool: "
-                + ", ".join(sorted(unavailable))
+                player_text("apworld.errors", "inventory_unavailable", items=", ".join(sorted(unavailable)))
             )
         if invalid_quantity:
             raise OptionError(
-                "DOOM Eternal starting inventory has invalid quantity: "
-                + ", ".join(sorted(invalid_quantity))
+                player_text("apworld.errors", "inventory_invalid_quantity", items=", ".join(sorted(invalid_quantity)))
             )
         if start_inventory.get("Chainsaw", 0) and not self.options.randomize_chainsaw.value:
-            raise OptionError("DOOM Eternal starting inventory Chainsaw unavailable when randomize_chainsaw is disabled")
+            raise OptionError(player_text("apworld.errors", "inventory_chainsaw_disabled"))
         if start_inventory.get("Dash", 0) and not self.options.randomize_dash.value:
-            raise OptionError("DOOM Eternal starting inventory Dash unavailable when randomize_dash is disabled")
+            raise OptionError(player_text("apworld.errors", "inventory_dash_disabled"))
 
     required_client_version = (0, 6, 7)
 
@@ -617,6 +619,7 @@ class DoomEternalWorld(World):
             ) >= count
 
         from .killsanity_logic import create_killsanity_locations
+
         create_killsanity_locations(self)
 
     def _filler_weights(self) -> dict[str, int]:
@@ -640,7 +643,7 @@ class DoomEternalWorld(World):
     def get_filler_item_name(self) -> str:
         weights = self._filler_weights()
         if not any(weights.values()):
-            raise OptionError("Filler Weights must leave a positive weight for replacement items")
+            raise OptionError(player_text("apworld.errors", "filler_replacement_weight"))
         return self.random.choices(list(weights), weights=list(weights.values()), k=1)[0]
 
     def create_items(self) -> None:
@@ -652,7 +655,7 @@ class DoomEternalWorld(World):
         plan = self.campaign_plan
         semantic_counts = plan.get("semantic_counts") or {}
         if not semantic_counts:
-            raise ValueError("DOOM Eternal semantic item pool was not planned")
+            raise ValueError(player_text("apworld.errors", "semantic_pool_unplanned"))
         pool_names: list[str] = []
         for name, quantity in sorted(semantic_counts.items()):
             pool_names.extend([name] * quantity)
@@ -669,7 +672,7 @@ class DoomEternalWorld(World):
                     if name not in pool_names and not start_inventory[name]
                 ]
                 if not eligible_weapons:
-                    raise OptionError("Starting Weapon random selection has no eligible pool weapon")
+                    raise OptionError(player_text("apworld.errors", "starting_weapon_unavailable"))
                 self.starting_weapon_name = self.item_pool_rng.choice(eligible_weapons)
         if self.starting_weapon_name in pool_names:
             pool_names.remove(self.starting_weapon_name)
@@ -702,7 +705,9 @@ class DoomEternalWorld(World):
         amount_needed = locations_count - len(pool_names)
         if amount_needed < 0:
             raise OptionError(
-                f"DOOM Eternal item pool requires {len(pool_names)} locations; only {locations_count} enabled"
+                player_text(
+                    "apworld.errors", "item_pool_capacity", pool_count=len(pool_names), location_count=locations_count
+                )
             )
         if amount_needed > 0:
             filler_weights = self._filler_weights()
@@ -711,7 +716,7 @@ class DoomEternalWorld(World):
             enabled_traps = [name for name in enabled_traps if trap_weights[name] > 0]
             trap_count = amount_needed * self.options.trap_percentage.value // 100 if enabled_traps else 0
             if amount_needed > trap_count and not any(filler_weights.values()):
-                raise OptionError("Filler Weights must leave a positive weight for residual locations")
+                raise OptionError(player_text("apworld.errors", "filler_residual_weight"))
             if amount_needed > trap_count:
                 pool_names.extend(self.item_pool_rng.choices(
                     list(filler_weights), weights=list(filler_weights.values()), k=amount_needed - trap_count))
@@ -722,6 +727,7 @@ class DoomEternalWorld(World):
         pool = [self.create_item(name) for name in pool_names]
         self.multiworld.itempool += pool
         from .classification import apply_dynamic_progression_classification
+
         apply_dynamic_progression_classification(self)
         preparation = Counter(plan.get('bootstrap_placed_items', ())) + Counter(plan.get('opening_placed_items', ()))
         for item in self.multiworld.itempool:
@@ -777,6 +783,7 @@ class DoomEternalWorld(World):
         if not plan.get('opening_stage') or hasattr(self, "_tracker_slot"):
             return
         from .native_enemy_safety import OPENING_REGIONS
+
         state = CollectionState(self.multiworld)
         credited = set()
         self.preparation_placements = []
@@ -799,9 +806,9 @@ class DoomEternalWorld(World):
                     continue
                 item = next((item for item in self.get_pre_fill_items() if item.name == name), None)
                 if item is None:
-                    raise FillError(f'DOOM Eternal preparation cannot place {name!r} for player {self.player}: '
-                                    'no held copy or reachable opening plando copy; review excluded locations, '
-                                    'item rules and plando')
+                    raise FillError(
+                        player_text("apworld.errors", "preparation_copy_missing", item=repr(name), player=self.player)
+                    )
                 self._place_preparation(item, state, regions, credited)
         for item in self.get_pre_fill_items():
             self._place_preparation(item, state, opening, credited)
@@ -810,9 +817,9 @@ class DoomEternalWorld(World):
         locations = [loc for loc in self._preparation_locations(state, regions) if loc.item is None
                      and loc.can_fill(state, item, check_access=False)]
         if not locations:
-            raise FillError(f'DOOM Eternal preparation cannot place {item.name!r} for player {self.player}: '
-                            'no reachable opening check accepts it; review excluded locations, '
-                            'item rules and plando')
+            raise FillError(
+                player_text("apworld.errors", "preparation_check_missing", item=repr(item.name), player=self.player)
+            )
         location = self.placement_rng.choice(sorted(locations, key=lambda loc: loc.name))
         location.place_locked_item(item)
         credited.add(location)
@@ -822,59 +829,125 @@ class DoomEternalWorld(World):
     def _spoiler_preparation(self):
         plan = self.campaign_plan
         names = Counter(plan['bootstrap_placed_items']) + Counter(plan['opening_placed_items'])
-        entries = [f"{name} (starting inventory)" for name in plan['bootstrap_inventory']]
+        entries = [
+            player_text("apworld.spoiler", "starting_inventory", item=name) for name in plan["bootstrap_inventory"]
+        ]
         locations = dict.fromkeys(getattr(self, 'preparation_placements', []) + self.multiworld.get_filled_locations())
         for location in locations:
             item = location.item
             if location.address is not None and item.player == self.player and names[item.name]:
-                entries.append(f"{item.name} at {location}")
+                entries.append(player_text("apworld.spoiler", "item_location", item=item.name, location=location))
                 names[item.name] -= 1
-        entries.extend(f"{name} (early delivery, {count})" for name, count in names.items() if count)
-        return "; ".join(entries) or "None"
+        entries.extend(
+            player_text("apworld.spoiler", "early_delivery", item=name, count=count)
+            for name, count in names.items()
+            if count
+        )
+        return "; ".join(entries) or player_text("apworld.spoiler", "none")
 
     def write_spoiler(self, spoiler_handle) -> None:
         plan = self.campaign_plan
         sequence = " -> ".join(STAGE_BY_ID[stage]['name'] for stage in plan['sequence'])
         access = "; ".join(f"{STAGE_BY_ID[stage]['name']}: {STAGE_BY_ID[stage]['name']} Access"
                            for stage in plan['access_items'].values())
-        spoiler_handle.write(f"\nDOOM Eternal - {self.player_name}\n")
-        spoiler_handle.write(f"  Mission order: {self.options.mission_order.current_option_name}\n")
-        spoiler_handle.write(f"  Sequence: {sequence}\n")
-        spoiler_handle.write(f"  Access items: {access or 'None (missions unlock in sequence)'}\n")
-        spoiler_handle.write(f"  Goal: {self.options.goal.current_option_name}\n")
-        spoiler_handle.write(f"  Preparation: {self._spoiler_preparation()}\n")
-        enemy = self.options.enemy_preset.current_option_name if self.enemies['enabled'] else "Off"
-        spoiler_handle.write(f"  Enemy preset: {enemy}\n")
+        spoiler_handle.write("\n" + player_text("apworld.spoiler", "title", player=self.player_name) + "\n")
+        spoiler_handle.write(
+            player_text("apworld.spoiler", "mission_order", order=self.options.mission_order.current_option_name) + "\n"
+        )
+        spoiler_handle.write(player_text("apworld.spoiler", "sequence", sequence=sequence) + "\n")
+        spoiler_handle.write(
+            player_text(
+                "apworld.spoiler", "access_items", items=access or player_text("apworld.spoiler", "sequence_unlocks")
+            )
+            + "\n"
+        )
+        spoiler_handle.write(player_text("apworld.spoiler", "goal", goal=self.options.goal.current_option_name) + "\n")
+        spoiler_handle.write(
+            player_text("apworld.spoiler", "preparation", preparation=self._spoiler_preparation()) + "\n"
+        )
+        enemy = (
+            self.options.enemy_preset.current_option_name
+            if self.enemies["enabled"]
+            else player_text("apworld.spoiler", "off")
+        )
+        spoiler_handle.write(player_text("apworld.spoiler", "enemy_preset", preset=enemy) + "\n")
         self._spoiler_planning(spoiler_handle)
 
     def _spoiler_planning(self, spoiler_handle):
         plan = self.campaign_plan
-        spoiler_handle.write(f"  Mission selection: {plan['requested_mission_count']} requested, "
-            f"{plan['effective_mission_count']} included; forced goal: {plan['goal_forced_active']}\n")
-        spoiler_handle.write(f"  Preparation CR: {plan['bootstrap_initial_cr']} -> {plan['bootstrap_final_cr']}; "
-            f"effective {plan['bootstrap_effective_cr']}; overshoot {plan['bootstrap_overshoot']}\n")
-        spoiler_handle.write(f"  Readiness deficit: {plan['readiness_initial_deficit']} -> "
-            f"{plan['readiness_final_deficit']}; resource budget: {plan['resource_permanent_budget']}\n")
-        for label, key in (("Pool counts", "semantic_counts"), ("Optional resources", "readiness_selection"),
-                           ("Automatic adjustments", "resource_auto_adjustments"),
-                           ("Composition bands", "composition_bands"), ("Progression bands", "enemy_progression_bands")):
+        spoiler_handle.write(
+            player_text(
+                "apworld.spoiler",
+                "mission_selection",
+                requested=plan["requested_mission_count"],
+                included=plan["effective_mission_count"],
+                forced_goal=str(plan["goal_forced_active"]),
+            )
+            + "\n"
+        )
+        spoiler_handle.write(
+            player_text(
+                "apworld.spoiler",
+                "preparation_cr",
+                initial=str(plan["bootstrap_initial_cr"]),
+                final=str(plan["bootstrap_final_cr"]),
+                effective=str(plan["bootstrap_effective_cr"]),
+                overshoot=str(plan["bootstrap_overshoot"]),
+            )
+            + "\n"
+        )
+        spoiler_handle.write(
+            player_text(
+                "apworld.spoiler",
+                "readiness",
+                initial=str(plan["readiness_initial_deficit"]),
+                final=str(plan["readiness_final_deficit"]),
+                budget=str(plan["resource_permanent_budget"]),
+            )
+            + "\n"
+        )
+        for label, key in (
+            (player_text("apworld.spoiler", "pool_counts"), "semantic_counts"),
+            (player_text("apworld.spoiler", "optional_resources"), "readiness_selection"),
+            (player_text("apworld.spoiler", "automatic_adjustments"), "resource_auto_adjustments"),
+            (player_text("apworld.spoiler", "composition_bands"), "composition_bands"),
+            (player_text("apworld.spoiler", "progression_bands"), "enemy_progression_bands"),
+        ):
             entries = "; ".join(f"{name}: {count}" for name, count in sorted(plan.get(key, {}).items()))
-            spoiler_handle.write(f"  {label}: {entries or 'None'}\n")
+            spoiler_handle.write(
+                player_text(
+                    "apworld.spoiler",
+                    "planning_entries",
+                    label=label,
+                    entries=entries or player_text("apworld.spoiler", "none"),
+                )
+                + "\n"
+            )
         self._spoiler_enemy_planning(spoiler_handle)
 
     def _spoiler_enemy_planning(self, spoiler_handle):
         plan = self.enemy_plan or {}
         if not plan:
             return
-        spoiler_handle.write(f"  Enemy generation seed: {plan['seed']}\n")
+        spoiler_handle.write(player_text("apworld.spoiler", "enemy_seed", seed=plan["seed"]) + "\n")
         for stage, costs in sorted(plan.get('combat_costs', {}).items()):
             waves = costs.get('campaign', {}).get('waves', [])
             peak = max((wave.get('peak_cost', wave['cost']) for wave in waves), default=0)
-            spoiler_handle.write(f"  Combat {stage}: cost {costs['original']:.1f} -> {costs['actual']:.1f}; "
-                f"{len(waves)} waves, peak cost {peak:.1f}\n")
+            spoiler_handle.write(
+                player_text(
+                    "apworld.spoiler",
+                    "combat",
+                    stage=stage,
+                    original=format(costs["original"], ".1f"),
+                    actual=format(costs["actual"], ".1f"),
+                    waves=len(waves),
+                    peak=format(peak, ".1f"),
+                )
+                + "\n"
+            )
         for adjustment in plan.get('compiler_adjustments', []):
             details = "; ".join(f"{name}: {value}" for name, value in sorted(adjustment.items()))
-            spoiler_handle.write(f"  Safety adjustment: {details}\n")
+            spoiler_handle.write(player_text("apworld.spoiler", "safety_adjustment", details=details) + "\n")
 
     def set_rules(self) -> None:
         active_location_names = {

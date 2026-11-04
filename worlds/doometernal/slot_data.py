@@ -21,6 +21,8 @@ from .slot_data_contract import (
 )
 from .version import APWORLD_REVISION, BRIDGE_PROTOCOL, MANIFEST_SCHEMA_VERSION, ROOM_CONTRACT_REVISION
 
+from .player_strings_generated import text as player_text
+
 
 REQUIRED_CAPABILITIES = ["slot_data_v7"]
 
@@ -118,7 +120,7 @@ def _placements(world):
         if location.address is None:
             continue
         if location.item is None:
-            raise StructureError(f"Room placement is missing an item at {location.name}")
+            raise StructureError(player_text("apworld.errors", "room_placement_missing", location=location.name))
         rows.append([location.address, location.item.code, location.item.player])
     return rows
 

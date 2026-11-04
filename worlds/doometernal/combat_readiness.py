@@ -10,6 +10,7 @@ Implements the Combat Readiness solver model:
 
 Pure deterministic evaluation for Archipelago logical reachability.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -17,6 +18,8 @@ from typing import TYPE_CHECKING, Any
 
 from .combat_rating import evaluate_player_loadout_cr, NORMAL_RUNE_NAMES
 from .logic import dash_available, sentinel_hammer_available
+
+from .player_strings_generated import text as player_text
 
 if TYPE_CHECKING:
     from BaseClasses import CollectionState
@@ -83,6 +86,7 @@ DARK_LORD_STAGE_ID: str = "e5m4_boss"
 @dataclass(frozen=True)
 class ReadinessResult:
     """Diagnostic result for readiness evaluation."""
+
     stage_id: str
     player_cr: float
     mission_base_cr: int
@@ -107,7 +111,7 @@ def get_mission_base_cr(stage_id: str, world: Any | None = None) -> int:
     if frozen is not None:
         return frozen.cr_max
     if stage_id not in MISSION_BASE_CR:
-        raise KeyError(f"Unknown stage ID for Base CR: {stage_id}")
+        raise KeyError(player_text("apworld.errors", "unknown_stage_cr", stage=stage_id))
     base = MISSION_BASE_CR[stage_id]
     enemy_plan = getattr(world, "enemy_plan", None) or {}
     costs = enemy_plan.get("combat_costs", {}).get(stage_id)
@@ -139,7 +143,7 @@ def _campaign_pressure_cr(stage_id, base, profile):
 def _opening_combat_profile(profile):
     waves = profile.get('opening_waves')
     if not waves:
-        raise ValueError('Starting mission has no verified opening encounters')
+        raise ValueError(player_text("apworld.errors", "opening_encounters_unavailable"))
     profile = {**profile, 'waves': waves, 'bodies': sum(wave['bodies'] for wave in waves)}
     if 'opening_estimated_kills' in profile:
         profile['estimated_kills'] = profile['opening_estimated_kills']
@@ -206,6 +210,7 @@ def _stage_counter_ids(stage_id, world, opening):
 
 def _enemy_counter_penalties(state, player, stage_id, world, *, opening=False):
     from .logic import COMBAT_CAPABILITIES
+
     present = _stage_counter_ids(stage_id, world, opening)
     enemy_plan = getattr(world, 'enemy_plan', None) or {}
     if enemy_plan.get('revision', 0) >= 13:
@@ -238,6 +243,7 @@ def _renewable_ammo(stage_id, world):
     if frozen is not None:
         return frozen.renewable_ammo
     from .native_enemy_plan import AMMO_FODDER
+
     stage = (getattr(world, "enemy_plan", None) or {}).get("maps", {}).get(stage_id, {})
     return any(operation.get("reserve") for operation in stage.get("operations", [])) or any(
         recipe.get('renewable') and any(body['species'] in AMMO_FODDER for body in recipe['bodies'])
@@ -257,10 +263,7 @@ def _breakpoint_spirit_present(stage_id, world):
 def get_skill_allowance(logic_difficulty: int, campaign_difficulty: int = 1) -> int:
     """Return the preparation allowance for a LogicDifficulty value."""
     if logic_difficulty not in SKILL_ALLOWANCES:
-        raise ValueError(
-            f"Unsupported logic difficulty: {logic_difficulty}. "
-            "Supported: 0 (Relaxed), 1 (Standard), 2 (Expert)"
-        )
+        raise ValueError(player_text("apworld.errors", "unsupported_logic_difficulty", difficulty=logic_difficulty))
     return max(0, SKILL_ALLOWANCES[logic_difficulty] - max(0, campaign_difficulty - 1) * 2)
 
 
@@ -296,6 +299,7 @@ def _resolve_readiness_options(
                 special_weapon = opt.current_option_name
             elif hasattr(opt, "value"):
                 from .options import SpecialWeapon
+
                 special_weapon = SpecialWeapon.labels.get(opt.value, "Progressive Special Weapon")
             else:
                 special_weapon = "Progressive Special Weapon"
@@ -362,6 +366,7 @@ def evaluate_mission_readiness(
     # The fixed Chainsaw pickup precedes the profiled Hell on Earth fights.
     if _renewable_ammo(stage_id, world) and randomize_chainsaw:
         from .logic import chainsaw_available
+
         if not chainsaw_available(state, player, randomize_chainsaw=True):
             missing.append("Chainsaw for ammunition supply")
     if stage_id in HOOK_TRAVERSAL_STAGES:

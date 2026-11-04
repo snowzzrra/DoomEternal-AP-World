@@ -9,6 +9,7 @@ from typing import Any
 from BaseClasses import CollectionState
 
 from .items import BASE_GATE_KEY_ITEM_NAMES, starting_weapon_item_names
+from .player_strings_generated import text as player_text
 
 MASTERY_SUFFIX = " - Weapon Mastery Challenge"
 
@@ -183,6 +184,7 @@ COMBAT_CAPABILITIES: Mapping[str, tuple[tuple[str, ...], ...]] = {
     "anti_spirit": (("Plasma Rifle", "Microwave Beam"),),
 }
 
+
 def combat_capability_alternatives(capability: str) -> tuple[tuple[str, ...], ...]:
     if capability in COMBAT_CAPABILITIES:
         return COMBAT_CAPABILITIES[capability]
@@ -191,7 +193,7 @@ def combat_capability_alternatives(capability: str) -> tuple[tuple[str, ...], ..
         base_weapon = MOD_BASE_WEAPON_REQUIREMENTS.get(mod_name)
         if base_weapon:
             return ((base_weapon, mod_name),)
-    raise ValueError(f"Unknown combat capability: {capability}")
+    raise ValueError(player_text("apworld.errors", "unknown_combat_capability", capability=capability))
 
 
 def fortress_battery_consumer_cost(active_spend_groups_count: int = 11) -> int:
@@ -206,7 +208,7 @@ def connection_requirement(
     """Convert generated connection metadata into AP access logic."""
     capabilities = condition.get("soft_capabilities", ())
     if not isinstance(capabilities, (list, tuple)):
-        raise ValueError("Generated connection soft_capabilities must be a sequence")
+        raise ValueError(player_text("apworld.errors", "invalid_soft_capabilities"))
     first_battery_gate = "requires_first_battery" in capabilities
     dash_gate = "requires_dash" in capabilities
     combat_capabilities = tuple(
@@ -264,7 +266,7 @@ def mission_clear_event_name(mission_name: str) -> str:
 
 def goal_endpoint_event_name(goal_name: str) -> str:
     if goal_name not in GOAL_NAMES:
-        raise ValueError(f"Unknown goal: {goal_name}")
+        raise ValueError(player_text("apworld.errors", "unknown_goal", goal=goal_name))
     return f"{GOAL_ENDPOINT_EVENT_PREFIX}{goal_name}"
 
 
@@ -276,19 +278,16 @@ def validate_goal_endpoint(
     include_dlc_missions: bool = True,
 ) -> None:
     if goal_name not in GOAL_NAMES:
-        raise ValueError(f"Unknown goal: {goal_name}")
+        raise ValueError(player_text("apworld.errors", "unknown_goal", goal=goal_name))
     if goal_name in {"Kill the Dark Lord", "Complete the Full Saga"} and (
         not use_dlc_content or not include_dlc_missions
     ):
-        required = "Dark Lord" if goal_name == "Kill the Dark Lord" else "Dark Lord and Full Saga"
-        raise ValueError(
-            f"DOOM Eternal Goal '{goal_name}' requires DLC content and DLC missions for {required} content"
-        )
+        key = "dark_lord_requires_dlc" if goal_name == "Kill the Dark Lord" else "full_saga_requires_dlc"
+        raise ValueError(player_text("apworld.errors", key, goal=goal_name))
     endpoint_location = GOAL_ENDPOINT_LOCATIONS.get(goal_name)
     if endpoint_location is not None and endpoint_location not in location_names:
         raise ValueError(
-            f"DOOM Eternal Goal '{goal_name}' is unavailable: "
-            f"required endpoint location '{endpoint_location}' is not in active catalog"
+            player_text("apworld.errors", "goal_endpoint_unavailable", goal=goal_name, location=endpoint_location)
         )
 
 
@@ -299,13 +298,13 @@ def goal_endpoint_available(goal_name: str, location_names: set[str]) -> bool:
 
 def victory_requirement_event_name(requirement_name: str) -> str:
     if requirement_name not in VICTORY_REQUIREMENT_NAMES:
-        raise ValueError(f"Unknown victory requirement: {requirement_name}")
+        raise ValueError(player_text("apworld.errors", "unknown_victory_requirement", requirement=requirement_name))
     return f"{VICTORY_REQUIREMENT_EVENT_PREFIX}{requirement_name}"
 
 
 def victory_requirement_location_event_name(requirement_name: str, location_name: str) -> str:
     if requirement_name not in VICTORY_REQUIREMENT_NAMES:
-        raise ValueError(f"Unknown victory requirement: {requirement_name}")
+        raise ValueError(player_text("apworld.errors", "unknown_victory_requirement", requirement=requirement_name))
     return f"{VICTORY_REQUIREMENT_EVENT_PREFIX}{requirement_name}: {location_name}"
 
 
@@ -340,7 +339,7 @@ def goal_redundant_requirements(
 ) -> frozenset[str]:
     """Return victory requirements fully implied by the selected Goal."""
     if goal not in GOAL_NAMES:
-        raise ValueError(f"Unknown goal: {goal}")
+        raise ValueError(player_text("apworld.errors", "unknown_goal", goal=goal))
     redundant: set[str] = set()
     if goal in GOAL_IMPLIED_UNMAYKR:
         redundant.add("Acquire the Unmaykr")
@@ -372,17 +371,26 @@ def validate_full_saga_catalog(
     missing = sorted(expected - authored)
     if missing:
         raise ValueError(
-            "DOOM Eternal Goal 'Complete the Full Saga' is unavailable: "
-            f"the mission-complete catalog is incomplete ({len(authored)}/{len(expected)} "
-            f"missions authored); missing: {', '.join(missing)}"
+            player_text(
+                "apworld.errors",
+                "full_saga_incomplete",
+                authored=len(authored),
+                expected=len(expected),
+                missing=", ".join(missing),
+            )
         )
     unexpected = sorted(authored - expected)
     if unexpected or len(authored) != len(expected):
         raise ValueError(
-            "DOOM Eternal Goal 'Complete the Full Saga' is unavailable: "
-            f"the mission-complete catalog must contain exactly {len(expected)} missions; "
-            f"authored {len(authored)}"
-            + (f"; unexpected: {', '.join(unexpected)}" if unexpected else "")
+            player_text(
+                "apworld.errors",
+                "full_saga_mission_count",
+                expected=len(expected),
+                authored=len(authored),
+                unexpected=player_text("apworld.errors", "full_saga_mission_count_details", names=", ".join(unexpected))
+                if unexpected
+                else "",
+            )
         )
 
 
@@ -396,7 +404,13 @@ def effective_victory_requirements(
 ) -> frozenset[str]:
     """Drop requirements with no authored content or fully implied by the Goal."""
     if selected - VICTORY_REQUIREMENT_NAMES:
-        raise ValueError(f"Unknown victory requirement(s): {sorted(selected - VICTORY_REQUIREMENT_NAMES)}")
+        raise ValueError(
+            player_text(
+                "apworld.errors",
+                "unknown_victory_requirements",
+                requirements=str(sorted(selected - VICTORY_REQUIREMENT_NAMES)),
+            )
+        )
     if goal is not None:
         selected = selected - goal_redundant_requirements(
             goal,
@@ -460,6 +474,7 @@ def build_location_prerequisites(
         from .killsanity_plan import load_campaign_kill_sources
         from .native_enemy_plan import native_event_identity
         from .secret_encounter_timers import load_secret_encounter_timers
+
         secrets = load_secret_encounter_timers()["maps"]
         kill_sources = load_campaign_kill_sources()["maps"]
         for key, plan in enemy_plan.get("maps", {}).items():
@@ -570,6 +585,7 @@ def build_location_prerequisites(
             )
     if "The Dark Lord - Defeated" in location_names:
         from .combat_readiness import is_dark_lord_defeated_ready
+
         dark_lord_custom_rule = (
             lambda state, player, sw=special_weapon, diff=logic_difficulty: is_dark_lord_defeated_ready(
                 state,
@@ -646,9 +662,9 @@ def validate_location_prerequisites(
 ) -> None:
     for location_name, requirement in table.items():
         if location_name not in location_names:
-            raise ValueError(f"Unknown logic location: {location_name}")
+            raise ValueError(player_text("apworld.errors", "unknown_logic_location", location=location_name))
         if not isinstance(requirement, LocationRequirement):
-            raise ValueError(f"Invalid logic rule: {location_name}")
+            raise ValueError(player_text("apworld.errors", "invalid_logic_rule", location=location_name))
         _validate_requirement(requirement, location_name, item_names)
 
 
@@ -659,13 +675,22 @@ def _validate_requirement(
 ) -> None:
     if set(requirement.all_of) - item_names:
         raise ValueError(
-            f"Unknown logic item(s) for {location_name}: {sorted(set(requirement.all_of) - item_names)}"
+            player_text(
+                "apworld.errors",
+                "unknown_logic_items",
+                location=location_name,
+                items=str(sorted(set(requirement.all_of) - item_names)),
+            )
         )
     if any(not alternative for alternative in requirement.any_of):
-        raise ValueError(f"Empty any_of alternative: {location_name}")
+        raise ValueError(player_text("apworld.errors", "empty_logic_alternative", location=location_name))
     unknown_any = {item for alternative in requirement.any_of for item in alternative if item not in item_names}
     if unknown_any:
-        raise ValueError(f"Unknown any_of item(s) for {location_name}: {sorted(unknown_any)}")
+        raise ValueError(
+            player_text(
+                "apworld.errors", "unknown_alternative_items", location=location_name, items=str(sorted(unknown_any))
+            )
+        )
     for capability in (*requirement.combat_all_of, *requirement.combat_any_of):
         alternatives = combat_capability_alternatives(capability)
         unknown_combat = {
@@ -673,14 +698,16 @@ def _validate_requirement(
         }
         if unknown_combat:
             raise ValueError(
-                f"Unknown combat capability item(s) for {location_name}: {sorted(unknown_combat)}"
+                player_text(
+                    "apworld.errors", "unknown_combat_items", location=location_name, items=str(sorted(unknown_combat))
+                )
             )
     if requirement.battery_currency < 0:
-        raise ValueError(f"Negative Battery requirement: {location_name}")
+        raise ValueError(player_text("apworld.errors", "negative_battery_requirement", location=location_name))
     if requirement.normal_weapon_count < 0:
-        raise ValueError(f"Negative normal weapon requirement: {location_name}")
+        raise ValueError(player_text("apworld.errors", "negative_weapon_requirement", location=location_name))
     if requirement.battery_currency and not {"Sentinel Battery", "Sentinel Battery Bundle"}.issubset(item_names):
-        raise ValueError(f"Battery items are absent for {location_name}")
+        raise ValueError(player_text("apworld.errors", "battery_items_absent", location=location_name))
     for child in requirement.all_requirements:
         _validate_requirement(child, location_name, item_names)
 
@@ -719,6 +746,7 @@ def requirement_satisfied(requirement: LocationRequirement, state: CollectionSta
     ):
         return False
     if requirement.reachable_any_of:
+
         def _safe_can_reach(kind: str, name: str) -> bool:
             mw = getattr(state, "multiworld", None)
             if mw is not None and hasattr(mw, "regions"):

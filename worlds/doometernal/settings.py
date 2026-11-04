@@ -1,8 +1,10 @@
 import settings
 
+from .player_strings_generated import text as player_text
+
 
 class DoomEternalSettings(settings.Group):
     class ClientDirectory(settings.UserFolderPath):
-        """Directory where the DOOM Eternal Archipelago client is installed."""
+        __doc__ = player_text("apworld.settings", "client_directory")
 
     client_directory: ClientDirectory = ClientDirectory("~/DoomEternalArchipelago/client")

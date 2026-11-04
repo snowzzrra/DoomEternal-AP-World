@@ -9,6 +9,7 @@ Dynamic item progression classification:
 - Promotes only proven-required copies to ItemClassification.progression.
 - Maintains canonical diagnostic ledger recording promotions and unpromoted items.
 """
+
 from __future__ import annotations
 
 from collections import Counter
@@ -47,6 +48,8 @@ from .planner import (
     select_readiness_items,
 )
 
+from .player_strings_generated import text as player_text
+
 if TYPE_CHECKING:
     from . import DoomEternalWorld
 
@@ -54,6 +57,7 @@ if TYPE_CHECKING:
 @dataclass
 class PromotionRecord:
     """Record of a promoted item copy."""
+
     item_name: str
     copy_index: int
     original_classification: ItemClassification
@@ -67,6 +71,7 @@ class PromotionRecord:
 @dataclass
 class UnpromotedRecord:
     """Record of a useful CR-positive candidate not promoted."""
+
     item_name: str
     copies_available: int
     reason_not_promoted: str
@@ -75,6 +80,7 @@ class UnpromotedRecord:
 @dataclass
 class ClassificationLedger:
     """Canonical P7.7 Classification Ledger."""
+
     promotions: list[PromotionRecord] = field(default_factory=list)
     unpromoted: list[UnpromotedRecord] = field(default_factory=list)
     initial_player_cr: float = 0.0
@@ -176,9 +182,10 @@ def apply_dynamic_progression_classification(world: DoomEternalWorld) -> Classif
         if not world.options.randomize_dash.value:
             available.add("Dash")
         from .items import item_data_table
+
         missing = sorted(name for name in hard_items if name in item_data_table and name not in available)
         if missing:
-            raise OptionError(f"Item Pool Overrides exclude active requirements: {', '.join(missing)}")
+            raise OptionError(player_text("apworld.errors", "pool_excludes_requirements", items=", ".join(missing)))
     combat_baselines = {
         "Combat Shotgun", "Heavy Cannon", "Plasma Rifle", "Rocket Launcher", "Ballista", "Chaingun",
         "Sticky Bombs", "Full Auto", "Precision Bolt", "Micro Missiles", "Heat Blast", "Microwave Beam",
@@ -248,7 +255,7 @@ def apply_dynamic_progression_classification(world: DoomEternalWorld) -> Classif
     wup_name = "Weapon Upgrade Points (3)"
     needed_wup_bundles = max(0, 3 * active_mastery_count - state.count(wup_name, player))
     if needed_wup_bundles > len(useful_items.get(wup_name, ())):
-        raise OptionError("The active Weapon Mastery Challenges need more Weapon Upgrade Points")
+        raise OptionError(player_text("apworld.errors", "mastery_points_insufficient"))
     if needed_wup_bundles:
         wup_list = useful_items[wup_name]
         for idx in range(needed_wup_bundles):
@@ -284,9 +291,7 @@ def apply_dynamic_progression_classification(world: DoomEternalWorld) -> Classif
         if not item_list:
             # Budget mismatch between planner and classifier would silently
             # drop a required copy; fail closed instead.
-            raise ValueError(
-                f"DOOM Eternal classification budget mismatch for '{step.item_name}'"
-            )
+            raise ValueError(player_text("apworld.errors", "classification_budget_mismatch", item=step.item_name))
         promoted_item = item_list.pop(0)
         if not item_list:
             del useful_items[step.item_name]

@@ -7,6 +7,8 @@ from .killsanity_plan import build_killsanity_plan
 from .locations import DoomEternalLocation, KILL_REWARD_ID_BASE
 from .slot_data_contract import MAX_KILL_REWARDS, catalog_tables
 
+from .player_strings_generated import text as player_text
+
 
 def expand_kill_rewards(interval, count, finite_supported_count):
     return [{"threshold": ordinal * interval, "location_id": KILL_REWARD_ID_BASE + ordinal,
@@ -18,7 +20,7 @@ def build_kill_rewards(options, finite_sources, *, estimated_kills=None):
         plan = build_killsanity_plan(options, finite_sources, estimated_kills=estimated_kills)
         count = len(plan["milestones"])
         if count > MAX_KILL_REWARDS:
-            raise ValueError(f"Kill Rewards must be Auto or 1..{MAX_KILL_REWARDS}")
+            raise ValueError(player_text("apworld.errors", "kill_rewards_range", maximum=MAX_KILL_REWARDS))
         plan["milestones"] = expand_kill_rewards(plan["interval"], count, plan["finite_kills"] // plan["interval"])
         return plan
     except ValueError as error:
@@ -37,10 +39,10 @@ def restore_kill_rewards(kills, catalog):
 def _source_access(world, row, entrance):
     multiworld, player = world.multiworld, world.player
     if row["map_key"] not in world.campaign_plan["stage_ids"]:
-        raise ValueError(f"Killsanity source references an inactive mission: {row['map_key']}")
+        raise ValueError(player_text("apworld.errors", "killsanity_inactive_mission", mission=row["map_key"]))
     items = tuple(row.get("required_items", ()))
     if set(items) - item_data_table.keys():
-        raise ValueError(f"Killsanity source references unknown items: {row['source_id']}")
+        raise ValueError(player_text("apworld.errors", "killsanity_unknown_items", source=row["source_id"]))
     if "location" in row:
         target = multiworld.get_location(row["location"], player)
         access_region = target.parent_region
@@ -50,7 +52,7 @@ def _source_access(world, row, entrance):
         event = completion_event(row["map_key"])
         return lambda state: all(state.has(item, player) for item in items) and state.has(event, player)
     if REGION_STAGE.get(access_region.name) != row["map_key"]:
-        raise ValueError(f"Killsanity source access belongs to another mission: {row['source_id']}")
+        raise ValueError(player_text("apworld.errors", "killsanity_access_mission", source=row["source_id"]))
     multiworld.register_indirect_condition(access_region, entrance)
     return lambda state: all(state.has(item, player) for item in items) and target.can_reach(state)
 
