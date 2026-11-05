@@ -1,4 +1,4 @@
-# GENERATED from data/player_strings.json; regenerate in DoomEternal-AP-Mod:
+# GENERATED from data/strings/en.json; regenerate in DoomEternal-AP-Mod:
 # python -m tools.content.compile_player_strings
 """APWorld player text; no Mod checkout or runtime catalog is required."""
 
