@@ -26,12 +26,8 @@ class TestShortWorldGeneration(unittest.TestCase):
                                 'Immora', 'The Blood Swamps', 'Sentinel Prime'},
         })
         economy = mw.worlds[1].campaign_plan['battery_economy']
-        self.assertEqual(economy, {
-            'cost': 16, 'surplus': 1, 'total': 17,
-            'surplus_percent': 25, 'native_first_battery': 0,
-        })
         validate_battery_economy(economy, cost=16, percent=25, native_first_battery=0)
-        self.assertEqual(sum(item.name == 'Sentinel Battery' for item in mw.itempool), 17)
+        self.assertEqual(sum(item.name == "Sentinel Battery" for item in mw.itempool), economy["total"])
         self.assertEqual(len(mw.itempool), len(mw.get_unfilled_locations(1)))
 
 

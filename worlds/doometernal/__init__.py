@@ -4,10 +4,10 @@ from functools import partial
 from random import Random
 from typing import ClassVar
 
-from BaseClasses import CollectionState, Item, ItemClassification, Location, Region, Tutorial
+from BaseClasses import CollectionState, Item, ItemClassification, Location, LocationProgressType, Region, Tutorial
 from Fill import FillError
 from worlds.AutoWorld import WebWorld, World
-from worlds.generic.Rules import add_rule, forbid_item, set_rule
+from worlds.generic.Rules import add_item_rule, add_rule, forbid_item, set_rule
 
 from Options import OptionError
 from .combat_readiness import (
@@ -499,7 +499,7 @@ class DoomEternalWorld(World):
 
         # 5. Create Mission Clear events
         for s in plan["stages"]:
-            if s["kind"] == "mission":
+            if s["kind"] in {"mission", "master"}:
                 mission_name = s["name"]
                 mission_location = f"{mission_name} - Mission Complete"
                 try:
@@ -572,7 +572,7 @@ class DoomEternalWorld(World):
 
         # 8. Hook up connections
         regions = {region.name: region for region in multiworld.get_regions(player)}
-        for stage_id in plan["sequence"]:
+        for stage_id in [*plan["sequence"], *plan["master_level_stage_ids"]]:
             stage = STAGE_BY_ID[stage_id]
             entrance = hub.connect(regions[stage["entry_region"]], "Mission Select: " + stage["name"])
             entrance.access_rule = (
@@ -991,6 +991,9 @@ class DoomEternalWorld(World):
             forbid_item(location, "Sentinel Battery", self.player)
             forbid_item(location, "Sentinel Battery Bundle", self.player)
 
+        self._set_victory_rules(active_location_names)
+
+    def _set_victory_rules(self, active_location_names):
         effective_requirements = effective_victory_requirements(
             set(self.options.additional_victory_requirements.value),
             active_location_names,
@@ -999,14 +1002,31 @@ class DoomEternalWorld(World):
             goal=self.options.goal.current_option_name,
         )
         mission_events = {
-            completion_event(s["id"]) for s in self.campaign_plan["stages"]
+            completion_event(s["id"]) for s in self.campaign_plan["stages"] if s["kind"] != "master"
         }
-        required_events = {goal_endpoint_event_name(self.options.goal.current_option_name)}
+        master_events = {completion_event(key) for key in self.campaign_plan["master_level_stage_ids"]}
+        master_goal = self.options.goal.current_option_name == "Complete N Master Levels"
+        required_events = set() if master_goal else {goal_endpoint_event_name(self.options.goal.current_option_name)}
+        if "Complete all Master Levels" in effective_requirements:
+            required_events.update(master_events)
         if "Complete All Included Missions" in effective_requirements:
             required_events.update(mission_events)
         if "Acquire the Unmaykr" in effective_requirements:
             required_events.add(goal_endpoint_event_name("Acquire the Unmaykr"))
-        for requirement_name in effective_requirements - {"Complete All Included Missions", "Acquire the Unmaykr"}:
+        required_events.update(self._additional_victory_events(active_location_names, effective_requirements))
+
+        self.multiworld.completion_condition[self.player] = lambda state: self._victory_satisfied(
+            state, required_events, master_goal, master_events)
+
+    def _victory_satisfied(self, state, required_events, master_goal, master_events):
+        return (
+            self._goal_stage_available(state)
+            and (not master_goal or sum(state.has(event, self.player) for event in master_events) >= self.options.master_level_count.value)
+            and all(state.has(event, self.player) for event in required_events))
+
+    def _additional_victory_events(self, active_location_names, effective_requirements):
+        events = set()
+        for requirement_name in effective_requirements - {"Complete All Included Missions", "Acquire the Unmaykr", "Complete all Master Levels"}:
             suffix = {
                 "Complete All Slayer Gates": " - Slayer Gate Complete",
                 "Complete All Escalation Encounters": " - Escalation Encounter Wave ",
@@ -1015,27 +1035,50 @@ class DoomEternalWorld(World):
                 "Complete All Weapon Mastery Challenges": MASTERY_SUFFIX,
             }[requirement_name]
             candidate_locations = active_location_names
-            required_events.update(
+            events.update(
                 victory_requirement_location_event_name(requirement_name, location)
                 for location in candidate_locations
                 if (suffix in location if suffix.endswith(" - ") or suffix.endswith(" ")
                     else location.endswith(suffix))
             )
 
-        def completion_condition(state):
-            goal_stage = self.campaign_plan["goal_stage"]
-            if goal_stage is not None:
-                ordinary_complete = all(state.has(completion_event(key), self.player)
-                                        for key in self.campaign_plan["sequence"] if key != goal_stage)
-                goal_access = self.campaign_plan["goal_as_item"] and state.has(
-                    STAGE_BY_ID[goal_stage]["name"] + " Access", self.player)
-                if not (ordinary_complete or goal_access):
-                    return False
-            return all(
-                state.has(event_name, self.player) for event_name in required_events
-            )
+        return events
 
-        self.multiworld.completion_condition[self.player] = completion_condition
+    def _goal_stage_available(self, state):
+        goal_stage = self.campaign_plan["goal_stage"]
+        if goal_stage is not None:
+            ordinary_complete = all(state.has(completion_event(key), self.player)
+                                    for key in self.campaign_plan["sequence"] if key != goal_stage)
+            goal_access = self.campaign_plan["goal_as_item"] and state.has(
+                STAGE_BY_ID[goal_stage]["name"] + " Access", self.player)
+            if not (ordinary_complete or goal_access):
+                return False
+        return True
+
+    def generate_basic(self) -> None:
+        if hasattr(self, "_tracker_slot"):
+            return
+        locations = [self.get_location(name) for group in self.active_spend_groups for name in group["locations"]]
+        eligible = [loc for loc in locations if loc.progress_type != LocationProgressType.EXCLUDED]
+        count = min(len(eligible), (len(locations) * self.options.useful_fortress_rewards.value + 99) // 100)
+        chosen = set(self.random.sample(eligible, count))
+        useful = ItemClassification.progression | ItemClassification.useful
+        for location in locations:
+            if location in chosen:
+                add_item_rule(location, lambda item: bool(item.classification & useful))
+            elif self.multiworld.players > 1:
+                add_item_rule(location, lambda item: item.player != self.player or bool(item.classification & useful))
+
+    def _access_priorities(self):
+        access_priority = {}
+        if self.options.mission_order.value == 2 and self.enemies.get('balance_preset'):
+            ranks = self.campaign_plan['enemy_progression_bands']
+            count = max(1, max(ranks.values()))
+            for stage in self.campaign_plan['access_items'].values():
+                if STAGE_BY_ID[stage]['kind'] == 'master':
+                    continue
+                access_priority[STAGE_BY_ID[stage]['name'] + ' Access'] = ranks[stage] / count + self.access_priority_rng.uniform(-0.6, 0.6)
+        return access_priority
 
     def fill_hook(
         self,
@@ -1045,12 +1088,7 @@ class DoomEternalWorld(World):
         fill_locations: list[Location],
     ) -> None:
         arsenal = set(getattr(self, 'frontloaded_arsenal', ()))
-        access_priority = {}
-        if self.options.mission_order.value == 2 and self.enemies.get('balance_preset'):
-            ranks = self.campaign_plan['enemy_progression_bands']
-            count = max(1, max(ranks.values()))
-            for stage in self.campaign_plan['access_items'].values():
-                access_priority[STAGE_BY_ID[stage]['name'] + ' Access'] = ranks[stage] / count + self.access_priority_rng.uniform(-0.6, 0.6)
+        access_priority = self._access_priorities()
 
         def sort_key(item: Item) -> float:
             if item.player == self.player:

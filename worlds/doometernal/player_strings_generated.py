@@ -173,6 +173,12 @@ TEMPLATES = {
     ("apworld.errors", "legacy_blood_punch"): (
         "Blood Punch belongs to legacy rooms; new seeds require Progressive Blood Punch (0..4)"
     ),
+    ("apworld.errors", "master_level_count"): (
+        "Master Level Count must be between 1 and {maximum} active Master Levels."
+    ),
+    ("apworld.errors", "master_levels_disabled"): (
+        "{objective} requires Include Master Levels to be enabled."
+    ),
     ("apworld.errors", "mastery_points_insufficient"): (
         "The active Weapon Mastery Challenges need more Weapon Upgrade Points"
     ),

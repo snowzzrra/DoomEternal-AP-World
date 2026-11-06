@@ -227,7 +227,7 @@ def derive_readiness_targets(options, plan: Mapping[str, Any]) -> list[Readiness
     is_dark_lord_goal = (goal_name == "kill_the_dark_lord" or plan.get("goal_stage") == DARK_LORD_STAGE_ID)
 
     if order_val == "mission_access_as_items":
-        active_ids = list(plan.get("active_normal_mission_ids", []))
+        active_ids = list(plan.get("active_normal_mission_ids", [])) + plan.get("master_level_stage_ids", [])
         goal_stage = plan.get("goal_stage")
         if goal_stage and goal_stage not in active_ids and goal_stage in STAGE_BY_ID:
             active_ids.append(goal_stage)
@@ -237,7 +237,7 @@ def derive_readiness_targets(options, plan: Mapping[str, Any]) -> list[Readiness
             if s_id in spirit_stage_ids:
                 add_target(s_id, "spirit_breakpoint", f"Spirit Breakpoint: {s_name}")
     else:
-        sequence = plan.get("sequence", [])
+        sequence = plan.get("sequence", []) + plan.get("master_level_stage_ids", [])
         for s_id in sequence:
             s_name = STAGE_BY_ID[s_id]["name"]
             add_target(s_id, "base", f"Mission: {s_name}")

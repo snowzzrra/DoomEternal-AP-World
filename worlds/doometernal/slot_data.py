@@ -11,12 +11,15 @@ from .combat_readiness import (
 from .enemy_plan import ENEMY_DRAW_REVISION
 from .generated_content import MASTERY_REQUIREMENT_COUNTS
 from .items import item_name_to_id
+from .campaign import STAGE_BY_ID
+from .generated_content import MASTER_LEVEL_COMBAT_PROFILES
 from .killsanity_plan import build_resolved_killsanity
 from .logic import effective_victory_requirements, goal_endpoint_event_name
 from .native_enemy_plan import AMMO_FODDER, encode_native_recipes
 from .options import DoomEternalOptions
 from .slot_data_contract import (
-    ContractError, StructureError, catalog_digest, catalog_tables, generation_fingerprint, load_slot_catalog,
+    ULTRA_NIGHTMARE_CAPABILITY, MASTER_LEVELS_CAPABILITY, ContractError, StructureError, catalog_digest, catalog_tables,
+    generation_fingerprint, load_slot_catalog,
     placement_digest, recipe_digest, validate_slot_data,
 )
 from .version import APWORLD_REVISION, BRIDGE_PROTOCOL, MANIFEST_SCHEMA_VERSION, ROOM_CONTRACT_REVISION
@@ -43,7 +46,8 @@ def _campaign(world):
         master_level_stage_ids=sorted(plan.get("master_level_stage_ids", [])),
         access_items=sorted(map(int, plan["access_items"])),
         fixed_dash_completion_stage=plan["fixed_dash_completion_stage"],
-        goal=dict(kind=options.goal.current_option_name, stage_id=plan["goal_stage"], count=0,
+        goal=dict(kind=options.goal.current_option_name, stage_id=plan["goal_stage"],
+            count=options.master_level_count.value if options.goal.current_option_name == "Complete N Master Levels" else 0,
             endpoint_event=goal_endpoint_event_name(options.goal.current_option_name),
             additional_requirements=sorted(requirements)),
         fortress=dict(active_spend_group_ids=sorted(group["id"] for group in plan["active_spend_groups"]),
@@ -60,13 +64,14 @@ def _runtime(world):
     options = world.options
     names = ("use_dlc_content", "randomize_chainsaw", "randomize_dash", "enhanced_melee_damage",
              "easier_secret_encounters", "reveal_ap_locations_on_automap")
-    return dict(difficulty=dict(engine=options.campaign_difficulty.value, death_policy="normal"),
+    return dict(difficulty={"engine": min(options.campaign_difficulty.value, 3),
+            "death_policy": "restart_stage" if options.campaign_difficulty.value == 4 else "normal"},
         death_link=dict(enabled=bool(options.death_link.value),
             mode="hardcore" if options.death_link_mode.value else "soft"),
         **{name: bool(getattr(options, name).value) for name in names},
         randomize_first_battery=not bool(world.campaign_plan["battery_economy"]["native_first_battery"]),
-        checks={name: bool(getattr(options, name).value) for name in
-            ("include_slayer_gates", "include_secret_encounters", "include_weapon_mastery_challenges")},
+        checks=dict(arena_checks=options.arena_checks.value, **{name: bool(getattr(options, name).value) for name in
+            ("include_slayer_gates", "include_secret_encounters", "include_weapon_mastery_challenges")}),
         special_weapon=options.special_weapon.current_option_name if options.use_dlc_content.value else "The Crucible",
         mastery_requirement_counts=dict(MASTERY_REQUIREMENT_COUNTS[options.mastery_requirements.current_option_name]))
 
@@ -88,7 +93,8 @@ def _stage_profile(world, stage_id):
     return dict(cr_min=low, cr_max=high, opening_cr_min=opening[0], opening_cr_max=opening[1],
         counter_ids=sorted(_enemy_counter_penalties(None, world.player, stage_id, world)),
         opening_counter_ids=sorted(_enemy_counter_penalties(None, world.player, stage_id, world, opening=True)),
-        renewable_ammo=bool(_renewable_ammo(plan.get("maps", {}).get(stage_id, {}))),
+        renewable_ammo=(MASTER_LEVEL_COMBAT_PROFILES[stage_id]["renewable_ammo"] if stage_id in MASTER_LEVEL_COMBAT_PROFILES
+                        else bool(_renewable_ammo(plan.get("maps", {}).get(stage_id, {})))),
         native_chainsaw_before_combat=bool(stage_id == "e1m1_intro" and plan.get("revision", 0) >= 13
             and not world.options.randomize_chainsaw.value),
         skulls=get_mission_skull_tier(stage_id, world),
@@ -96,7 +102,8 @@ def _stage_profile(world, stage_id):
 
 
 def _resolved_blocks(world, catalog):
-    active = set(world.campaign_plan["stage_ids"])
+    active = set(world.campaign_plan["sequence"])
+    active.update(STAGE_BY_ID[key]["map_key"] for key in world.campaign_plan["master_level_stage_ids"])
     active.update(key for key, row in catalog_tables(catalog)["maps"].items() if row["stage_id"] is None)
     kills = world.killsanity_plan
     return dict(recipes=encode_native_recipes(world.enemy_plan, catalog, active_maps=active,
@@ -131,19 +138,27 @@ def build_slot_data(world):
         catalog = load_slot_catalog()
         blocks = _resolved_blocks(world, catalog)
         placements = _placements(world)
+        capabilities = _required_capabilities(world)
         data = dict(identity=dict(schema=7,
                 algorithm_revision=(world.enemy_plan or {}).get("revision", ENEMY_DRAW_REVISION),
                 catalog_digest=catalog_digest(catalog), recipe_digest=recipe_digest(blocks["recipes"])),
             compatibility=dict(apworld_version=APWORLD_REVISION,
                 minimum_client_version=APWORLD_REVISION,
                 bridge_protocol=BRIDGE_PROTOCOL, manifest_schema_version=MANIFEST_SCHEMA_VERSION,
-                mod_contract_revision=ROOM_CONTRACT_REVISION, required_capabilities=list(REQUIRED_CAPABILITIES)),
+                mod_contract_revision=ROOM_CONTRACT_REVISION, required_capabilities=capabilities),
             campaign=_campaign(world), starting=_starting(world), runtime=_runtime(world), **blocks,
             tracker_options=_tracker_options(world),
             placement_digest=placement_digest(placements))
         data["native_generation_fingerprint"] = generation_fingerprint(data)
         validate_slot_data(data, catalog, placements=placements,
-                           supported_capabilities=frozenset(REQUIRED_CAPABILITIES))
+                           supported_capabilities=frozenset(capabilities))
         return data
     except ContractError as error:
         raise OptionError(str(error)) from error
+
+
+def _required_capabilities(world):
+    extra = [ULTRA_NIGHTMARE_CAPABILITY] if world.options.campaign_difficulty.value == 4 else []
+    if world.campaign_plan["master_level_stage_ids"]:
+        extra.append(MASTER_LEVELS_CAPABILITY)
+    return sorted(REQUIRED_CAPABILITIES + extra)

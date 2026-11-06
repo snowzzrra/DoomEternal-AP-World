@@ -92,6 +92,7 @@ DLC_REGION_NAMES = frozenset({
 DLC_MISSION_NAMES = frozenset(DLC_REGION_NAMES)
 DLC_MISSION_LOCAL_PREFIXES = DLC_MISSION_NAMES | frozenset({"The Dark Lord"})
 VICTORY_REQUIREMENT_NAMES = frozenset({
+    "Complete all Master Levels",
     "Complete All Included Missions",
     "Complete All Slayer Gates",
     "Complete All Escalation Encounters",
@@ -101,6 +102,7 @@ VICTORY_REQUIREMENT_NAMES = frozenset({
     "Acquire the Unmaykr",
 })
 GOAL_NAMES = frozenset({
+    "Complete N Master Levels",
     "Acquire the Unmaykr",
     "Kill the Icon of Sin",
     "Kill the Dark Lord",
@@ -423,7 +425,13 @@ def effective_victory_requirements(
         use_dlc_content=use_dlc_content,
         include_dlc_missions=include_dlc_missions,
     )
-    content_present = {
+    content_present = _victory_content_present(active_locations)
+    return frozenset(name for name in selected if content_present[name])
+
+
+def _victory_content_present(active_locations):
+    return {
+        "Complete all Master Levels": any(name.endswith("Master Level - Mission Complete") for name in active_locations),
         "Complete All Included Missions": any(name.endswith(" - Mission Complete") for name in active_locations),
         "Complete All Slayer Gates": any(" - Slayer Gate Complete" in name for name in active_locations),
         "Complete All Escalation Encounters": any(" - Escalation Encounter Wave " in name for name in active_locations),
@@ -432,7 +440,6 @@ def effective_victory_requirements(
         "Complete All Weapon Mastery Challenges": any(name.endswith(MASTERY_SUFFIX) for name in active_locations),
         "Acquire the Unmaykr": "Fortress of Doom - Unmaykr Acquired" in active_locations,
     }
-    return frozenset(name for name in selected if content_present[name])
 
 
 def _requirement_item_names(requirement: LocationRequirement) -> frozenset[str]:
@@ -599,6 +606,7 @@ def build_location_prerequisites(
             all_of=("Blood Punch",),
             custom_rule=dark_lord_custom_rule,
         )
+    _arena_prerequisites(table, location_names)
     battery_cost = (
         active_battery_cost
         if active_battery_cost is not None
@@ -653,6 +661,14 @@ def build_location_prerequisites(
                 state.count("Weapon Upgrade Points (3)", player) >= bundles,
         )
     return table
+
+
+def _arena_prerequisites(table, location_names):
+    from .generated_content import ARENA_LOCATION_RULES
+
+    for name, reference in ARENA_LOCATION_RULES.items():
+        if name in location_names:
+            table[name] = table.get(reference, LocationRequirement())
 
 
 def validate_location_prerequisites(

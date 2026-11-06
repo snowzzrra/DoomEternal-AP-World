@@ -366,12 +366,26 @@ def build_pool_candidate_counts(
     )
 
 
+def _master_levels(options, goal_name):
+    masters = [s["id"] for s in CAMPAIGN_STAGES if s["kind"] == "master"] if options.include_master_levels.value else []
+    if goal_name == "Complete N Master Levels":
+        if not masters:
+            raise OptionError(player_text("apworld.errors", "master_levels_disabled", objective=goal_name))
+        if not 1 <= options.master_level_count.value <= len(masters):
+            raise OptionError(player_text("apworld.errors", "master_level_count", maximum=len(masters)))
+    if "Complete all Master Levels" in options.additional_victory_requirements.value and not masters:
+        raise OptionError(player_text("apworld.errors", "master_levels_disabled", objective="Complete all Master Levels"))
+
+    return masters
+
+
 def make_plan(options, rng, world=None, *, candidate=None):
     pool_name = options.mission_pool.current_option_name
     goal_name = options.goal.current_option_name
     order_mode = options.mission_order.value  # 0: Vanilla, 1: RMO, 2: MAI
     if goal_name == "Acquire the Unmaykr" and not options.include_slayer_gates.value:
         raise OptionError(player_text("apworld.errors", "unmaykr_requires_gates"))
+    masters = _master_levels(options, goal_name)
 
     # 1. Candidate resolution
     if pool_name == "Base":
@@ -463,6 +477,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
     active_stage_ids = list(active_normal_ids)
     if dark_lord_active:
         active_stage_ids.append("e5m4_boss")
+    active_stage_ids.extend(masters)
 
     # Short-world scaling parameters
     active_stage_set = set(active_stage_ids)
@@ -543,6 +558,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
         provisional_sequence.append(goal_stage)
     provisional_plan = {
         "sequence": provisional_sequence,
+        "master_level_stage_ids": masters,
         "active_normal_mission_ids": list(active_normal_ids),
         "goal_stage": goal_stage,
         "stage_ids": list(active_stage_ids),
@@ -554,7 +570,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
             mission_loc_count -= 1
             resource_mission_locations -= 1
     eff_starts = max(1, min(options.starting_missions.value, len(ordinary)))
-    access_count = (len(ordinary) - eff_starts + int(bool(goal_stage and options.goal_mission_as_item.value))) if order_mode == 2 else 0
+    access_count = ((len(ordinary) - eff_starts + int(bool(goal_stage and options.goal_mission_as_item.value))) if order_mode == 2 else 0) + len(masters)
     suit_option = options.praetor_suit_upgrades_in_pool.value
     profile = options.resource_profile.current_option_name
     effective_suit_count = (len(suit_perk_item_names)
@@ -730,6 +746,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
     # them into the same concrete semantic multiset.
     semantic_counts = dict(semantic_pool.counts_view())
     semantic_placement_counts = dict(semantic_pool.placement_view())
+    access.extend(masters)
     for stage in access:
         access_name = STAGE_BY_ID[stage]["name"] + " Access"
         semantic_counts[access_name] = semantic_counts.get(access_name, 0) + 1
@@ -759,9 +776,10 @@ def make_plan(options, rng, world=None, *, candidate=None):
         **({'opening_stage': chosen_start} if chosen_start in OPENING_REGIONS and use_opening else {}),
         **({'composition_bands': dict(candidate['composition_bands'])} if candidate and 'composition_bands' in candidate else {}),
         "mode": options.mission_order.current_option_name,
-        "difficulty": options.campaign_difficulty.value,
+        "difficulty": min(options.campaign_difficulty.value, 3),
         "logic_difficulty": options.logic_difficulty.current_option_name,
         "sequence": sequence,
+        "master_level_stage_ids": masters,
         "enemy_progression_bands": enemy_bands,
         "starting_stages": starts,
         **({'unprepared_start_stages': [chosen_start]} if unprepared_start else {}),

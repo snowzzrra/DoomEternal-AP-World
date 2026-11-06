@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import ClassVar
 
 from Options import (
     Accessibility as APAccessibility, Choice, DeathLink as APDeathLink, DeathLinkMixin,
@@ -195,6 +196,7 @@ class Goal(_ExactLabelChoice):
     Kill the Icon of Sin: Defeat the base game's final boss.
     Kill the Dark Lord: Defeat Davoth, the final boss of The Ancient Gods Part Two.
     Complete the Full Saga: Include the base game and both DLC campaigns, with your chosen boss as the finale.
+    Complete N Master Levels: Finish the selected number of distinct included Master Levels.
     Victory Requirements adds extra objectives to your goal."""
 
     display_name = "Goal"
@@ -202,16 +204,38 @@ class Goal(_ExactLabelChoice):
     option_kill_the_icon_of_sin = 1
     option_kill_the_dark_lord = 2
     option_complete_the_full_saga = 3
+    option_complete_n_master_levels = 4
     default = option_acquire_the_unmaykr
     labels = {
         option_acquire_the_unmaykr: "Acquire the Unmaykr",
         option_kill_the_icon_of_sin: "Kill the Icon of Sin",
         option_kill_the_dark_lord: "Kill the Dark Lord",
         option_complete_the_full_saga: "Complete the Full Saga",
+        option_complete_n_master_levels: "Complete N Master Levels",
     }
 
 
+class IncludeMasterLevels(Toggle):
+    """Include every qualified standard Master Level, each with its own Access item.
+
+    Master Levels are independent of Mission Pool and Mission Order. Their enemies stay vanilla."""
+
+    display_name = "Include Master Levels"
+
+
+class MasterLevelCount(Range):
+    """Choose how many distinct Master Levels to finish for Complete N Master Levels.
+
+    Include Master Levels must be enabled. Replaying a completed Master Level counts once."""
+
+    display_name = "Master Level Count"
+    range_start = 1
+    range_end = sum(stage["kind"] == "master" for stage in CAMPAIGN_STAGES)
+    default = 1
+
+
 VICTORY_REQUIREMENT_NAMES = frozenset({
+    "Complete all Master Levels",
     "Complete All Included Missions",
     "Complete All Slayer Gates",
     "Complete All Escalation Encounters",
@@ -231,6 +255,7 @@ class AdditionalVictoryRequirements(OptionSet):
     Complete All Secret Encounters: Beat every included timed Secret Encounter.
     Complete All Mission Challenges: Finish the Mission Challenges in each included mission.
     Complete All Weapon Mastery Challenges: Finish every included weapon mastery challenge.
+    Complete all Master Levels: Finish every included Master Level.
     Acquire the Unmaykr: Collect the Unmaykr from its case in the Fortress."""
 
     display_name = "Additional Victory Requirements"
@@ -324,6 +349,26 @@ class IncludeSecretEncounters(Toggle):
 
     display_name = "Include Secret Encounters"
     default = 1
+
+
+class ArenaChecks(_ExactLabelChoice):
+    """Choose which levels give a check for each arena you clear.
+
+    All Levels: every campaign mission, DLC mission and Master Level.
+    DLC + Master Levels: DLC missions and Master Levels.
+    Only DLC Levels: DLC missions only.
+    Only Master Levels: Master Levels only.
+    No Levels: no arena checks."""
+
+    display_name = "Arena Checks"
+    option_all_levels = 0
+    option_dlc_and_master_levels = 1
+    option_only_dlc_levels = 2
+    option_only_master_levels = 3
+    option_no_levels = 4
+    default = 1
+    labels: ClassVar[dict[int, str]] = {0: "All Levels", 1: "DLC + Master Levels", 2: "Only DLC Levels",
+              3: "Only Master Levels", 4: "No Levels"}
 
 
 class IncludeWeaponMasteryChallenges(Toggle):
@@ -585,20 +630,34 @@ _STARTING_WEAPON_OPTION_NAMES = {
 }
 
 
-class CampaignDifficulty(Choice):
+class CampaignDifficulty(_ExactLabelChoice):
     """Choose the game's combat difficulty for your campaign.
 
     I'm Too Young to Die: The easiest fights, with more room for mistakes.
     Hurt Me Plenty: A moderate challenge.
     Ultra-Violence: Tough fights that reward good weapon use and movement.
-    Nightmare: The hardest setting, with aggressive enemies and punishing damage."""
+    Nightmare: Aggressive enemies and punishing damage.
+    Ultra-Nightmare: Nightmare combat. Only a death without Extra Life or Saving Throw
+    restarts the current mission from the beginning through Mission Select. Quitting or
+    crashing resumes the last checkpoint. Inventory follows the game's Mission Select
+    behavior. Received items are not delivered again. Sent checks stay sent. Differs from
+    vanilla Ultra-Nightmare. Requires a runtime with Ultra-Nightmare support."""
 
     display_name = "Campaign Difficulty"
     option_im_too_young_to_die = 0
     option_hurt_me_plenty = 1
     option_ultra_violence = 2
     option_nightmare = 3
+    option_ultra_nightmare = 4
     default = 2
+
+    labels: ClassVar[dict[int, str]] = {
+        option_im_too_young_to_die: "Im Too Young To Die",
+        option_hurt_me_plenty: "Hurt Me Plenty",
+        option_ultra_violence: "Ultra Violence",
+        option_nightmare: "Nightmare",
+        option_ultra_nightmare: "Ultra-Nightmare",
+    }
 
 
 class ResourceProfile(_ExactLabelChoice):
@@ -615,6 +674,18 @@ class ResourceProfile(_ExactLabelChoice):
     option_lean = 2
     default = option_balanced
     labels = {option_balanced: "Balanced", option_generous: "Generous", option_lean: "Lean"}
+
+
+class UsefulFortressRewards(Range):
+    """Choose how many Fortress battery room rewards hold something useful.
+
+    This percentage of the battery room rewards only holds progression or useful items, from any world. The others can hold filler and traps from other worlds; your own filler and traps only go there in a single-player seed.
+    0%: no restriction. 100%: every battery room reward is useful."""
+
+    display_name = "Useful Fortress Rewards"
+    range_start = 0
+    range_end = 100
+    default = 75
 
 
 class _BoundedItemDict(OptionDict):
@@ -878,6 +949,7 @@ class DoomEternalOptions(DeathLinkMixin, PerGameCommonOptions):
     logic_difficulty: LogicDifficulty
     mastery_requirements: MasteryRequirements
     resource_profile: ResourceProfile
+    useful_fortress_rewards: UsefulFortressRewards
     item_pool_counts: ItemPoolCounts
     filler_weights: FillerWeights
     trap_weights: TrapWeights
@@ -885,6 +957,8 @@ class DoomEternalOptions(DeathLinkMixin, PerGameCommonOptions):
     full_saga_final_boss: FullSagaFinalBoss
     goal_mission_as_item: GoalMissionAsItem
     goal: Goal
+    include_master_levels: IncludeMasterLevels
+    master_level_count: MasterLevelCount
     additional_victory_requirements: AdditionalVictoryRequirements
     special_weapon: SpecialWeapon
     death_link_mode: DeathLinkMode
@@ -893,6 +967,7 @@ class DoomEternalOptions(DeathLinkMixin, PerGameCommonOptions):
     randomize_dash: RandomizeDash
     include_slayer_gates: IncludeSlayerGates
     include_secret_encounters: IncludeSecretEncounters
+    arena_checks: ArenaChecks
     easier_secret_encounters: EasierSecretEncounters
     enemy_randomizer: EnemyRandomizer
     enemy_preset: EnemyPreset
@@ -925,12 +1000,12 @@ class DoomEternalOptions(DeathLinkMixin, PerGameCommonOptions):
 option_groups = [
     OptionGroup("Campaign and Missions", [
         MissionPool, CustomMissions, CustomDarkLord, MissionCount, MissionOrder, StartingMissions,
-        Goal, GoalMissionAsItem, FullSagaFinalBoss, AdditionalVictoryRequirements,
-        IncludeSlayerGates, IncludeSecretEncounters, IncludeWeaponMasteryChallenges,
+        Goal, GoalMissionAsItem, FullSagaFinalBoss, AdditionalVictoryRequirements, IncludeMasterLevels, MasterLevelCount,
+        IncludeSlayerGates, IncludeSecretEncounters, ArenaChecks, IncludeWeaponMasteryChallenges,
     ]),
     OptionGroup("Items and Pool", [
         UseDLCContent, StartingWeapon, SpecialWeapon, RandomizeChainsaw, RandomizeDash,
-        ResourceProfile, ItemPoolCounts, PraetorSuitUpgradesInPool, FillerWeights,
+        ResourceProfile, UsefulFortressRewards, ItemPoolCounts, PraetorSuitUpgradesInPool, FillerWeights,
         TrapPercentage, EnabledTraps, TrapWeights,
     ]),
     OptionGroup("Enemies", [

@@ -4,7 +4,7 @@ from typing import NamedTuple
 
 from BaseClasses import Location
 
-from .generated_content import LOCATION_NAME_TO_ID, LOCATION_ROWS
+from .generated_content import ARENA_LOCATION_KINDS, LOCATION_NAME_TO_ID, LOCATION_ROWS
 from .identity import GAME_NAME
 from .slot_data_contract import MAX_KILL_REWARDS
 
@@ -33,6 +33,10 @@ location_name_to_id = {**LOCATION_NAME_TO_ID, **kill_reward_name_to_id}
 
 
 def optional_location_enabled(name: str, options) -> bool:
+    if name in ARENA_LOCATION_KINDS:
+        return ARENA_LOCATION_KINDS[name] in (
+            {"base", "dlc", "master"}, {"dlc", "master"}, {"dlc"}, {"master"}, set()
+        )[options.arena_checks.value]
     if name.endswith(" - Slayer Gate Complete"):
         return bool(options.include_slayer_gates.value)
     if " - Secret Encounter - " in name:
