@@ -355,6 +355,17 @@ def _equipment_requirements(state, player, stage_id, world, context, sw):
     return missing
 
 
+def _armor_requirements(state, player, stage_id, world, difficulty):
+    plan = getattr(world, "campaign_plan", {})
+    stages = plan.get("sequence", []) + plan.get("master_level_stage_ids", [])
+    if difficulty >= 2 or stage_id not in stages or stages.index(stage_id) < len(stages) // 2:
+        return []
+    if state.has("Flame Belch", player) or all(state.has(name, player) for name in
+            ("Super Shotgun", "Meat Hook", "Meat Hook Mastery")):
+        return []
+    return [player_text("apworld.readiness", "armor_source")]
+
+
 def evaluate_mission_readiness(
     state: CollectionState,
     player: int,
@@ -403,6 +414,7 @@ def evaluate_mission_readiness(
     effective_cr = min(MAX_EFFECTIVE_CR, base_cr + soft_penalty)
     deficit = round(effective_cr - player_cr, 2)
     missing = _equipment_requirements(state, player, stage_id, world, context, sw)
+    missing.extend(_armor_requirements(state, player, stage_id, world, diff))
     preparation_deficit = float(len(missing))
     enemies = getattr(world, 'enemies', {})
     if stage_id in ENDURANCE_STAGES and context != 'opening' and not enemies.get('balance_preset'):

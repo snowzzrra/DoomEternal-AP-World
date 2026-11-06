@@ -563,6 +563,7 @@ def make_plan(options, rng, world=None, *, candidate=None):
         "goal_stage": goal_stage,
         "stage_ids": list(active_stage_ids),
     }
+    world_context.campaign_plan = provisional_plan
     readiness_targets = derive_readiness_targets(options, provisional_plan)
     special_weapon = options.special_weapon.current_option_name if options.use_dlc_content.value else "The Crucible"
     if not crucible_challenge_enabled(special_weapon) and CRUCIBLE_CHALLENGE in location_data_table:

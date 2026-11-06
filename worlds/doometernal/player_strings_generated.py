@@ -319,6 +319,9 @@ TEMPLATES = {
         "DOOM Eternal starting mission {mission} has no guaranteed combat preparation; keeping the configured"
         " loadout."
     ),
+    ("apworld.readiness", "armor_source"): (
+        "Flame Belch or Super Shotgun, Meat Hook and Meat Hook Mastery"
+    ),
     ("apworld.settings", "client_directory"): (
         "Directory where the DOOM Eternal Archipelago client is installed."
     ),
