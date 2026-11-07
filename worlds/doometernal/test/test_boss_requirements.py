@@ -8,13 +8,20 @@ class TestBossRequirements(unittest.TestCase):
     def test_boss_completion_requires_its_tools_even_with_a_full_loadout(self):
         for order in ("random_mission_order", "mission_access_as_items"):
             with self.subTest(order=order):
-                multiworld = setup_multiworld(DoomEternalWorld, seed=20261025, options={
-                    "mission_pool": "full_saga", "mission_order": order,
-                    "randomize_dash": True, "enemy_randomizer": False,
-                })
+                multiworld = setup_multiworld(
+                    DoomEternalWorld,
+                    seed=20261025,
+                    options={
+                        "mission_pool": "full_saga",
+                        "mission_order": order,
+                        "randomize_dash": True,
+                        "enemy_randomizer": False,
+                    },
+                )
                 for location_name, required in (
                     ("Urdak - Mission Complete", ("Blood Punch", "Dash")),
                     ("The Holt - Mission Complete", ("Plasma Rifle", "Microwave Beam")),
+                    ("The Dark Lord - Arena - Dark Lord", ("Blood Punch",)),
                 ):
                     location = multiworld.get_location(location_name, 1)
                     for missing in required:

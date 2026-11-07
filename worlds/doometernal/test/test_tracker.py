@@ -5,15 +5,18 @@ from contextlib import ExitStack
 from unittest.mock import patch
 
 import pytest
-
 from BaseClasses import CollectionState
+
 from Options import OptionError
 from test.general import gen_steps, setup_multiworld
 from worlds.AutoWorld import call_all
 from worlds.doometernal import DoomEternalWorld
 from worlds.doometernal.slot_data import build_slot_data
 from worlds.doometernal.slot_data_contract import ContractError, generation_fingerprint
+
 from .test_starting_inventory import core_args
+
+pytestmark = pytest.mark.slow
 
 
 class TestTracker(unittest.TestCase):
@@ -25,27 +28,79 @@ class TestTracker(unittest.TestCase):
 
 
 RESOLVED_CASES = [
-    {"mission_pool": "full_saga", "mission_count": "all", "mission_order": "random_mission_order",
-     "killsanity": True, "kills_per_check": 1000, "killsanity_maximum_milestones": 12,
-     "randomize_chainsaw": True, "randomize_dash": True},
-    {"mission_pool": "base", "mission_count": 6, "mission_order": "mission_access_as_items",
-     "starting_missions": 2, "goal": "kill_the_icon_of_sin", "logic_difficulty": "expert",
-     "start_inventory": {"Flame Belch": 1, "Progressive Health Upgrade": 1, "Progressive Blood Punch": 1},
-     "start_inventory_from_pool": {"Progressive Ammo Upgrade": 2, "Progressive Blood Punch": 1}},
-    {"mission_pool": "dlc_only", "mission_count": 6, "mission_order": "vanilla_order",
-     "goal": "kill_the_dark_lord", "enemy_randomizer": False,
-     "include_secret_encounters": False, "include_weapon_mastery_challenges": False},
-    {"mission_pool": "custom", "mission_count": 6, "goal": "kill_the_icon_of_sin",
-     "custom_missions": {"Cultist Base", "Doom Hunter Base", "Super Gore Nest", "ARC Complex", "Mars Core", "Taras Nabad"},
-     "mission_order": "vanilla_order", "campaign_difficulty": "nightmare", "logic_difficulty": "expert",
-     "starting_weapon": "heavy_cannon", "randomize_dash": True, "randomize_chainsaw": True},
-    {"mission_pool": "full_saga", "mission_order": "random_mission_order",
-     "mission_count": "all", "killsanity": True, "kills_per_check": 25,
-     "start_inventory": {"Flame Belch": 1}, "starting_weapon": "random",
-     "randomize_chainsaw": True, "randomize_dash": True},
-    {"mission_pool": "base", "mission_count": 6, "mission_order": "mission_access_as_items",
-     "starting_missions": 2, "goal": "kill_the_icon_of_sin", "logic_difficulty": "expert",
-     "mastery_requirements": "quarter", "resource_profile": "generous"},
+    {
+        "mission_pool": "full_saga",
+        "mission_count": "all",
+        "mission_order": "random_mission_order",
+        "killsanity": True,
+        "kills_per_check": 1000,
+        "killsanity_maximum_milestones": 12,
+        "randomize_chainsaw": True,
+        "randomize_dash": True,
+        "enemy_health": {"minimum": 75, "maximum": 125},
+        "enemy_weights": {"imp": 200},
+    },
+    {
+        "mission_pool": "base",
+        "mission_count": 6,
+        "mission_order": "mission_access_as_items",
+        "starting_missions": 2,
+        "goal": "kill_the_icon_of_sin",
+        "logic_difficulty": "expert",
+        "start_inventory": {"Flame Belch": 1, "Progressive Health Upgrade": 1, "Progressive Blood Punch": 1},
+        "start_inventory_from_pool": {"Progressive Ammo Upgrade": 2, "Progressive Blood Punch": 1},
+    },
+    {
+        "mission_pool": "dlc_only",
+        "mission_count": 6,
+        "mission_order": "vanilla_order",
+        "goal": "kill_the_dark_lord",
+        "enemy_randomizer": False,
+        "include_secret_encounters": False,
+        "include_weapon_mastery_challenges": False,
+    },
+    {
+        "mission_pool": "custom",
+        "mission_count": 6,
+        "goal": "kill_the_icon_of_sin",
+        "custom_missions": {
+            "Cultist Base",
+            "Doom Hunter Base",
+            "Super Gore Nest",
+            "ARC Complex",
+            "Mars Core",
+            "Taras Nabad",
+        },
+        "mission_order": "vanilla_order",
+        "campaign_difficulty": "nightmare",
+        "logic_difficulty": "expert",
+        "starting_weapon": "heavy_cannon",
+        "randomize_dash": True,
+        "randomize_chainsaw": True,
+    },
+    {
+        "mission_pool": "full_saga",
+        "mission_order": "random_mission_order",
+        "mission_count": "all",
+        "killsanity": True,
+        "kills_per_check": 25,
+        "start_inventory": {"Flame Belch": 1},
+        "starting_weapon": "random",
+        "randomize_chainsaw": True,
+        "randomize_dash": True,
+        "enemy_health": {"minimum": 75, "maximum": 125},
+        "enemy_weights": {"imp": 200},
+    },
+    {
+        "mission_pool": "base",
+        "mission_count": 6,
+        "mission_order": "mission_access_as_items",
+        "starting_missions": 2,
+        "goal": "kill_the_icon_of_sin",
+        "logic_difficulty": "expert",
+        "mastery_requirements": "quarter",
+        "resource_profile": "generous",
+    },
 ]
 
 

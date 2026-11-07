@@ -1,56 +1,76 @@
 from collections import Counter
+from typing import ClassVar
 
 import pytest
-
 from BaseClasses import CollectionState, PlandoItemBlock
 from Fill import FillError, distribute_items_restrictive, distribute_planned_blocks
+
 from Options import PlandoItems
 from test.general import gen_steps, setup_multiworld
 from worlds.AutoWorld import call_all
 from worlds.doometernal import DoomEternalWorld
 from worlds.doometernal.campaign import FORTRESS_BOOTSTRAP_LOCATIONS
 from worlds.doometernal.logic import (
-    MISSION_CLEAR_EVENT_PREFIX, VICTORY_REQUIREMENT_EVENT_PREFIX, goal_endpoint_event_name,
+    MISSION_CLEAR_EVENT_PREFIX,
+    VICTORY_REQUIREMENT_EVENT_PREFIX,
+    goal_endpoint_event_name,
 )
 from worlds.generic.Rules import exclusion_rules
 
 from . import bases
 
+pytestmark = pytest.mark.slow
 
 PREPARATION_OPTIONS = {
-    'mission_pool': 'custom',
-    'custom_missions': {'Hell on Earth', 'Exultia', 'Cultist Base',
-                        'Super Gore Nest', 'Mars Core', 'Final Sin'},
-    'mission_order': 'mission_access_as_items', 'starting_missions': 2,
-    'campaign_difficulty': 'nightmare', 'enemy_randomizer': True,
-    'enemy_preset': 'hells_vanguard', 'randomize_dash': False, 'randomize_chainsaw': False,
+    "mission_pool": "custom",
+    "custom_missions": {"Hell on Earth", "Exultia", "Cultist Base", "Super Gore Nest", "Mars Core", "Final Sin"},
+    "mission_order": "mission_access_as_items",
+    "starting_missions": 2,
+    "campaign_difficulty": "nightmare",
+    "enemy_randomizer": True,
+    "enemy_preset": "hells_vanguard",
+    "randomize_dash": False,
+    "randomize_chainsaw": False,
 }
 
 
 class TestVanilla(bases.DoomEternalTestBase):
-    options = {'mission_order': 'vanilla_order', 'enemy_randomizer': False}
+    options: ClassVar[dict] = {"mission_order": "vanilla_order", "enemy_randomizer": False}
 
 
 class TestRMO(bases.DoomEternalTestBase):
-    options = {'mission_order': 'random_mission_order', 'enemy_randomizer': False}
+    options: ClassVar[dict] = {"mission_order": "random_mission_order", "enemy_randomizer": False}
 
 
 class TestMAI(bases.DoomEternalTestBase):
-    options = {'mission_order': 'mission_access_as_items', 'starting_missions': 2,
-               'goal_mission_as_item': True, 'enemy_randomizer': False}
+    options: ClassVar[dict] = {
+        "mission_order": "mission_access_as_items",
+        "starting_missions": 2,
+        "goal_mission_as_item": True,
+        "enemy_randomizer": False,
+    }
 
 
 class TestCompactCampaign(bases.DoomEternalTestBase):
-    options = {'mission_pool': 'base', 'mission_count': 6,
-               'mission_order': 'random_mission_order', 'goal': 'kill_the_icon_of_sin',
-               'enemy_randomizer': False}
+    options: ClassVar[dict] = {
+        "mission_pool": "base",
+        "mission_count": 6,
+        "mission_order": "random_mission_order",
+        "goal": "kill_the_icon_of_sin",
+        "enemy_randomizer": False,
+    }
 
 
 class TestDLCCampaign(bases.DoomEternalTestBase):
-    options = {'mission_pool': 'dlc_only', 'mission_count': 6,
-               'mission_order': 'random_mission_order', 'goal': 'kill_the_dark_lord',
-               'starting_weapon': 'combat_shotgun', 'start_inventory': bases.DLC_START_INVENTORY,
-               'enemy_randomizer': False}
+    options: ClassVar[dict] = {
+        "mission_pool": "dlc_only",
+        "mission_count": 6,
+        "mission_order": "random_mission_order",
+        "goal": "kill_the_dark_lord",
+        "starting_weapon": "combat_shotgun",
+        "start_inventory": bases.DLC_START_INVENTORY,
+        "enemy_randomizer": False,
+    }
 
     def world_setup(self, seed=1077):
         self.multiworld = setup_multiworld(DoomEternalWorld, steps=gen_steps[:-1], seed=seed,
@@ -64,14 +84,19 @@ class TestDLCCampaign(bases.DoomEternalTestBase):
 
 
 class TestExtraObjectives(bases.DoomEternalTestBase):
-    options = {
-        'mission_pool': 'full_saga', 'mission_order': 'vanilla_order',
-        'goal': 'kill_the_icon_of_sin', 'enemy_randomizer': False,
-        'additional_victory_requirements': {
-            'Complete All Included Missions', 'Complete All Slayer Gates',
-            'Complete All Escalation Encounters', 'Complete All Secret Encounters',
-            'Complete All Mission Challenges', 'Complete All Weapon Mastery Challenges',
-            'Acquire the Unmaykr',
+    options: ClassVar[dict] = {
+        "mission_pool": "full_saga",
+        "mission_order": "vanilla_order",
+        "goal": "kill_the_icon_of_sin",
+        "enemy_randomizer": False,
+        "additional_victory_requirements": {
+            "Complete All Included Missions",
+            "Complete All Slayer Gates",
+            "Complete All Escalation Encounters",
+            "Complete All Secret Encounters",
+            "Complete All Mission Challenges",
+            "Complete All Weapon Mastery Challenges",
+            "Acquire the Unmaykr",
         },
     }
 
@@ -165,20 +190,14 @@ def collect_sphere_items(state, sphere):
             assert state.prog_items[location.player] == before
 
 
-@pytest.mark.parametrize('exclude_all', [False, True], ids=['one-check', 'all-checks'])
-def test_excluded_preparation_locations_are_not_filled(exclude_all):
-    mw = setup_multiworld(DoomEternalWorld, steps=gen_steps[:-1], seed=230001,
-                          options=PREPARATION_OPTIONS)
+def test_excluded_preparation_locations_are_not_filled():
+    mw = setup_multiworld(DoomEternalWorld, steps=gen_steps[:-1], seed=230001, options=PREPARATION_OPTIONS)
     before = item_counts(physical_items(mw))
-    assert mw.worlds[1].campaign_plan['bootstrap_placed_items']
+    assert mw.worlds[1].campaign_plan["bootstrap_placed_items"]
     excluded = set(FORTRESS_BOOTSTRAP_LOCATIONS)
-    if not exclude_all:
-        excluded = {min(excluded)}
     exclusion_rules(mw, 1, excluded)
-    try:
-        call_all(mw, 'pre_fill')
-    except FillError as error:
-        assert 'excluded locations' in str(error)
+    with pytest.raises(FillError, match="preparation cannot place.*excluded locations"):
+        call_all(mw, "pre_fill")
     assert all(mw.get_location(name, 1).item is None for name in excluded)
     assert item_counts(physical_items(mw)) == before
     assert len(mw.itempool) + len(mw.worlds[1].get_pre_fill_items()) == len(mw.get_unfilled_locations())
@@ -208,14 +227,17 @@ def test_plando_preserves_preparation_and_item_conservation():
     assert mw.can_beat_game()
 
 
-def test_access_items_gate_only_their_missions():
-    mw = setup_multiworld(DoomEternalWorld, seed=230001, options=TestMAI.options)
+@pytest.mark.parametrize("goal_as_item", [False, True])
+def test_access_items_gate_only_their_missions(goal_as_item):
+    mw = setup_multiworld(
+        DoomEternalWorld, seed=230001, options={**TestMAI.options, "goal_mission_as_item": goal_as_item}
+    )
     state = CollectionState(mw)
     items = physical_items(mw)
     for item in items:
         state.collect(item, prevent_sweep=True)
     entrances = mission_entrances(mw)
-    access_items = [item for item in items if item.name.endswith(' Access')]
+    access_items = [item for item in items if item.name.endswith(" Access")]
     assert access_items
     assert all(entrance.can_reach(state) for entrance in entrances)
     for item in access_items:

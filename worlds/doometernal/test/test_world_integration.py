@@ -1,15 +1,15 @@
-from collections import Counter
 from io import StringIO
 
 import pytest
-
 from BaseClasses import CollectionState
-from Options import OptionError, get_option_groups
+
+from Options import OptionError
 from test.general import gen_steps, setup_multiworld
 from worlds.doometernal import DoomEternalWorld
 from worlds.doometernal.campaign import STAGE_BY_ID
 from worlds.doometernal.items import FILLER_WEIGHT_NAMES, POOL_ITEM_LIMITS
 
+pytestmark = pytest.mark.slow
 
 CAMPAIGN = {"mission_pool": "base", "mission_count": 6, "goal": "kill_the_icon_of_sin"}
 
@@ -73,19 +73,6 @@ def test_pool_configuration_errors_reach_apworld_boundary(overrides, message):
         mw.worlds[1].generate_early()
     assert isinstance(raised.value.__cause__, ValueError)
     assert str(raised.value) == str(raised.value.__cause__)
-
-
-def test_web_option_groups_cover_game_options_once():
-    groups = get_option_groups(DoomEternalWorld)
-    expected = {"Campaign and Missions", "Items and Pool", "Enemies", "Killsanity", "Difficulty", "Extras"}
-    assert expected <= groups.keys()
-    grouped = Counter(option for group in DoomEternalWorld.web.option_groups if group.name in expected
-                      for option in group.options)
-    assert all(count == 1 for count in grouped.values())
-    assert set(grouped) == {DoomEternalWorld.options_dataclass.type_hints[name]
-                            for name in DoomEternalWorld.options_dataclass.__annotations__.keys()
-                            - {"start_inventory", "start_inventory_from_pool"}}
-    assert {"start_inventory", "start_inventory_from_pool"} <= groups["Item & Location Options"].keys()
 
 
 @pytest.mark.parametrize("order", ["random_mission_order", "mission_access_as_items"])

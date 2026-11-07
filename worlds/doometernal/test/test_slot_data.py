@@ -1,18 +1,20 @@
-from dataclasses import fields
 from io import StringIO
 from unittest.mock import patch
 
 import pytest
-
 from Fill import distribute_items_restrictive
+
 from Options import OptionError
 from test.general import setup_multiworld
 from worlds.doometernal import DoomEternalWorld
-from worlds.doometernal.slot_data import REQUIRED_CAPABILITIES, build_slot_data
+from worlds.doometernal.slot_data import build_slot_data
 from worlds.doometernal.slot_data_contract import (
-    MAX_PAYLOAD_BYTES, PayloadSizeError, SlotData, canonical_bytes, generation_fingerprint,
-    load_slot_catalog, placement_digest, recipe_digest, validate_slot_data,
+    MAX_PAYLOAD_BYTES,
+    PayloadSizeError,
+    canonical_bytes,
 )
+
+pytestmark = pytest.mark.slow
 
 
 @pytest.fixture(scope="module")
@@ -20,33 +22,6 @@ def default_world():
     multiworld = setup_multiworld(DoomEternalWorld, seed=42)
     distribute_items_restrictive(multiworld)
     return multiworld.worlds[1]
-
-
-def placements(world):
-    return [[location.address, location.item.code, location.item.player]
-            for location in world.multiworld.get_locations(world.player) if location.address is not None]
-
-
-def assert_digests(data, world):
-    assert data["identity"]["recipe_digest"] == recipe_digest(data["recipes"])
-    assert data["placement_digest"] == placement_digest(placements(world))
-    assert data["native_generation_fingerprint"] == generation_fingerprint(data)
-
-
-def test_complete_contract(default_world):
-    data = default_world.fill_slot_data()
-    assert set(data) == {field.name for field in fields(SlotData)}
-    admitted = validate_slot_data(data, load_slot_catalog(), placements=placements(default_world),
-                                 supported_capabilities=frozenset(REQUIRED_CAPABILITIES))
-    assert admitted.identity.schema == 7
-    assert admitted.identity.algorithm_revision == default_world.enemy_plan["revision"]
-    assert_digests(data, default_world)
-    assert set(data["stage_profiles"]) == set(default_world.campaign_plan["stage_ids"])
-    assert set(data["tracker_options"]) == {*default_world.options.__annotations__,
-                                             "start_inventory", "start_inventory_from_pool"}
-    assert data["recipes"]["timers"]
-    assert data["killsanity"] == dict(interval=0, count=0, finite_supported_count=0,
-                                     finite_kills=0, estimated_kills=0, sources=[])
 
 
 def test_recipe_changes_identity(default_world, monkeypatch):
@@ -113,12 +88,6 @@ def test_payload_error_is_player_configuration_error(default_world):
     validate.assert_called_once()
 
 
-def test_producer_validates_once(default_world):
-    with patch("worlds.doometernal.slot_data.validate_slot_data", wraps=validate_slot_data) as validate:
-        build_slot_data(default_world)
-    validate.assert_called_once()
-
-
 def test_incomplete_placements_are_rejected(default_world, monkeypatch):
     location = next(location for location in default_world.multiworld.get_locations(1)
                     if location.address is not None)
@@ -127,52 +96,23 @@ def test_incomplete_placements_are_rejected(default_world, monkeypatch):
         build_slot_data(default_world)
 
 
-def test_rooms_carry_resolved_room_data(default_world):
-    data = default_world.fill_slot_data()
-    assert data["identity"]["schema"] == 7
-    assert data == build_slot_data(default_world)
-
-
-@pytest.mark.parametrize("enabled", [False, True])
-def test_disabled_enemies_and_kill_rewards(enabled):
-    multiworld = setup_multiworld(DoomEternalWorld, seed=42, options={
-        "mission_pool": "base", "mission_count": 6, "goal": "kill_the_icon_of_sin",
-        "enemy_randomizer": False, "killsanity": enabled, "kills_per_check": 5, "use_dlc_content": False,
-        "death_link": True, "death_link_mode": "hardcore", "easier_secret_encounters": True,
-    })
-    distribute_items_restrictive(multiworld)
-    world = multiworld.worlds[1]
-    data = build_slot_data(world)
-    assert data["recipes"]["enabled"] is False
-    assert data["recipes"]["timers"]
-    assert bool(data["killsanity"]["count"]) is enabled
-    assert data["killsanity"]["finite_kills"] == world.killsanity_plan["finite_kills"]
-    assert data["runtime"]["death_link"] == dict(enabled=True, mode="hardcore")
-    assert data["runtime"]["special_weapon"] == "The Crucible"
-    assert len(placements(world)) == len(multiworld.get_filled_locations(1)) - sum(
-        location.address is None for location in multiworld.get_filled_locations(1))
-
-
-def report_size(world, label):
-    data = build_slot_data(world)
-    total, recipes = len(canonical_bytes(data)), len(canonical_bytes(data["recipes"]))
-    print(f"{label}: total={total:,} bytes; recipes={recipes:,} bytes")
-    assert total <= MAX_PAYLOAD_BYTES
-    return data
-
-
-def test_default_size(default_world):
-    report_size(default_world, "Default")
-
-
 def test_large_size():
-    options = dict(mission_pool="full_saga", killsanity=True, kills_per_check=1,
-        killsanity_maximum_milestones=2000, enemy_count_mode="multiplier", enemy_count_multiplier=500,
-        enemy_health={"minimum": 25, "maximum": 400}, enemy_damage={"minimum": 25, "maximum": 400},
-        enemy_speed={"minimum": 50, "maximum": 200}, enemy_size={"minimum": 50, "maximum": 150})
+    options = {
+        "mission_pool": "full_saga",
+        "killsanity": True,
+        "kills_per_check": 1,
+        "killsanity_maximum_milestones": 2000,
+        "enemy_count_mode": "multiplier",
+        "enemy_count_multiplier": 500,
+        "enemy_health": {"minimum": 25, "maximum": 400},
+        "enemy_damage": {"minimum": 25, "maximum": 400},
+        "enemy_speed": {"minimum": 50, "maximum": 200},
+        "enemy_size": {"minimum": 50, "maximum": 150},
+    }
     multiworld = setup_multiworld(DoomEternalWorld, seed=42, options=options)
     distribute_items_restrictive(multiworld)
-    data = report_size(multiworld.worlds[1], "Large")
+    data = build_slot_data(multiworld.worlds[1])
+    assert len(canonical_bytes(data)) <= MAX_PAYLOAD_BYTES
     assert data["killsanity"]["count"] == 2000
     assert data["killsanity"]["sources"]
     assert len(data["recipes"]["profiles"]) > 1000

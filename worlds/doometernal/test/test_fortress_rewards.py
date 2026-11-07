@@ -1,14 +1,16 @@
 from math import ceil
 
 import pytest
-
 from BaseClasses import Item, LocationProgressType
 from BaseClasses import ItemClassification as Classification
 from Fill import distribute_items_restrictive
+
 from test.general import gen_steps, setup_multiworld
 from worlds.AutoWorld import call_all
 from worlds.doometernal import DoomEternalWorld
 from worlds.generic.Rules import add_item_rule, exclusion_rules
+
+pytestmark = pytest.mark.slow
 
 
 def battery_locations(mw, player):

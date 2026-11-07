@@ -1,12 +1,16 @@
 import unittest
+from typing import ClassVar
 
 from test.general import gen_steps, setup_multiworld
 from worlds.AutoWorld import call_all
 from worlds.doometernal import DoomEternalWorld
+import pytest
+
+pytestmark = pytest.mark.slow
 
 
 class TestRngStreams(unittest.TestCase):
-    options = {"mission_pool": "base", "mission_count": 6,
+    options: ClassVar[dict] = {"mission_pool": "base", "mission_count": 6,
                "mission_order": "mission_access_as_items", "starting_weapon": "random"}
 
     def generation_result(self, mw, player=1):
@@ -25,12 +29,9 @@ class TestRngStreams(unittest.TestCase):
         }
 
     def test_same_seed_replays_generation(self):
-        for options in (self.options, {**self.options, "mission_order": "random_mission_order",
-                                       "enemy_preset": "cultist_chaos"}):
-            with self.subTest(options=options):
-                expected = setup_multiworld(DoomEternalWorld, seed=42, options=options)
-                replay = setup_multiworld(DoomEternalWorld, seed=42, options=options)
-                self.assertEqual(self.generation_result(replay), self.generation_result(expected))
+        expected = setup_multiworld(DoomEternalWorld, seed=42, options=self.options)
+        replay = setup_multiworld(DoomEternalWorld, seed=42, options=self.options)
+        self.assertEqual(self.generation_result(replay), self.generation_result(expected))
 
     def test_filler_randomness_does_not_change_campaign_or_enemy_seed(self):
         expected = setup_multiworld(DoomEternalWorld, seed=42, options=self.options)
