@@ -1,53 +1,31 @@
-"""DOOM Eternal dynamic progression classification.
-
-Dynamic item progression classification:
-- Derives required readiness targets from active campaign plan (RMO, MAI, Vanilla).
-- Computes baseline progression-only expected state (precollected + existing progression).
-- Handles Weapon Mastery / WUP requirements for victory and accessibility.
-- Deterministically evaluates candidate items from the useful pool using production
-  readiness (evaluate_player_loadout_cr and evaluate_mission_readiness).
-- Promotes only proven-required copies to ItemClassification.progression.
-- Maintains canonical diagnostic ledger recording promotions and unpromoted items.
-"""
+"""Promote items required by active checks and combat readiness."""
 
 from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Sequence
+from typing import TYPE_CHECKING
 
 from BaseClasses import CollectionState, ItemClassification
 
 from Options import OptionError
+
 from .campaign import STAGE_BY_ID
 from .combat_rating import (
-    CATEGORY_CAPS,
     ITEM_CONTRIBUTIONS,
     NORMAL_RUNE_NAMES,
     SUPPORT_RUNE_NAMES,
     evaluate_player_loadout_cr,
 )
-from .combat_readiness import (
-    DARK_LORD_STAGE_ID,
-    SPIRIT_BREAKPOINTS,
-    evaluate_mission_readiness,
-)
-from .items import DoomEternalItem, item_data_table
+from .combat_readiness import READINESS_PLACEMENT_SLACK, derive_readiness_targets, select_readiness_items
+from .generated_content import CAMPAIGN_CONNECTIONS
+from .items import DoomEternalItem
 from .logic import (
     MASTERY_SUFFIX,
     build_location_prerequisites,
     connection_requirement,
     required_item_names,
 )
-from .generated_content import CAMPAIGN_CONNECTIONS
-from .planner import (
-    ITEM_DEPENDENCIES,
-    READINESS_PLACEMENT_SLACK,
-    ReadinessTarget,
-    derive_readiness_targets,
-    select_readiness_items,
-)
-
 from .player_strings_generated import text as player_text
 
 if TYPE_CHECKING:
@@ -62,7 +40,7 @@ class PromotionRecord:
     copy_index: int
     original_classification: ItemClassification
     final_classification: ItemClassification
-    reason: str  # "cr_readiness", "spirit_breakpoint", "dark_lord_breakpoint", "mastery_accessibility", "hard_existing"
+    reason: str
     marginal_cr: float
     target_description: str
     dependency_closure: tuple[str, ...] = ()
@@ -79,8 +57,6 @@ class UnpromotedRecord:
 
 @dataclass
 class ClassificationLedger:
-    """Canonical P7.7 Classification Ledger."""
-
     promotions: list[PromotionRecord] = field(default_factory=list)
     unpromoted: list[UnpromotedRecord] = field(default_factory=list)
     initial_player_cr: float = 0.0
@@ -89,244 +65,285 @@ class ClassificationLedger:
     all_targets_satisfied: bool = False
     max_remaining_deficit: float = 0.0
 
-    def summary_by_item(self) -> dict[str, dict[str, Any]]:
-        """Return promotion count and reasons summarized by item name."""
-        summary: dict[str, dict[str, Any]] = {}
-        for p in self.promotions:
-            if p.item_name not in summary:
-                summary[p.item_name] = {
-                    "count": 0,
-                    "reasons": set(),
-                    "total_marginal_cr": 0.0,
-                    "targets": set(),
-                }
-            summary[p.item_name]["count"] += 1
-            summary[p.item_name]["reasons"].add(p.reason)
-            summary[p.item_name]["total_marginal_cr"] += p.marginal_cr
-            summary[p.item_name]["targets"].add(p.target_description)
-        return summary
-
-
-def get_required_readiness_targets(world: DoomEternalWorld) -> list[ReadinessTarget]:
-    """Derive required readiness targets from the actual generated campaign plan."""
-    return derive_readiness_targets(world.options, world.campaign_plan)
-
 
 def build_progression_only_state(world: DoomEternalWorld) -> CollectionState:
-    """Build a deterministic CollectionState with precollected and existing progression items.
-
-    ``CollectionState(mw)`` already ingests every precollected item (including
-    physical initial-inventory items), so precollected items must not be
-    collected a second time here.
-    """
+    """Precollected items are already included by CollectionState."""
     mw = world.multiworld
     player = world.player
     state = CollectionState(mw)
 
-    # Generated items in pool that are progression
     for item in mw.itempool:
         if item.player == player and item.advancement:
             state.collect(item, prevent_sweep=True)
 
-    state.sweep_for_advancements(
-        loc for loc in mw.get_locations(player) if loc.address is None
-    )
+    state.sweep_for_advancements(loc for loc in mw.get_locations(player) if loc.address is None)
 
     return state
 
 
 def apply_dynamic_progression_classification(world: DoomEternalWorld) -> ClassificationLedger:
-    """Execute dynamic progression classification on world.multiworld.itempool for world.player.
+    builder = _ProgressionClassifier(world=world)
+    return builder.build()
 
-    Evaluates readiness targets, promotes necessary WUP and CR contributors deterministically,
-    and returns the diagnostic ledger.
-    """
-    ledger = ClassificationLedger()
-    mw = world.multiworld
-    player = world.player
 
-    # 1. Targets
-    targets = get_required_readiness_targets(world)
-    ledger.targets_count = len(targets)
+class _ProgressionClassifier:
+    def __init__(self, world: DoomEternalWorld):
+        self.world = world
 
-    active_locations = {loc.name for loc in mw.get_locations(player) if loc.address is not None}
-    active_regions = {region.name for region in mw.get_regions(player)}
-    requirements = build_location_prerequisites(
-        active_locations,
-        active_region_names=active_regions,
-        randomize_chainsaw=bool(world.options.randomize_chainsaw.value),
-        randomize_dash=bool(world.options.randomize_dash.value),
-        special_weapon=(world.options.special_weapon.current_option_name
-                        if world.options.use_dlc_content.value else "The Crucible"),
-        logic_difficulty=world.options.logic_difficulty.value,
-        active_spend_groups=getattr(world, "active_spend_groups", None),
-        enemy_plan=getattr(world, "enemy_plan", None),
-    )
-    hard_items = set().union(*(required_item_names(req) for req in requirements.values()))
-    if any(STAGE_BY_ID[stage_id]["source"] == "tag2"
-           for stage_id in world.campaign_plan.get("active_normal_mission_ids", ())):
-        hard_items.add("Meat Hook")
-    for source, destination, _, condition in CAMPAIGN_CONNECTIONS:
-        if source in active_regions and destination in active_regions:
-            hard_items.update(required_item_names(connection_requirement(
-                condition,
-                randomize_dash=bool(world.options.randomize_dash.value),
-            )))
-    if world.options.item_pool_counts.value:
-        available = {item.name for item in mw.itempool if item.player == player}
-        available.update(item.name for item in mw.precollected_items[player])
-        if "Progressive Blood Punch" in available:
-            available.add("Blood Punch")
-        if not world.options.randomize_chainsaw.value:
-            available.add("Chainsaw")
-        if not world.options.randomize_dash.value:
-            available.add("Dash")
-        from .items import item_data_table
+    def build(self):
+        self._hard_requirements()
+        self._validate_pool()
+        self._classify_combat()
+        self._classify_blood_punch()
+        self._classify_batteries()
+        self._classify_preparation()
+        self._baseline()
+        self._classify_mastery_points()
+        self._select_readiness()
+        self._record_readiness()
+        return self._record_unpromoted()
 
-        missing = sorted(name for name in hard_items if name in item_data_table and name not in available)
-        if missing:
-            raise OptionError(player_text("apworld.errors", "pool_excludes_requirements", items=", ".join(missing)))
-    combat_baselines = {
-        "Combat Shotgun", "Heavy Cannon", "Plasma Rifle", "Rocket Launcher", "Ballista", "Chaingun",
-        "Sticky Bombs", "Full Auto", "Precision Bolt", "Micro Missiles", "Heat Blast", "Microwave Beam",
-        "Remote Detonate", "Lock-on Burst", "Arbalest", "Destroyer Blade", "Energy Shield", "Mobile Turret",
-        "Meat Hook",
-    }
-    for item in mw.itempool:
-        if item.player == player and item.name in combat_baselines and item.name not in hard_items:
-            item.classification = ItemClassification.useful
-        if item.player == player and item.name in hard_items and not item.advancement:
-            original = item.classification
-            item.classification = ItemClassification.progression
-            ledger.promotions.append(PromotionRecord(
-                item.name, 1, original, ItemClassification.progression,
-                "active_hard_requirement", 0.0, "Active location or traversal prerequisite", (),
-            ))
+    def _hard_requirements(self):
+        self.ledger = ClassificationLedger()
+        self.mw = self.world.multiworld
+        self.player = self.world.player
+        self.targets = derive_readiness_targets(self.world.options, self.world.campaign_plan)
+        self.ledger.targets_count = len(self.targets)
+        self.active_locations = {loc.name for loc in self.mw.get_locations(self.player) if loc.address is not None}
+        self.active_regions = {region.name for region in self.mw.get_regions(self.player)}
+        requirements = build_location_prerequisites(
+            self.active_locations,
+            active_region_names=self.active_regions,
+            randomize_chainsaw=bool(self.world.options.randomize_chainsaw.value),
+            randomize_dash=bool(self.world.options.randomize_dash.value),
+            special_weapon=self.world.options.special_weapon.current_option_name
+            if self.world.options.use_dlc_content.value
+            else "The Crucible",
+            logic_difficulty=self.world.options.logic_difficulty.value,
+            active_spend_groups=getattr(self.world, "active_spend_groups", None),
+            enemy_plan=getattr(self.world, "enemy_plan", None),
+        )
+        self.hard_items = set().union(*(required_item_names(req) for req in requirements.values()))
+        self._traversal_requirements()
 
-    starting_blood_punch = next((item for item in mw.precollected_items[player]
-                                if item.name == "Progressive Blood Punch"), None)
-    if starting_blood_punch is not None:
-        starting_blood_punch.classification = ItemClassification.progression
-    needs_blood_punch = starting_blood_punch is None
-    for item in mw.itempool:
-        if item.player == player and item.name == "Progressive Blood Punch":
-            item.classification = ItemClassification.progression if needs_blood_punch else ItemClassification.useful
-            needs_blood_punch = False
+    def _validate_pool(self):
+        if self.world.options.item_pool_counts.value:
+            available = self._available_item_names()
+            from .items import item_data_table
 
-    battery_required = sum(group["cost"] for group in world.active_spend_groups)
-    battery_required -= sum(
-        item.name == "Sentinel Battery" for item in mw.precollected_items[player]
-    )
-    battery_required -= world.campaign_plan["battery_economy"]["native_first_battery"]
-    for item in mw.itempool:
-        if item.player == player and item.name == "Sentinel Battery":
-            item.classification = (ItemClassification.progression if battery_required > 0
-                                   else ItemClassification.useful)
-            battery_required -= 1
+            missing = sorted(name for name in self.hard_items if name in item_data_table and name not in available)
+            if missing:
+                raise OptionError(player_text("apworld.errors", "pool_excludes_requirements", items=", ".join(missing)))
 
-    bootstrap_copies = Counter(world.campaign_plan.get("bootstrap_placed_items", ()))
-    arsenal = set(getattr(world, 'frontloaded_arsenal', ()))
-    bootstrap_copies.update(arsenal)
-    for item in mw.itempool:
-        if item.player == player and bootstrap_copies[item.name] > 0:
-            bootstrap_copies[item.name] -= 1
-            if not item.advancement:
+    def _classify_combat(self):
+        combat_baselines = {
+            "Combat Shotgun",
+            "Heavy Cannon",
+            "Plasma Rifle",
+            "Rocket Launcher",
+            "Ballista",
+            "Chaingun",
+            "Sticky Bombs",
+            "Full Auto",
+            "Precision Bolt",
+            "Micro Missiles",
+            "Heat Blast",
+            "Microwave Beam",
+            "Remote Detonate",
+            "Lock-on Burst",
+            "Arbalest",
+            "Destroyer Blade",
+            "Energy Shield",
+            "Mobile Turret",
+            "Meat Hook",
+        }
+        for item in self.mw.itempool:
+            if item.player == self.player and item.name in combat_baselines and (item.name not in self.hard_items):
+                item.classification = ItemClassification.useful
+            if item.player == self.player and item.name in self.hard_items and (not item.advancement):
                 original = item.classification
                 item.classification = ItemClassification.progression
-                ledger.promotions.append(PromotionRecord(
-                    item.name, 1, original, ItemClassification.progression,
-                    "early_arsenal" if item.name in arsenal else "starting_stage_witness", 0.0,
-                    "Early arsenal" if item.name in arsenal else "Concrete starting-stage readiness witness", (),
-                ))
+                self.ledger.promotions.append(
+                    PromotionRecord(
+                        item.name,
+                        1,
+                        original,
+                        ItemClassification.progression,
+                        "active_hard_requirement",
+                        0.0,
+                        "Active location or traversal prerequisite",
+                        (),
+                    )
+                )
 
-    # 2. Baseline progression-only state
-    state = build_progression_only_state(world)
-    cr_initial = evaluate_player_loadout_cr(state, player, world)
-    ledger.initial_player_cr = cr_initial.total
+    def _classify_blood_punch(self):
+        starting_blood_punch = next(
+            (item for item in self.mw.precollected_items[self.player] if item.name == "Progressive Blood Punch"), None
+        )
+        if starting_blood_punch is not None:
+            starting_blood_punch.classification = ItemClassification.progression
+        needs_blood_punch = starting_blood_punch is None
+        for item in self.mw.itempool:
+            if item.player == self.player and item.name == "Progressive Blood Punch":
+                item.classification = ItemClassification.progression if needs_blood_punch else ItemClassification.useful
+                needs_blood_punch = False
 
-    active_mastery_count = sum(name.endswith(MASTERY_SUFFIX) for name in active_locations)
+    def _classify_batteries(self):
+        battery_required = sum(group["cost"] for group in self.world.active_spend_groups)
+        battery_required -= sum(item.name == "Sentinel Battery" for item in self.mw.precollected_items[self.player])
+        battery_required -= self.world.campaign_plan["battery_economy"]["native_first_battery"]
+        for item in self.mw.itempool:
+            if item.player == self.player and item.name == "Sentinel Battery":
+                item.classification = (
+                    ItemClassification.progression if battery_required > 0 else ItemClassification.useful
+                )
+                battery_required -= 1
 
-    # Find unpromoted useful items in player's pool
-    useful_items: dict[str, list[DoomEternalItem]] = {}
-    for item in mw.itempool:
-        if item.player == player and not item.advancement and item.classification == ItemClassification.useful:
-            useful_items.setdefault(item.name, []).append(item)
+    def _classify_preparation(self):
+        bootstrap_copies = Counter(self.world.campaign_plan.get("bootstrap_placed_items", ()))
+        arsenal = set(getattr(self.world, "frontloaded_arsenal", ()))
+        bootstrap_copies.update(arsenal)
+        for item in self.mw.itempool:
+            if item.player == self.player and bootstrap_copies[item.name] > 0:
+                bootstrap_copies[item.name] -= 1
+                if not item.advancement:
+                    original = item.classification
+                    item.classification = ItemClassification.progression
+                    self.ledger.promotions.append(
+                        PromotionRecord(
+                            item.name,
+                            1,
+                            original,
+                            ItemClassification.progression,
+                            "early_arsenal" if item.name in arsenal else "starting_stage_witness",
+                            0.0,
+                            "Early arsenal" if item.name in arsenal else "Concrete starting-stage readiness witness",
+                            (),
+                        )
+                    )
 
-    wup_name = "Weapon Upgrade Points (3)"
-    needed_wup_bundles = max(0, 3 * active_mastery_count - state.count(wup_name, player))
-    if needed_wup_bundles > len(useful_items.get(wup_name, ())):
-        raise OptionError(player_text("apworld.errors", "mastery_points_insufficient"))
-    if needed_wup_bundles:
-        wup_list = useful_items[wup_name]
-        for idx in range(needed_wup_bundles):
-            item_to_promote = wup_list.pop(0)
-            item_to_promote.classification = ItemClassification.progression
-            state.collect(item_to_promote, prevent_sweep=True)
-            ledger.promotions.append(PromotionRecord(
-                item_name=wup_name,
-                copy_index=idx + 1,
-                original_classification=ItemClassification.useful,
-                final_classification=ItemClassification.progression,
-                reason="mastery_accessibility",
-                marginal_cr=0.0,
-                target_description="Weapon Mastery Challenges",
-                dependency_closure=(),
-            ))
-        if not wup_list:
-            del useful_items[wup_name]
+    def _baseline(self):
+        self.state = build_progression_only_state(self.world)
+        cr_initial = evaluate_player_loadout_cr(self.state, self.player, self.world)
+        self.ledger.initial_player_cr = cr_initial.total
+        self.active_mastery_count = sum(name.endswith(MASTERY_SUFFIX) for name in self.active_locations)
+        self.useful_items: dict[str, list[DoomEternalItem]] = {}
+        for item in self.mw.itempool:
+            if (
+                item.player == self.player
+                and (not item.advancement)
+                and (item.classification == ItemClassification.useful)
+            ):
+                self.useful_items.setdefault(item.name, []).append(item)
 
-    # 4. Deterministic dependency-aware promotion loop (canonical planner selector)
-    base_items = dict(state.prog_items[player])
-    additional = {name: len(items) for name, items in useful_items.items() if items}
-    selection = select_readiness_items(
-        base_items=base_items,
-        targets=targets,
-        additional=additional,
-        world_context=world,
-        player=player,
-        slack=READINESS_PLACEMENT_SLACK,
-    )
-    for step in selection.steps:
-        item_list = useful_items.get(step.item_name)
-        if not item_list:
-            # Budget mismatch between planner and classifier would silently
-            # drop a required copy; fail closed instead.
-            raise ValueError(player_text("apworld.errors", "classification_budget_mismatch", item=step.item_name))
-        promoted_item = item_list.pop(0)
-        if not item_list:
-            del useful_items[step.item_name]
-        promoted_item.classification = ItemClassification.progression
-        state.collect(promoted_item, prevent_sweep=True)
+    def _classify_mastery_points(self):
+        self.wup_name = "Weapon Upgrade Points (3)"
+        needed_wup_bundles = max(0, 3 * self.active_mastery_count - self.state.count(self.wup_name, self.player))
+        if needed_wup_bundles > len(self.useful_items.get(self.wup_name, ())):
+            raise OptionError(player_text("apworld.errors", "mastery_points_insufficient"))
+        if needed_wup_bundles:
+            wup_list = self.useful_items[self.wup_name]
+            for idx in range(needed_wup_bundles):
+                item_to_promote = wup_list.pop(0)
+                item_to_promote.classification = ItemClassification.progression
+                self.state.collect(item_to_promote, prevent_sweep=True)
+                self.ledger.promotions.append(
+                    PromotionRecord(
+                        item_name=self.wup_name,
+                        copy_index=idx + 1,
+                        original_classification=ItemClassification.useful,
+                        final_classification=ItemClassification.progression,
+                        reason="mastery_accessibility",
+                        marginal_cr=0.0,
+                        target_description="Weapon Mastery Challenges",
+                        dependency_closure=(),
+                    )
+                )
+            if not wup_list:
+                del self.useful_items[self.wup_name]
 
-        copy_idx = sum(1 for p in ledger.promotions if p.item_name == step.item_name) + 1
-        reason = step.reason if not step.is_dependency else f"dependency_for_{step.package_lead}"
-        ledger.promotions.append(PromotionRecord(
-            item_name=step.item_name,
-            copy_index=copy_idx,
-            original_classification=ItemClassification.useful,
-            final_classification=ItemClassification.progression,
-            reason=reason,
-            marginal_cr=step.delta_cr if step.package_size == 1 else 0.0,
-            target_description=step.target_description,
-            dependency_closure=step.dependency_closure,
-        ))
+    def _select_readiness(self):
+        base_items = dict(self.state.prog_items[self.player])
+        additional = {name: len(items) for name, items in self.useful_items.items() if items}
+        self.selection = select_readiness_items(
+            base_items=base_items,
+            targets=self.targets,
+            additional=additional,
+            world_context=self.world,
+            player=self.player,
+            slack=READINESS_PLACEMENT_SLACK,
+        )
+        for step in self.selection.steps:
+            item_list = self.useful_items.get(step.item_name)
+            if not item_list:
+                raise ValueError(player_text("apworld.errors", "classification_budget_mismatch", item=step.item_name))
+            promoted_item = item_list.pop(0)
+            if not item_list:
+                del self.useful_items[step.item_name]
+            promoted_item.classification = ItemClassification.progression
+            self.state.collect(promoted_item, prevent_sweep=True)
+            copy_idx = sum(1 for p in self.ledger.promotions if p.item_name == step.item_name) + 1
+            reason = step.reason if not step.is_dependency else f"dependency_for_{step.package_lead}"
+            self.ledger.promotions.append(
+                PromotionRecord(
+                    item_name=step.item_name,
+                    copy_index=copy_idx,
+                    original_classification=ItemClassification.useful,
+                    final_classification=ItemClassification.progression,
+                    reason=reason,
+                    marginal_cr=step.delta_cr if step.package_size == 1 else 0.0,
+                    target_description=step.target_description,
+                    dependency_closure=step.dependency_closure,
+                )
+            )
 
-    # Final state accounting
-    current_max_deficit = selection.final_deficit
-    cr_final = evaluate_player_loadout_cr(state, player, world)
-    ledger.final_player_cr = cr_final.total
-    ledger.max_remaining_deficit = round(current_max_deficit, 2)
-    ledger.all_targets_satisfied = (current_max_deficit <= 0.0)
+    def _record_readiness(self):
+        current_max_deficit = self.selection.final_deficit
+        cr_final = evaluate_player_loadout_cr(self.state, self.player, self.world)
+        self.ledger.final_player_cr = cr_final.total
+        self.ledger.max_remaining_deficit = round(current_max_deficit, 2)
+        self.ledger.all_targets_satisfied = current_max_deficit <= 0.0
 
+    def _record_unpromoted(self):
+        for name, remaining_items in sorted(self.useful_items.items()):
+            if (
+                name in ITEM_CONTRIBUTIONS
+                or name in NORMAL_RUNE_NAMES
+                or name in SUPPORT_RUNE_NAMES
+                or (name == self.wup_name)
+                or name.startswith("Progressive ")
+            ):
+                self.ledger.unpromoted.append(
+                    UnpromotedRecord(
+                        item_name=name,
+                        copies_available=len(remaining_items),
+                        reason_not_promoted="Readiness targets satisfied or category cap reached",
+                    )
+                )
+        self.world.classification_ledger = self.ledger
+        return self.ledger
 
-    # 6. Record unpromoted useful CR-positive candidates
-    for name, remaining_items in sorted(useful_items.items()):
-        if name in ITEM_CONTRIBUTIONS or name in NORMAL_RUNE_NAMES or name in SUPPORT_RUNE_NAMES or name == wup_name or name.startswith("Progressive "):
-            ledger.unpromoted.append(UnpromotedRecord(
-                item_name=name,
-                copies_available=len(remaining_items),
-                reason_not_promoted="Readiness targets satisfied or category cap reached",
-            ))
+    def _traversal_requirements(self):
+        if any(
+            STAGE_BY_ID[stage_id]["source"] == "tag2"
+            for stage_id in self.world.campaign_plan.get("active_normal_mission_ids", ())
+        ):
+            self.hard_items.add("Meat Hook")
+        for source, destination, _, condition in CAMPAIGN_CONNECTIONS:
+            if source in self.active_regions and destination in self.active_regions:
+                self.hard_items.update(
+                    required_item_names(
+                        connection_requirement(condition, randomize_dash=bool(self.world.options.randomize_dash.value))
+                    )
+                )
 
-    world.classification_ledger = ledger
-    return ledger
+    def _available_item_names(self):
+        available = {item.name for item in self.mw.itempool if item.player == self.player}
+        available.update(item.name for item in self.mw.precollected_items[self.player])
+        if "Progressive Blood Punch" in available:
+            available.add("Blood Punch")
+        if not self.world.options.randomize_chainsaw.value:
+            available.add("Chainsaw")
+        if not self.world.options.randomize_dash.value:
+            available.add("Dash")
+        return available

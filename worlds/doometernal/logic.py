@@ -8,13 +8,12 @@ from typing import Any
 
 from BaseClasses import CollectionState
 
-from .items import BASE_GATE_KEY_ITEM_NAMES, starting_weapon_item_names
+from .items import starting_weapon_item_names
 from .player_strings_generated import text as player_text
 
 MASTERY_SUFFIX = " - Weapon Mastery Challenge"
 
-# Base weapons and mods are separate progression items in current pool. Mod
-# requirements never imply a vanilla grant for a stripped or AP item.
+
 MOD_BASE_WEAPON_REQUIREMENTS: Mapping[str, str] = {
     "Full Auto": "Combat Shotgun",
     "Sticky Bombs": "Combat Shotgun",
@@ -54,7 +53,10 @@ GOAL_ENDPOINT_EVENT_PREFIX = "Internal Goal Endpoint: "
 BASE_SLAYER_GATES: Mapping[str, tuple[str, str]] = {
     "Exultia - Slayer Gate Complete": ("Exultia - Hell - Ichor Expanse", "Slayer Gate Key Exultia"),
     "Cultist Base - Slayer Gate Complete": ("Cultist Base - Promenade of Culling", "Slayer Gate Key Cultist Base"),
-    "Super Gore Nest - Slayer Gate Complete": ("Super Gore Nest - Upper Area - Vermilion Canal", "Slayer Gate Key Super Gore Nest"),
+    "Super Gore Nest - Slayer Gate Complete": (
+        "Super Gore Nest - Upper Area - Vermilion Canal",
+        "Slayer Gate Key Super Gore Nest",
+    ),
     "ARC Complex - Slayer Gate Complete": ("ARC Complex - Convention Parking", "Slayer Gate Key ARC Complex"),
     "Mars Core - Slayer Gate Complete": ("Mars Core - Hell - Temple of Sin", "Slayer Gate Key Mars Core"),
     "Taras Nabad - Slayer Gate Complete": ("Taras Nabad - City Outskirts", "Slayer Gate Key Taras Nabad"),
@@ -64,50 +66,58 @@ TAG1_GATE_COMPLETE_NAMES = (
     "UAC Atlantica Facility - Slayer Gate Complete",
     "The Holt - Slayer Gate Complete",
 )
-BASE_MISSION_NAMES = frozenset({
-    "Hell on Earth",
-    "Exultia",
-    "Cultist Base",
-    "Doom Hunter Base",
-    "Super Gore Nest",
-    "ARC Complex",
-    "Mars Core",
-    "Sentinel Prime",
-    "Taras Nabad",
-    "Nekravol",
-    "Nekravol Part II",
-    "Urdak",
-    "Final Sin",
-})
+BASE_MISSION_NAMES = frozenset(
+    {
+        "Hell on Earth",
+        "Exultia",
+        "Cultist Base",
+        "Doom Hunter Base",
+        "Super Gore Nest",
+        "ARC Complex",
+        "Mars Core",
+        "Sentinel Prime",
+        "Taras Nabad",
+        "Nekravol",
+        "Nekravol Part II",
+        "Urdak",
+        "Final Sin",
+    }
+)
 
-DLC_REGION_NAMES = frozenset({
-    "UAC Atlantica Facility",
-    "The Blood Swamps",
-    "The Holt",
-    "The World Spear",
-    "Reclaimed Earth",
-    "Immora",
-    "Immora - The Dark Lord",
-})
+DLC_REGION_NAMES = frozenset(
+    {
+        "UAC Atlantica Facility",
+        "The Blood Swamps",
+        "The Holt",
+        "The World Spear",
+        "Reclaimed Earth",
+        "Immora",
+        "Immora - The Dark Lord",
+    }
+)
 DLC_MISSION_NAMES = frozenset(DLC_REGION_NAMES)
 DLC_MISSION_LOCAL_PREFIXES = DLC_MISSION_NAMES | frozenset({"The Dark Lord"})
-VICTORY_REQUIREMENT_NAMES = frozenset({
-    "Complete all Master Levels",
-    "Complete All Included Missions",
-    "Complete All Slayer Gates",
-    "Complete All Escalation Encounters",
-    "Complete All Secret Encounters",
-    "Complete All Mission Challenges",
-    "Complete All Weapon Mastery Challenges",
-    "Acquire the Unmaykr",
-})
-GOAL_NAMES = frozenset({
-    "Complete N Master Levels",
-    "Acquire the Unmaykr",
-    "Kill the Icon of Sin",
-    "Kill the Dark Lord",
-    "Complete the Full Saga",
-})
+VICTORY_REQUIREMENT_NAMES = frozenset(
+    {
+        "Complete all Master Levels",
+        "Complete All Included Missions",
+        "Complete All Slayer Gates",
+        "Complete All Escalation Encounters",
+        "Complete All Secret Encounters",
+        "Complete All Mission Challenges",
+        "Complete All Weapon Mastery Challenges",
+        "Acquire the Unmaykr",
+    }
+)
+GOAL_NAMES = frozenset(
+    {
+        "Complete N Master Levels",
+        "Acquire the Unmaykr",
+        "Kill the Icon of Sin",
+        "Kill the Dark Lord",
+        "Complete the Full Saga",
+    }
+)
 GOAL_ENDPOINT_LOCATIONS = {
     "Acquire the Unmaykr": "Fortress of Doom - Unmaykr Acquired",
     "Kill the Icon of Sin": "Final Sin - Mission Complete",
@@ -144,20 +154,22 @@ FULL_SAGA_MISSIONS = BASE_CAMPAIGN_MISSIONS + FULL_SAGA_TAG_MISSIONS
 BASE_CAMPAIGN_MISSION_COUNT = len(BASE_CAMPAIGN_MISSIONS)
 FULL_SAGA_MISSION_COUNT = len(FULL_SAGA_MISSIONS)
 
-FORTRESS_BATTERY_CONSUMER_LOCATIONS = frozenset({
-    "Fortress of Doom - Sentinel Crystal - Battery Room Lower East",
-    "Fortress of Doom - Sentinel Crystal - Battery Room Lower West",
-    "Fortress of Doom - Praetor Suit Token - Battery Room Upper East",
-    "Fortress of Doom - Praetor Suit Token - Battery Room Upper West",
-    "Fortress of Doom - Modbot - Battery Room Upper West",
-    "Fortress of Doom - Modbot - Battery Room Upper East",
-    "Fortress of Doom - Praetor Suit Token - Elevator Room West",
-    "Fortress of Doom - Praetor Suit Token - Elevator Room East",
-    "Fortress of Doom - All Runes Cheat Code",
-    "Fortress of Doom - Praetor Suit",
-    "Fortress of Doom - Sentinel Armor",
-    "Fortress of Doom - Classic Marine Suit",
-})
+FORTRESS_BATTERY_CONSUMER_LOCATIONS = frozenset(
+    {
+        "Fortress of Doom - Sentinel Crystal - Battery Room Lower East",
+        "Fortress of Doom - Sentinel Crystal - Battery Room Lower West",
+        "Fortress of Doom - Praetor Suit Token - Battery Room Upper East",
+        "Fortress of Doom - Praetor Suit Token - Battery Room Upper West",
+        "Fortress of Doom - Modbot - Battery Room Upper West",
+        "Fortress of Doom - Modbot - Battery Room Upper East",
+        "Fortress of Doom - Praetor Suit Token - Elevator Room West",
+        "Fortress of Doom - Praetor Suit Token - Elevator Room East",
+        "Fortress of Doom - All Runes Cheat Code",
+        "Fortress of Doom - Praetor Suit",
+        "Fortress of Doom - Sentinel Armor",
+        "Fortress of Doom - Classic Marine Suit",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -172,7 +184,7 @@ class LocationRequirement:
     battery_currency: int = 0
     normal_weapon_count: int = 0
     custom_rule: Callable[[CollectionState, int], bool] | None = None
-    all_requirements: tuple["LocationRequirement", ...] = ()
+    all_requirements: tuple[LocationRequirement, ...] = ()
 
 
 COMBAT_CAPABILITIES: Mapping[str, tuple[tuple[str, ...], ...]] = {
@@ -209,7 +221,7 @@ def connection_requirement(
 ) -> LocationRequirement:
     """Convert generated connection metadata into AP access logic."""
     capabilities = condition.get("soft_capabilities", ())
-    if not isinstance(capabilities, (list, tuple)):
+    if not isinstance(capabilities, list | tuple):
         raise ValueError(player_text("apworld.errors", "invalid_soft_capabilities"))
     first_battery_gate = "requires_first_battery" in capabilities
     dash_gate = "requires_dash" in capabilities
@@ -241,7 +253,7 @@ def chainsaw_available(state: CollectionState, player: int, *, randomize_chainsa
 
 
 def sentinel_hammer_available(state: CollectionState, player: int, *, special_weapon: str) -> bool:
-    """Sentinel Hammer is available at stage >= 2 of Progressive Special Weapon or stage >= 1 of Progressive Sentinel Hammer."""
+    """Resolve Hammer availability from the selected special-weapon progression."""
     if special_weapon == "Progressive Special Weapon":
         return state.count("Progressive Special Weapon", player) >= 2
     if special_weapon == "Progressive Sentinel Hammer":
@@ -272,47 +284,15 @@ def goal_endpoint_event_name(goal_name: str) -> str:
     return f"{GOAL_ENDPOINT_EVENT_PREFIX}{goal_name}"
 
 
-def validate_goal_endpoint(
-    goal_name: str,
-    location_names: set[str],
-    *,
-    use_dlc_content: bool,
-    include_dlc_missions: bool = True,
-) -> None:
-    if goal_name not in GOAL_NAMES:
-        raise ValueError(player_text("apworld.errors", "unknown_goal", goal=goal_name))
-    if goal_name in {"Kill the Dark Lord", "Complete the Full Saga"} and (
-        not use_dlc_content or not include_dlc_missions
-    ):
-        key = "dark_lord_requires_dlc" if goal_name == "Kill the Dark Lord" else "full_saga_requires_dlc"
-        raise ValueError(player_text("apworld.errors", key, goal=goal_name))
-    endpoint_location = GOAL_ENDPOINT_LOCATIONS.get(goal_name)
-    if endpoint_location is not None and endpoint_location not in location_names:
-        raise ValueError(
-            player_text("apworld.errors", "goal_endpoint_unavailable", goal=goal_name, location=endpoint_location)
-        )
-
-
 def goal_endpoint_available(goal_name: str, location_names: set[str]) -> bool:
     endpoint_location = GOAL_ENDPOINT_LOCATIONS.get(goal_name)
     return endpoint_location is not None and endpoint_location in location_names
-
-
-def victory_requirement_event_name(requirement_name: str) -> str:
-    if requirement_name not in VICTORY_REQUIREMENT_NAMES:
-        raise ValueError(player_text("apworld.errors", "unknown_victory_requirement", requirement=requirement_name))
-    return f"{VICTORY_REQUIREMENT_EVENT_PREFIX}{requirement_name}"
 
 
 def victory_requirement_location_event_name(requirement_name: str, location_name: str) -> str:
     if requirement_name not in VICTORY_REQUIREMENT_NAMES:
         raise ValueError(player_text("apworld.errors", "unknown_victory_requirement", requirement=requirement_name))
     return f"{VICTORY_REQUIREMENT_EVENT_PREFIX}{requirement_name}: {location_name}"
-
-
-def catalog_has_dlc_content(location_names: set[str]) -> bool:
-    """Return whether generated location catalog contains TAG mission content."""
-    return any(is_dlc_mission_local_name(location_name) for location_name in location_names)
 
 
 def is_dlc_mission_local_name(name: str) -> bool:
@@ -350,50 +330,11 @@ def goal_redundant_requirements(
             use_dlc_content=use_dlc_content,
             include_dlc_missions=include_dlc_missions,
         )
-        if (
-            set(BASE_GATE_COMPLETE_NAMES) <= active_locations
-            and not any(name in active_locations for name in TAG1_GATE_COMPLETE_NAMES)
+        if set(BASE_GATE_COMPLETE_NAMES) <= active_locations and not any(
+            name in active_locations for name in TAG1_GATE_COMPLETE_NAMES
         ):
             redundant.add("Complete All Slayer Gates")
     return frozenset(redundant & VICTORY_REQUIREMENT_NAMES)
-
-
-def validate_full_saga_catalog(
-    location_names: set[str],
-    *,
-    include_dlc_missions: bool = True,
-) -> None:
-    """Fail closed unless exactly canonical 13/19 mission completions are active."""
-    authored = {
-        name.removesuffix(" - Mission Complete")
-        for name in location_names
-        if name.endswith(" - Mission Complete")
-    }
-    expected = set(FULL_SAGA_MISSIONS if include_dlc_missions else BASE_CAMPAIGN_MISSIONS)
-    missing = sorted(expected - authored)
-    if missing:
-        raise ValueError(
-            player_text(
-                "apworld.errors",
-                "full_saga_incomplete",
-                authored=len(authored),
-                expected=len(expected),
-                missing=", ".join(missing),
-            )
-        )
-    unexpected = sorted(authored - expected)
-    if unexpected or len(authored) != len(expected):
-        raise ValueError(
-            player_text(
-                "apworld.errors",
-                "full_saga_mission_count",
-                expected=len(expected),
-                authored=len(authored),
-                unexpected=player_text("apworld.errors", "full_saga_mission_count_details", names=", ".join(unexpected))
-                if unexpected
-                else "",
-            )
-        )
 
 
 def effective_victory_requirements(
@@ -431,12 +372,16 @@ def effective_victory_requirements(
 
 def _victory_content_present(active_locations):
     return {
-        "Complete all Master Levels": any(name.endswith("Master Level - Mission Complete") for name in active_locations),
+        "Complete all Master Levels": any(
+            name.endswith("Master Level - Mission Complete") for name in active_locations
+        ),
         "Complete All Included Missions": any(name.endswith(" - Mission Complete") for name in active_locations),
         "Complete All Slayer Gates": any(" - Slayer Gate Complete" in name for name in active_locations),
         "Complete All Escalation Encounters": any(" - Escalation Encounter Wave " in name for name in active_locations),
         "Complete All Secret Encounters": any(" - Secret Encounter - " in name for name in active_locations),
-        "Complete All Mission Challenges": any(" - All Mission Challenges Completed" in name for name in active_locations),
+        "Complete All Mission Challenges": any(
+            " - All Mission Challenges Completed" in name for name in active_locations
+        ),
         "Complete All Weapon Mastery Challenges": any(name.endswith(MASTERY_SUFFIX) for name in active_locations),
         "Acquire the Unmaykr": "Fortress of Doom - Unmaykr Acquired" in active_locations,
     }
@@ -444,14 +389,9 @@ def _victory_content_present(active_locations):
 
 def _requirement_item_names(requirement: LocationRequirement) -> frozenset[str]:
     names = set(requirement.all_of)
-    # Only conjunctive requirements can make their own location inaccessible.
-    # Alternatives remain gameplay choices, not placement bans.
+
     for capability in requirement.combat_all_of:
-        names.update(
-            item
-            for alternative in combat_capability_alternatives(capability)
-            for item in alternative
-        )
+        names.update(item for alternative in combat_capability_alternatives(capability) for item in alternative)
     return frozenset(names)
 
 
@@ -475,191 +415,14 @@ def build_location_prerequisites(
     enemy_plan: Mapping[str, Any] | None = None,
 ) -> dict[str, LocationRequirement]:
     mastery_locations = sorted(name for name in location_names if name.endswith(MASTERY_SUFFIX))
-    generated_targets: dict[str, set[tuple[str, str]]] = {}
-    if enemy_plan:
-        from .generated_content import CHALLENGE_ENEMY_TARGETS
-        from .killsanity_plan import load_campaign_kill_sources
-        from .native_enemy_plan import native_event_identity
-        from .secret_encounter_timers import load_secret_encounter_timers
-
-        secrets = load_secret_encounter_timers()["maps"]
-        kill_sources = load_campaign_kill_sources()["maps"]
-        for key, plan in enemy_plan.get("maps", {}).items():
-            managers = {timer["manager"] for timer in secrets.get(key, {}).get("timers", [])}
-            if not managers:
-                continue
-            locations = {row["source_id"]: row.get("location") for row in kill_sources[key]["sources"]}
-            replacements = [(recipe["binding"].get("owner"), native_event_identity(recipe),
-                             {body["species"] for body in recipe["bodies"]}) for recipe in plan["recipes"]]
-            for manager, identity, species in replacements:
-                if manager not in managers:
-                    continue
-                location = locations.get(identity)
-                if location is None:
-                    continue
-                for target in CHALLENGE_ENEMY_TARGETS:
-                    if target["map_key"] is None and species.intersection(target["species"]):
-                        generated_targets.setdefault(target["name"], set()).add(("Location", location))
-    challenge_rules = {
-        CRUCIBLE_CHALLENGE: LocationRequirement(
-            all_of=("Progressive Special Weapon",) if special_weapon == "Progressive Special Weapon" else ("The Crucible",),
-        ),
-        "Cultist Base - Mission Challenge - Armored Rain": LocationRequirement(
-            combat_all_of=("flame_belch",)
-        ),
-        "Cultist Base - Mission Challenge - Master of Turrets": LocationRequirement(
-            combat_all_of=("weak_point",)
-        ),
-        "Doom Hunter Base - Mission Challenge - Fire in the Hole": LocationRequirement(
-            combat_all_of=("frag_grenade",)
-        ),
-        "ARC Complex - Mission Challenge - External Combustion": LocationRequirement(
-            combat_all_of=("plasma_rifle",)
-        ),
-        "ARC Complex - Mission Challenge - Solitary Confinement": LocationRequirement(
-            combat_all_of=("weak_point",)
-        ),
-        "Mars Core - Mission Challenge - Disarmament": LocationRequirement(
-            combat_all_of=("weak_point",)
-        ),
-        "Taras Nabad - Mission Challenge - Keeping Cool": LocationRequirement(
-            combat_all_of=("ice_bomb",)
-        ),
-        "Nekravol Part II - Mission Challenge - Punched by Blood": LocationRequirement(
-            combat_all_of=("blood_punch",)
-        ),
-        "Urdak - Mission Challenge - Angel of Death": LocationRequirement(
-            all_of=("Heavy Cannon", "Precision Bolt")
-        ),
-        "Mars Core - Mission Challenge - Big Ba-Da Boom": LocationRequirement(
-            all_of=("BFG-9000",)
-        ),
-    }
-    table: dict[str, LocationRequirement] = {
-        loc_name: req for loc_name, req in challenge_rules.items() if loc_name in location_names
-    }
-    gate_complete_keys = {
-        "Exultia - Slayer Gate Complete": "Slayer Gate Key Exultia",
-        "Cultist Base - Slayer Gate Complete": "Slayer Gate Key Cultist Base",
-        "Super Gore Nest - Slayer Gate Complete": "Slayer Gate Key Super Gore Nest",
-        "ARC Complex - Slayer Gate Complete": "Slayer Gate Key ARC Complex",
-        "Mars Core - Slayer Gate Complete": "Slayer Gate Key Mars Core",
-        "Taras Nabad - Slayer Gate Complete": "Slayer Gate Key Taras Nabad",
-        "UAC Atlantica Facility - Slayer Gate Complete": "Slayer Gate Key UAC Atlantica Facility",
-        "The Holt - Slayer Gate Complete": "Slayer Gate Key The Holt",
-    }
-    for loc_name, key_name in gate_complete_keys.items():
-        if loc_name in location_names:
-            table[loc_name] = LocationRequirement(all_of=(key_name,))
-    active_base_gates = tuple(loc for loc in BASE_GATE_COMPLETE_NAMES if loc in location_names)
-    if "Fortress of Doom - Unmaykr Acquired" in location_names:
-        table["Fortress of Doom - Unmaykr Acquired"] = LocationRequirement(
-            custom_rule=(
-                (lambda state, player, gates=active_base_gates: all(
-                    state.can_reach(loc, "Location", player) for loc in gates
-                ))
-                if active_base_gates
-                else None
-            ),
-        )
-    for aggregate_name in sorted(
-        name for name in location_names if name.endswith(" - All Mission Challenges Completed")
-    ):
-        mission_prefix = aggregate_name.removesuffix(" - All Mission Challenges Completed")
-        children = sorted(
-            name
-            for name in location_names
-            if name.startswith(f"{mission_prefix} - Mission Challenge - ")
-        )
-        child_requirements = [table.get(child, LocationRequirement()) for child in children]
-        table[aggregate_name] = LocationRequirement(
-            all_requirements=tuple(child_requirements),
-            custom_rule=(None if children else lambda state, player, complete=f"{mission_prefix} - Mission Complete":
-                         state.can_reach(complete, "Location", player)),
-        )
-    for location_name in location_names:
-        if location_name.endswith(" - Mission Complete"):
-            mission_name = location_name.removesuffix(" - Mission Complete")
-            all_of: tuple[str, ...] = ()
-            combat_all_of: tuple[str, ...] = ()
-            if mission_name == "Urdak":
-                all_of = ("Blood Punch", "Dash")
-            elif mission_name == "The Holt":
-                all_of = ("Plasma Rifle", "Microwave Beam")
-            table[location_name] = LocationRequirement(
-                all_of=all_of,
-                combat_all_of=combat_all_of,
-            )
-    if "The Dark Lord - Defeated" in location_names:
-        from .combat_readiness import is_dark_lord_defeated_ready
-
-        dark_lord_custom_rule = (
-            lambda state, player, sw=special_weapon, diff=logic_difficulty: is_dark_lord_defeated_ready(
-                state,
-                player,
-                world=getattr(getattr(state, "multiworld", None), "worlds", {}).get(player),
-                special_weapon=sw,
-                logic_difficulty=diff,
-            )
-        )
-        table["The Dark Lord - Defeated"] = LocationRequirement(
-            all_of=("Blood Punch",),
-            custom_rule=dark_lord_custom_rule,
-        )
+    generated_targets = _generated_challenge_targets(enemy_plan)
+    table = _challenge_requirements(location_names, special_weapon)
+    _gate_prerequisites(table, location_names)
+    _aggregate_challenges(table, location_names)
+    _mission_prerequisites(table, location_names, special_weapon, logic_difficulty)
     _arena_prerequisites(table, location_names)
-    battery_cost = (
-        active_battery_cost
-        if active_battery_cost is not None
-        else fortress_battery_consumer_cost()
-    )
-    if active_spend_groups is not None:
-        cost = sum(group["cost"] for group in active_spend_groups)
-        for sg in active_spend_groups:
-            for loc in sg["locations"]:
-                if loc in location_names:
-                    table[loc] = LocationRequirement(battery_currency=cost)
-    for location_name in (FORTRESS_BATTERY_CONSUMER_LOCATIONS & location_names):
-        if location_name not in table:
-            table[location_name] = LocationRequirement(battery_currency=battery_cost)
-    for location_name in mastery_locations:
-        mod_name = location_name.removesuffix(MASTERY_SUFFIX)
-        base_weapon = MOD_BASE_WEAPON_REQUIREMENTS.get(mod_name)
-        if base_weapon is None:
-            continue
-        candidates: tuple[tuple[str, str], ...] = ()
-        if mod_name == "Full Auto":
-            candidates = (("Region", "Doom Hunter Base - Station of Redemption"),)
-        elif mod_name == "Lock-on Burst":
-            candidates = (
-                ("Location", "Cultist Base - Slayer Key - Giant Yellow Wall Route"),
-                ("Region", "Doom Hunter Base - Station of Redemption"),
-            )
-        if candidates:
-            candidates += tuple(sorted(generated_targets.get(location_name, ())))
-        reachable_any_of = tuple(
-            (kind, name)
-            for kind, name in candidates
-            if (
-                (kind == "Location" and name in location_names)
-                or (
-                    kind == "Region"
-                    and (
-                        (active_region_names is not None and name in active_region_names)
-                        or (
-                            active_region_names is None
-                            and any(loc.startswith(name.split(" - ")[0] + " - ") for loc in location_names)
-                        )
-                    )
-                )
-            )
-        )
-        table[location_name] = LocationRequirement(
-            combat_all_of=(f"mod:{mod_name}",),
-            reachable_any_of=reachable_any_of,
-            # reserve the points for every active mod so purchases cannot lock another challenge.
-            custom_rule=lambda state, player, bundles=3 * len(mastery_locations):
-                state.count("Weapon Upgrade Points (3)", player) >= bundles,
-        )
+    _fortress_prerequisites(table, location_names, active_battery_cost, active_spend_groups)
+    _mastery_prerequisites(table, mastery_locations, generated_targets, location_names, active_region_names)
     return table
 
 
@@ -707,81 +470,28 @@ def _validate_requirement(
                 "apworld.errors", "unknown_alternative_items", location=location_name, items=str(sorted(unknown_any))
             )
         )
-    for capability in (*requirement.combat_all_of, *requirement.combat_any_of):
-        alternatives = combat_capability_alternatives(capability)
-        unknown_combat = {
-            item for alternative in alternatives for item in alternative if item not in item_names
-        }
-        if unknown_combat:
-            raise ValueError(
-                player_text(
-                    "apworld.errors", "unknown_combat_items", location=location_name, items=str(sorted(unknown_combat))
-                )
-            )
-    if requirement.battery_currency < 0:
-        raise ValueError(player_text("apworld.errors", "negative_battery_requirement", location=location_name))
-    if requirement.normal_weapon_count < 0:
-        raise ValueError(player_text("apworld.errors", "negative_weapon_requirement", location=location_name))
-    if requirement.battery_currency and not {"Sentinel Battery", "Sentinel Battery Bundle"}.issubset(item_names):
-        raise ValueError(player_text("apworld.errors", "battery_items_absent", location=location_name))
+    _validate_combat_items(requirement, location_name, item_names)
+    _validate_resource_requirements(requirement, location_name, item_names)
     for child in requirement.all_requirements:
         _validate_requirement(child, location_name, item_names)
 
 
 def requirement_satisfied(requirement: LocationRequirement, state: CollectionState, player: int) -> bool:
-    if not all(state.has(item_name, player) for item_name in requirement.all_of):
-        return False
-    if requirement.normal_weapon_count and sum(
-        state.count(item_name, player) for item_name in starting_weapon_item_names
-    ) < requirement.normal_weapon_count:
-        return False
-    if (
-        requirement.battery_currency
-        and (state.count("Sentinel Battery", player) + 2 * state.count("Sentinel Battery Bundle", player))
-        < requirement.battery_currency
-    ):
-        return False
-    if requirement.any_of and not any(
-        all(state.has(item_name, player) for item_name in alternative) for alternative in requirement.any_of
-    ):
+    if not _inventory_requirement_satisfied(requirement, state, player):
         return False
     if not all(
-        any(
-            all(state.has(item_name, player) for item_name in alternative)
-            for alternative in combat_capability_alternatives(capability)
-        )
+        _alternatives_satisfied(combat_capability_alternatives(capability), state, player)
         for capability in requirement.combat_all_of
     ):
         return False
     if requirement.combat_any_of and not any(
-        any(
-            all(state.has(item_name, player) for item_name in alternative)
-            for alternative in combat_capability_alternatives(capability)
-        )
+        _alternatives_satisfied(combat_capability_alternatives(capability), state, player)
         for capability in requirement.combat_any_of
     ):
         return False
-    if requirement.reachable_any_of:
-
-        def _safe_can_reach(kind: str, name: str) -> bool:
-            mw = getattr(state, "multiworld", None)
-            if mw is not None and hasattr(mw, "regions"):
-                if kind == "Region":
-                    if name not in mw.regions.region_cache.get(player, ()):
-                        return False
-                elif kind == "Location":
-                    if name not in mw.regions.location_cache.get(player, ()):
-                        return False
-            try:
-                return state.can_reach(name, kind, player)
-            except KeyError:
-                return False
-
-        if not any(_safe_can_reach(kind, name) for kind, name in requirement.reachable_any_of):
-            return False
-    if requirement.custom_rule is not None and not requirement.custom_rule(state, player):
+    if not _reachable_requirement_satisfied(requirement, state, player):
         return False
-    return all(requirement_satisfied(child, state, player) for child in requirement.all_requirements)
+    return _custom_requirements_satisfied(requirement, state, player)
 
 
 def required_item_names(requirement: LocationRequirement) -> frozenset[str]:
@@ -790,3 +500,282 @@ def required_item_names(requirement: LocationRequirement) -> frozenset[str]:
     for child in requirement.all_requirements:
         names.update(required_item_names(child))
     return frozenset(names)
+
+
+def _generated_challenge_targets(enemy_plan):
+    generated_targets: dict[str, set[tuple[str, str]]] = {}
+    if enemy_plan:
+        from .killsanity_plan import load_campaign_kill_sources
+        from .native_enemy_plan import native_event_identity
+        from .secret_encounter_timers import load_secret_encounter_timers
+
+        secrets = load_secret_encounter_timers()["maps"]
+        kill_sources = load_campaign_kill_sources()["maps"]
+        for key, plan in enemy_plan.get("maps", {}).items():
+            managers = {timer["manager"] for timer in secrets.get(key, {}).get("timers", [])}
+            if not managers:
+                continue
+            locations = {row["source_id"]: row.get("location") for row in kill_sources[key]["sources"]}
+            replacements = [
+                (
+                    recipe["binding"].get("owner"),
+                    native_event_identity(recipe),
+                    {body["species"] for body in recipe["bodies"]},
+                )
+                for recipe in plan["recipes"]
+            ]
+            _record_challenge_targets(generated_targets, replacements, managers, locations)
+    return generated_targets
+
+
+def _challenge_requirements(location_names, special_weapon):
+    challenge_rules = {
+        CRUCIBLE_CHALLENGE: LocationRequirement(
+            all_of=("Progressive Special Weapon",)
+            if special_weapon == "Progressive Special Weapon"
+            else ("The Crucible",),
+        ),
+        "Cultist Base - Mission Challenge - Armored Rain": LocationRequirement(combat_all_of=("flame_belch",)),
+        "Cultist Base - Mission Challenge - Master of Turrets": LocationRequirement(combat_all_of=("weak_point",)),
+        "Doom Hunter Base - Mission Challenge - Fire in the Hole": LocationRequirement(combat_all_of=("frag_grenade",)),
+        "ARC Complex - Mission Challenge - External Combustion": LocationRequirement(combat_all_of=("plasma_rifle",)),
+        "ARC Complex - Mission Challenge - Solitary Confinement": LocationRequirement(combat_all_of=("weak_point",)),
+        "Mars Core - Mission Challenge - Disarmament": LocationRequirement(combat_all_of=("weak_point",)),
+        "Taras Nabad - Mission Challenge - Keeping Cool": LocationRequirement(combat_all_of=("ice_bomb",)),
+        "Nekravol Part II - Mission Challenge - Punched by Blood": LocationRequirement(combat_all_of=("blood_punch",)),
+        "Urdak - Mission Challenge - Angel of Death": LocationRequirement(all_of=("Heavy Cannon", "Precision Bolt")),
+        "Mars Core - Mission Challenge - Big Ba-Da Boom": LocationRequirement(all_of=("BFG-9000",)),
+    }
+    table: dict[str, LocationRequirement] = {
+        loc_name: req for loc_name, req in challenge_rules.items() if loc_name in location_names
+    }
+    return table
+
+
+def _gate_prerequisites(table, location_names):
+    gate_complete_keys = {
+        "Exultia - Slayer Gate Complete": "Slayer Gate Key Exultia",
+        "Cultist Base - Slayer Gate Complete": "Slayer Gate Key Cultist Base",
+        "Super Gore Nest - Slayer Gate Complete": "Slayer Gate Key Super Gore Nest",
+        "ARC Complex - Slayer Gate Complete": "Slayer Gate Key ARC Complex",
+        "Mars Core - Slayer Gate Complete": "Slayer Gate Key Mars Core",
+        "Taras Nabad - Slayer Gate Complete": "Slayer Gate Key Taras Nabad",
+        "UAC Atlantica Facility - Slayer Gate Complete": "Slayer Gate Key UAC Atlantica Facility",
+        "The Holt - Slayer Gate Complete": "Slayer Gate Key The Holt",
+    }
+    for loc_name, key_name in gate_complete_keys.items():
+        if loc_name in location_names:
+            table[loc_name] = LocationRequirement(all_of=(key_name,))
+    active_base_gates = tuple(loc for loc in BASE_GATE_COMPLETE_NAMES if loc in location_names)
+    if "Fortress of Doom - Unmaykr Acquired" in location_names:
+        table["Fortress of Doom - Unmaykr Acquired"] = LocationRequirement(
+            custom_rule=(
+                (
+                    lambda state, player, gates=active_base_gates: all(
+                        state.can_reach(loc, "Location", player) for loc in gates
+                    )
+                )
+                if active_base_gates
+                else None
+            ),
+        )
+
+
+def _aggregate_challenges(table, location_names):
+    for aggregate_name in sorted(
+        name for name in location_names if name.endswith(" - All Mission Challenges Completed")
+    ):
+        mission_prefix = aggregate_name.removesuffix(" - All Mission Challenges Completed")
+        children = sorted(
+            name for name in location_names if name.startswith(f"{mission_prefix} - Mission Challenge - ")
+        )
+        child_requirements = [table.get(child, LocationRequirement()) for child in children]
+        table[aggregate_name] = LocationRequirement(
+            all_requirements=tuple(child_requirements),
+            custom_rule=(
+                None
+                if children
+                else lambda state, player, complete=f"{mission_prefix} - Mission Complete": state.can_reach(
+                    complete, "Location", player
+                )
+            ),
+        )
+
+
+def _mission_prerequisites(table, location_names, special_weapon, logic_difficulty):
+    for location_name in location_names:
+        if location_name.endswith(" - Mission Complete"):
+            mission_name = location_name.removesuffix(" - Mission Complete")
+            all_of: tuple[str, ...] = ()
+            combat_all_of: tuple[str, ...] = ()
+            if mission_name == "Urdak":
+                all_of = ("Blood Punch", "Dash")
+            elif mission_name == "The Holt":
+                all_of = ("Plasma Rifle", "Microwave Beam")
+            table[location_name] = LocationRequirement(
+                all_of=all_of,
+                combat_all_of=combat_all_of,
+            )
+    if "The Dark Lord - Defeated" in location_names:
+        from .combat_readiness import is_dark_lord_defeated_ready
+
+        def dark_lord_custom_rule(state, player, sw=special_weapon, diff=logic_difficulty):
+            return is_dark_lord_defeated_ready(
+                state,
+                player,
+                world=getattr(getattr(state, "multiworld", None), "worlds", {}).get(player),
+                special_weapon=sw,
+                logic_difficulty=diff,
+            )
+
+        table["The Dark Lord - Defeated"] = LocationRequirement(
+            all_of=("Blood Punch",),
+            custom_rule=dark_lord_custom_rule,
+        )
+
+
+def _fortress_prerequisites(table, location_names, active_battery_cost, active_spend_groups):
+    battery_cost = active_battery_cost if active_battery_cost is not None else fortress_battery_consumer_cost()
+    if active_spend_groups is not None:
+        cost = sum(group["cost"] for group in active_spend_groups)
+        for sg in active_spend_groups:
+            for loc in sg["locations"]:
+                if loc in location_names:
+                    table[loc] = LocationRequirement(battery_currency=cost)
+    for location_name in FORTRESS_BATTERY_CONSUMER_LOCATIONS & location_names:
+        if location_name not in table:
+            table[location_name] = LocationRequirement(battery_currency=battery_cost)
+
+
+def _mastery_prerequisites(table, mastery_locations, generated_targets, location_names, active_region_names):
+    bundles = 3 * len(mastery_locations)
+    for location_name in mastery_locations:
+        mod_name = location_name.removesuffix(MASTERY_SUFFIX)
+        base_weapon = MOD_BASE_WEAPON_REQUIREMENTS.get(mod_name)
+        if base_weapon is None:
+            continue
+        candidates: tuple[tuple[str, str], ...] = ()
+        if mod_name == "Full Auto":
+            candidates = (("Region", "Doom Hunter Base - Station of Redemption"),)
+        elif mod_name == "Lock-on Burst":
+            candidates = (
+                ("Location", "Cultist Base - Slayer Key - Giant Yellow Wall Route"),
+                ("Region", "Doom Hunter Base - Station of Redemption"),
+            )
+        if candidates:
+            candidates += tuple(sorted(generated_targets.get(location_name, ())))
+        reachable_any_of = _reachable_mastery_targets(candidates, location_names, active_region_names)
+        table[location_name] = LocationRequirement(
+            combat_all_of=(f"mod:{mod_name}",),
+            reachable_any_of=reachable_any_of,
+            # reserve the points for every active mod so purchases cannot lock another challenge.
+            custom_rule=lambda state, player, bundles=bundles: state.count("Weapon Upgrade Points (3)", player)
+            >= bundles,
+        )
+
+
+def _reachable_mastery_targets(candidates, location_names, active_region_names):
+    return tuple(
+        (kind, name)
+        for kind, name in candidates
+        if _mastery_target_present(kind, name, location_names, active_region_names)
+    )
+
+
+def _mastery_target_present(kind, name, location_names, active_region_names):
+    if kind == "Location":
+        return name in location_names
+    if kind != "Region":
+        return False
+    if active_region_names is not None:
+        return name in active_region_names
+    return any(loc.startswith(name.split(" - ")[0] + " - ") for loc in location_names)
+
+
+def _validate_combat_items(requirement, location_name, item_names):
+    for capability in (*requirement.combat_all_of, *requirement.combat_any_of):
+        alternatives = combat_capability_alternatives(capability)
+        unknown_combat = {item for alternative in alternatives for item in alternative if item not in item_names}
+        if unknown_combat:
+            raise ValueError(
+                player_text(
+                    "apworld.errors", "unknown_combat_items", location=location_name, items=str(sorted(unknown_combat))
+                )
+            )
+
+
+def _record_challenge_targets(generated_targets, replacements, managers, locations):
+    from .generated_content import CHALLENGE_ENEMY_TARGETS
+
+    for manager, identity, species in replacements:
+        if manager not in managers:
+            continue
+        location = locations.get(identity)
+        if location is None:
+            continue
+        for target in CHALLENGE_ENEMY_TARGETS:
+            if target["map_key"] is None and species.intersection(target["species"]):
+                generated_targets.setdefault(target["name"], set()).add(("Location", location))
+
+
+def _safe_can_reach(state, player, kind: str, name: str) -> bool:
+    mw = getattr(state, "multiworld", None)
+    if mw is not None and hasattr(mw, "regions"):
+        if kind == "Region":
+            if name not in mw.regions.region_cache.get(player, ()):
+                return False
+        elif kind == "Location":
+            if name not in mw.regions.location_cache.get(player, ()):
+                return False
+    try:
+        return state.can_reach(name, kind, player)
+    except KeyError:
+        return False
+
+
+def _inventory_requirement_satisfied(requirement, state, player):
+    if not all(state.has(item_name, player) for item_name in requirement.all_of):
+        return False
+    if (
+        requirement.normal_weapon_count
+        and sum(state.count(item_name, player) for item_name in starting_weapon_item_names)
+        < requirement.normal_weapon_count
+    ):
+        return False
+    if (
+        requirement.battery_currency
+        and (state.count("Sentinel Battery", player) + 2 * state.count("Sentinel Battery Bundle", player))
+        < requirement.battery_currency
+    ):
+        return False
+    return _item_alternatives_satisfied(requirement, state, player)
+
+
+def _validate_resource_requirements(requirement, location_name, item_names):
+    if requirement.battery_currency < 0:
+        raise ValueError(player_text("apworld.errors", "negative_battery_requirement", location=location_name))
+    if requirement.normal_weapon_count < 0:
+        raise ValueError(player_text("apworld.errors", "negative_weapon_requirement", location=location_name))
+    if requirement.battery_currency and not {"Sentinel Battery", "Sentinel Battery Bundle"}.issubset(item_names):
+        raise ValueError(player_text("apworld.errors", "battery_items_absent", location=location_name))
+
+
+def _reachable_requirement_satisfied(requirement, state, player):
+    if requirement.reachable_any_of:
+        if not any(_safe_can_reach(state, player, kind, name) for kind, name in requirement.reachable_any_of):
+            return False
+    return True
+
+
+def _item_alternatives_satisfied(requirement, state, player):
+    return not requirement.any_of or _alternatives_satisfied(requirement.any_of, state, player)
+
+
+def _custom_requirements_satisfied(requirement, state, player):
+    if requirement.custom_rule is not None and not requirement.custom_rule(state, player):
+        return False
+    return all(requirement_satisfied(child, state, player) for child in requirement.all_requirements)
+
+
+def _alternatives_satisfied(alternatives, state, player):
+    return any(all(state.has(item_name, player) for item_name in alternative) for alternative in alternatives)

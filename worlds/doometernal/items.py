@@ -2,8 +2,8 @@ from typing import NamedTuple
 
 from BaseClasses import Item, ItemClassification
 
-from .identity import GAME_NAME
 from .generated_content import CAMPAIGN_STAGES
+from .identity import GAME_NAME
 
 
 class DoomEternalItem(Item):
@@ -19,8 +19,7 @@ class ItemData(NamedTuple):
 
 ITEM_ID_BASE = 7770000
 
-# Audited from local base-campaign maps/DECLs.  The short route deliberately
-# uses only its own fixed quantity; later-map currency remains reserved.
+
 BASE_CAMPAIGN_MAX_SENTINEL_BATTERIES = 28
 BASE_CAMPAIGN_SENTINEL_BATTERIES = 28
 BASE_CAMPAIGN_SENTINEL_BATTERY_BUNDLES = 13
@@ -28,11 +27,25 @@ BASE_CAMPAIGN_SENTINEL_BATTERY_SINGLES = 2
 SENTINEL_BATTERY_BUNDLE_VALUE = 2
 
 # Reserved IDs stay unavailable to current item definitions.
-RESERVED_ITEM_IDS = frozenset({
-    7770018, 7770019, 7770030, 7770057, 7770105,
-    7770119, 7770120, 7770121, 7770143, 7770144,
-    7770156, 7770157, 7770158, 7770159, 7770160,
-})
+RESERVED_ITEM_IDS = frozenset(
+    {
+        7770018,
+        7770019,
+        7770030,
+        7770057,
+        7770105,
+        7770119,
+        7770120,
+        7770121,
+        7770143,
+        7770144,
+        7770156,
+        7770157,
+        7770158,
+        7770159,
+        7770160,
+    }
+)
 RESERVED_LOCATION_IDS = frozenset({7770055, 7770068})
 
 PROGRESSIVE_SPECIAL_WEAPON_ID = 7770901
@@ -42,11 +55,13 @@ WEAPON_UPGRADE_POINTS_NAME = "Weapon Upgrade Points (3)"
 WEAPON_UPGRADE_POINTS_PER_ITEM = 3
 WEAPON_UPGRADE_POINTS_ITEM_COUNT = 39
 WEAPON_UPGRADE_POINTS_TOTAL = 117
-SPECIAL_WEAPON_ITEM_NAMES = frozenset({
-    "Progressive Special Weapon",
-    "Progressive Sentinel Hammer",
-    "The Crucible",
-})
+SPECIAL_WEAPON_ITEM_NAMES = frozenset(
+    {
+        "Progressive Special Weapon",
+        "Progressive Sentinel Hammer",
+        "The Crucible",
+    }
+)
 SPECIAL_WEAPON_POOL_COUNTS = {
     "Progressive Special Weapon": 3,
     "Progressive Sentinel Hammer": 2,
@@ -68,7 +83,6 @@ ALL_GATE_KEY_ITEM_NAMES = BASE_GATE_KEY_ITEM_NAMES + TAG1_GATE_KEY_ITEM_NAMES
 
 item_data_table: dict[str, ItemData] = {
     "Weapon Upgrade Points (3)": ItemData(7770903, ItemClassification.useful),
-    # Progression & Combat Items (Weapons & Equipment)
     "Heavy Cannon": ItemData(7770000, ItemClassification.progression, True, True),
     "Plasma Rifle": ItemData(7770001, ItemClassification.progression, True, True),
     "Rocket Launcher": ItemData(7770002, ItemClassification.useful, True, True),
@@ -162,7 +176,6 @@ item_data_table: dict[str, ItemData] = {
     "Desperate Punch": ItemData(7770146, ItemClassification.useful),
     "Take Back": ItemData(7770147, ItemClassification.useful),
     "Suit Point": ItemData(7770021, ItemClassification.useful),
-    # Filler Items
     "Extra Life": ItemData(7770022, ItemClassification.useful),
     "Extra Life Pack": ItemData(7770023, ItemClassification.useful),
     "Ammo Refill": ItemData(7770024, ItemClassification.useful),
@@ -186,7 +199,6 @@ item_data_table: dict[str, ItemData] = {
     "Berserk": ItemData(7770910, ItemClassification.filler),
     "Onslaught": ItemData(7770911, ItemClassification.filler),
     "Overdrive": ItemData(7770912, ItemClassification.filler),
-    # Traps
     "Imp Trap": ItemData(7770043, ItemClassification.trap),
     "Carcass Trap": ItemData(7770044, ItemClassification.trap),
     "Revenant Trap": ItemData(7770045, ItemClassification.trap),
@@ -205,75 +217,148 @@ item_data_table: dict[str, ItemData] = {
     "Victory": ItemData(7770096, ItemClassification.progression),
 }
 
-item_data_table.update({
-    stage["name"] + " Access": ItemData(stage["access_id"], ItemClassification.progression)
-    for stage in CAMPAIGN_STAGES
-})
+item_data_table.update(
+    {
+        stage["name"] + " Access": ItemData(stage["access_id"], ItemClassification.progression)
+        for stage in CAMPAIGN_STAGES
+    }
+)
 item_name_to_id = {name: data.code for name, data in item_data_table.items() if data.code is not None}
 
-SAFE_TRAP_NAMES = frozenset({
-    "Imp Trap",
-    "Carcass Trap",
-    "Revenant Trap",
-    "Arachnotron Trap",
-    "Hell Knight Trap",
-    "Dread Knight Trap",
-    "Baron Trap",
-    "Tyrant Trap",
-    "Marauder Trap",
-    "Archvile Trap",
-    "Cueball Trap",
-    "Ammo Drain Trap",
-    "Fuel Drain Trap",
-    "BFG Drain Trap",
-})
+SAFE_TRAP_NAMES = frozenset(
+    {
+        "Imp Trap",
+        "Carcass Trap",
+        "Revenant Trap",
+        "Arachnotron Trap",
+        "Hell Knight Trap",
+        "Dread Knight Trap",
+        "Baron Trap",
+        "Tyrant Trap",
+        "Marauder Trap",
+        "Archvile Trap",
+        "Cueball Trap",
+        "Ammo Drain Trap",
+        "Fuel Drain Trap",
+        "BFG Drain Trap",
+    }
+)
 
 world_pool_weapon_item_names = tuple(
     name for name, data in item_data_table.items() if data.world_pool_weapon and name not in SPECIAL_WEAPON_ITEM_NAMES
 )
-starting_weapon_item_names = tuple(
-    name for name, data in item_data_table.items() if data.starting_weapon
-)
+starting_weapon_item_names = tuple(name for name, data in item_data_table.items() if data.starting_weapon)
 
 PRAETOR_SUIT_UPGRADE_ID_RANGE = range(7770097, 7770122)
 LEGACY_AUTOMAP_PERK_IDS = frozenset({7770101, 7770102, 7770103, 7770104})
 suit_perk_item_names = [
     name
     for name, data in item_data_table.items()
-    if data.code in PRAETOR_SUIT_UPGRADE_ID_RANGE
-    and data.code not in RESERVED_ITEM_IDS | LEGACY_AUTOMAP_PERK_IDS
+    if data.code in PRAETOR_SUIT_UPGRADE_ID_RANGE and data.code not in RESERVED_ITEM_IDS | LEGACY_AUTOMAP_PERK_IDS
 ]
 
-DEVINV_START_INVENTORY_ITEM_NAMES = frozenset({
-    "Heavy Cannon", "Plasma Rifle", "Rocket Launcher", "Super Shotgun", "Ballista", "Chaingun", "Combat Shotgun",
-    "Chainsaw", "Frag Grenade", "Blood Punch", "Progressive Blood Punch", "Flame Belch", "Ice Bomb", "Dash",
-    "Sticky Bombs", "Full Auto", "Precision Bolt", "Micro Missiles", "Heat Blast", "Microwave Beam",
-    "Remote Detonate", "Lock-on Burst", "Arbalest", "Destroyer Blade", "Energy Shield", "Mobile Turret",
-    "Savagery", "Seek and Destroy", "Blood Fueled", "Air Control", "Dazed and Confused", "Saving Throw",
-    "Chrono Strike", "Equipment Fiend", "Punch and Reave", "Sticky Bombs Mastery", "Full Auto Mastery",
-    "Micro Missiles Mastery", "Heat Blast Mastery", "Microwave Beam Mastery", "Lock-on Burst Mastery",
-    "Arbalest Mastery", "Energy Shield Mastery", "Mobile Turret Mastery", "Precision Bolt Mastery",
-    "Remote Detonate Mastery", "Destroyer Blade Mastery", "Meat Hook", "Meat Hook Mastery",
-    "Progressive Health Upgrade", "Progressive Armor Upgrade", "Progressive Ammo Upgrade",
-    "Faster Ledge Grab", "Faster Weapon Swap", "Faster Dash Recharge", "Dash Refill on Glory Kill",
-    "Reduced Hazard Damage", "Reduced Self Damage", "Respawning Barrels",
-    "Ammo from Barrels", "Powerup Extender", "Frag Grenade Cooldown", "Frag Grenade Concussive Blast",
-    "Frag Grenade Cluster Bombs", "Second Frag Grenade", "Ice Bomb Cooldown", "Extended Ice Bomb Duration",
-    "Health from Frozen Demons", "Frozen Melee Shatter", "Sentinel Battery", "Sentinel Battery Bundle",
-    "The Crucible", "Progressive Special Weapon", "Progressive Sentinel Hammer", "Ammo Refill",
-    "Break Blast", "Desperate Punch", "Take Back",
-    "Slayer Gate Key UAC Atlantica Facility", "Slayer Gate Key The Holt",
-    "Slayer Gate Key Exultia", "Slayer Gate Key Cultist Base",
-    "Slayer Gate Key Super Gore Nest", "Slayer Gate Key ARC Complex",
-    "Slayer Gate Key Mars Core", "Slayer Gate Key Taras Nabad",
-})
+DEVINV_START_INVENTORY_ITEM_NAMES = frozenset(
+    {
+        "Heavy Cannon",
+        "Plasma Rifle",
+        "Rocket Launcher",
+        "Super Shotgun",
+        "Ballista",
+        "Chaingun",
+        "Combat Shotgun",
+        "Chainsaw",
+        "Frag Grenade",
+        "Blood Punch",
+        "Progressive Blood Punch",
+        "Flame Belch",
+        "Ice Bomb",
+        "Dash",
+        "Sticky Bombs",
+        "Full Auto",
+        "Precision Bolt",
+        "Micro Missiles",
+        "Heat Blast",
+        "Microwave Beam",
+        "Remote Detonate",
+        "Lock-on Burst",
+        "Arbalest",
+        "Destroyer Blade",
+        "Energy Shield",
+        "Mobile Turret",
+        "Savagery",
+        "Seek and Destroy",
+        "Blood Fueled",
+        "Air Control",
+        "Dazed and Confused",
+        "Saving Throw",
+        "Chrono Strike",
+        "Equipment Fiend",
+        "Punch and Reave",
+        "Sticky Bombs Mastery",
+        "Full Auto Mastery",
+        "Micro Missiles Mastery",
+        "Heat Blast Mastery",
+        "Microwave Beam Mastery",
+        "Lock-on Burst Mastery",
+        "Arbalest Mastery",
+        "Energy Shield Mastery",
+        "Mobile Turret Mastery",
+        "Precision Bolt Mastery",
+        "Remote Detonate Mastery",
+        "Destroyer Blade Mastery",
+        "Meat Hook",
+        "Meat Hook Mastery",
+        "Progressive Health Upgrade",
+        "Progressive Armor Upgrade",
+        "Progressive Ammo Upgrade",
+        "Faster Ledge Grab",
+        "Faster Weapon Swap",
+        "Faster Dash Recharge",
+        "Dash Refill on Glory Kill",
+        "Reduced Hazard Damage",
+        "Reduced Self Damage",
+        "Respawning Barrels",
+        "Ammo from Barrels",
+        "Powerup Extender",
+        "Frag Grenade Cooldown",
+        "Frag Grenade Concussive Blast",
+        "Frag Grenade Cluster Bombs",
+        "Second Frag Grenade",
+        "Ice Bomb Cooldown",
+        "Extended Ice Bomb Duration",
+        "Health from Frozen Demons",
+        "Frozen Melee Shatter",
+        "Sentinel Battery",
+        "Sentinel Battery Bundle",
+        "The Crucible",
+        "Progressive Special Weapon",
+        "Progressive Sentinel Hammer",
+        "Ammo Refill",
+        "Break Blast",
+        "Desperate Punch",
+        "Take Back",
+        "Slayer Gate Key UAC Atlantica Facility",
+        "Slayer Gate Key The Holt",
+        "Slayer Gate Key Exultia",
+        "Slayer Gate Key Cultist Base",
+        "Slayer Gate Key Super Gore Nest",
+        "Slayer Gate Key ARC Complex",
+        "Slayer Gate Key Mars Core",
+        "Slayer Gate Key Taras Nabad",
+    }
+)
 
-DEVINV_NON_PERSISTENT_USEFUL_ITEM_NAMES = frozenset({
-    "Extra Life", "Extra Life Pack", "One Extra Life",
-})
+DEVINV_NON_PERSISTENT_USEFUL_ITEM_NAMES = frozenset(
+    {
+        "Extra Life",
+        "Extra Life Pack",
+        "One Extra Life",
+    }
+)
 
 POOL_ITEM_LIMITS = {
-    name: 1 for name in DEVINV_START_INVENTORY_ITEM_NAMES | set(world_pool_weapon_item_names)
+    name: 1
+    for name in DEVINV_START_INVENTORY_ITEM_NAMES | set(world_pool_weapon_item_names)
     if name not in {"Blood Punch", "Ammo Refill", "Sentinel Battery", "Sentinel Battery Bundle"}
     and not name.startswith("Slayer Gate Key ")
 }
@@ -281,13 +366,11 @@ POOL_ITEM_LIMITS.update({f"Progressive {stat} Upgrade": 4 for stat in ("Health",
 POOL_ITEM_LIMITS.update(SPECIAL_WEAPON_POOL_COUNTS)
 POOL_ITEM_LIMITS["Progressive Blood Punch"] = 4
 POOL_ITEM_LIMITS[WEAPON_UPGRADE_POINTS_NAME] = WEAPON_UPGRADE_POINTS_ITEM_COUNT
-FILLER_WEIGHT_NAMES = frozenset(name for name, item in item_data_table.items()
-                              if item.classification == ItemClassification.filler) | {"Extra Life", "Ammo Refill"}
+FILLER_WEIGHT_NAMES = frozenset(
+    name for name, item in item_data_table.items() if item.classification == ItemClassification.filler
+) | {"Extra Life", "Ammo Refill"}
 
-# Canonical eligibility for the parent Dossier > Suit page. Crystal
-# progressives are displayed there; Frag and Ice have vanilla Suit-family
-# preReqStats. Flame Belch is not part of that Suit group, so its base item is
-# deliberately not a page unlocker.
+
 SUIT_PAGE_UNLOCKING_ITEM_NAMES = frozenset(
     {
         "Progressive Health Upgrade",

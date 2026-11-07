@@ -7,18 +7,16 @@ from typing import cast
 from .generated_content import (
     BRIDGE_PROTOCOL_VERSION,
     CONTENT_SCHEMA_VERSION,
+    MANIFEST_SCHEMA_VERSION,  # noqa: F401
+    SESSION_MOD_CONTRACT_REVISION,
+    SLOT_DATA_REVISION,  # noqa: F401
+    SLOT_DATA_SCHEMA_VERSION,  # noqa: F401
 )
 from .generated_content import (
     COMPILER_REVISION as GENERATED_COMPILER_REVISION,
 )
 from .generated_content import (
     CONTENT_REVISION as GENERATED_CONTENT_REVISION,
-)
-from .generated_content import (
-    MANIFEST_SCHEMA_VERSION,
-    SESSION_MOD_CONTRACT_REVISION,
-    SLOT_DATA_REVISION,
-    SLOT_DATA_SCHEMA_VERSION,
 )
 
 _manifest = json.loads(files(__package__).joinpath("archipelago.json").read_text(encoding="utf-8"))

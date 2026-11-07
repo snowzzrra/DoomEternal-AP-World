@@ -1,3 +1,4 @@
 .apignore
 test/
 sync_version.py
+ruff.toml

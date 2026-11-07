@@ -1,0 +1,29 @@
+extend = "../../ruff.toml"
+
+# copied projections are linted at their Mod source and must retain their bytes
+exclude = [
+    "enemy_options.py",
+    "enemy_plan.py",
+    "enemy_species.py",
+    "fortress_economy.py",
+    "generated_content.py",
+    "killsanity_plan.py",
+    "native_enemy_balance.py",
+    "native_enemy_plan.py",
+    "native_enemy_safety.py",
+    "player_strings_generated.py",
+    "recipe_codec.py",
+    "secret_encounter_timers.py",
+    "slot_data_contract.py",
+    "vanilla_enemy_profiles.py",
+]
+
+[lint]
+allowed-confusables = ["’"]
+
+[lint.per-file-ignores]
+# Archipelago option classes expose mutable defaults to its option metaclass
+"options.py" = ["RUF012", "E501"]
+# test bodies belong to the test-cleanup job
+"test_*.py" = ["E501", "I001", "Q000"]
+"bases.py" = ["Q000"]

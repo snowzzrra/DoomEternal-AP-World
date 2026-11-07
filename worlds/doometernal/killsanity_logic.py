@@ -1,18 +1,24 @@
 from BaseClasses import Region
+
 from Options import OptionError
 
-from .campaign import completion_event, REGION_STAGE
+from .campaign import REGION_STAGE, completion_event
 from .items import item_data_table
 from .killsanity_plan import build_killsanity_plan
-from .locations import DoomEternalLocation, KILL_REWARD_ID_BASE
-from .slot_data_contract import MAX_KILL_REWARDS, catalog_tables
-
+from .locations import KILL_REWARD_ID_BASE, DoomEternalLocation
 from .player_strings_generated import text as player_text
+from .slot_data_contract import MAX_KILL_REWARDS, catalog_tables
 
 
 def expand_kill_rewards(interval, count, finite_supported_count):
-    return [{"threshold": ordinal * interval, "location_id": KILL_REWARD_ID_BASE + ordinal,
-             "finite_supported": ordinal <= finite_supported_count} for ordinal in range(1, count + 1)]
+    return [
+        {
+            "threshold": ordinal * interval,
+            "location_id": KILL_REWARD_ID_BASE + ordinal,
+            "finite_supported": ordinal <= finite_supported_count,
+        }
+        for ordinal in range(1, count + 1)
+    ]
 
 
 def build_kill_rewards(options, finite_sources, *, estimated_kills=None):
@@ -29,11 +35,16 @@ def build_kill_rewards(options, finite_sources, *, estimated_kills=None):
 
 def restore_kill_rewards(kills, catalog):
     sources = catalog_tables(catalog)["finite_sources"]
-    return dict(interval=kills.interval, maximum_milestones=kills.count,
-        finite_kills=kills.finite_kills, estimated_kills=kills.estimated_kills,
-        finite_sources=[{**sources[ref], "map_key": sources[ref]["stage_id"], "count": count}
-                        for ref, count in kills.sources],
-        milestones=expand_kill_rewards(kills.interval, kills.count, kills.finite_supported_count))
+    return {
+        "interval": kills.interval,
+        "maximum_milestones": kills.count,
+        "finite_kills": kills.finite_kills,
+        "estimated_kills": kills.estimated_kills,
+        "finite_sources": [
+            {**sources[ref], "map_key": sources[ref]["stage_id"], "count": count} for ref, count in kills.sources
+        ],
+        "milestones": expand_kill_rewards(kills.interval, kills.count, kills.finite_supported_count),
+    }
 
 
 def _source_access(world, row, entrance):
@@ -66,22 +77,35 @@ def create_killsanity_locations(world):
     multiworld.regions.append(region)
     entrance = multiworld.get_region("Menu", player).connect(region)
     sources = [(row, _source_access(world, row, entrance)) for row in plan["finite_sources"]]
+    repeatable = _repeatable_kill_sources(world, sources, player)
+    entrance.access_rule = lambda state: any(access(state) for _, access in sources) or any(
+        state.has(event, player) and access(state) for event, access in repeatable
+    )
+    _create_kill_milestones(plan, player, region, sources, repeatable)
+
+
+def _repeatable_kill_sources(world, sources, player):
     repeatable = [(completion_event(row["map_key"]), access) for row, access in sources if row["repeatable"]]
-    for key in world.campaign_plan['stage_ids']:
-        if not any(row['map_key'] == key for row, _ in sources):
+    for key in world.campaign_plan["stage_ids"]:
+        if not any(row["map_key"] == key for row, _ in sources):
             event = completion_event(key)
             repeatable.append((event, lambda state, event=event: state.has(event, player)))
-    entrance.access_rule = lambda state: any(access(state) for _, access in sources) or any(
-        state.has(event, player) and access(state) for event, access in repeatable)
+    return repeatable
+
+
+def _create_kill_milestones(plan, player, region, sources, repeatable):
     for ordinal, row in enumerate(plan["milestones"], 1):
         threshold = row["threshold"]
         location = DoomEternalLocation(player, f"Kill Reward {ordinal:04d}", row["location_id"], region)
         location.display_name = f"Killed {threshold} Enemies"
         if row["finite_supported"]:
-            location.access_rule = lambda state, threshold=threshold: sum(
-                source["count"] for source, access in sources if access(state)) >= threshold
+            location.access_rule = (
+                lambda state, threshold=threshold: sum(source["count"] for source, access in sources if access(state))
+                >= threshold
+            )
         else:
             location.item_rule = lambda item: not item.advancement
             location.access_rule = lambda state: any(
-                state.has(event, player) and access(state) for event, access in repeatable)
+                state.has(event, player) and access(state) for event, access in repeatable
+            )
         region.locations.append(location)

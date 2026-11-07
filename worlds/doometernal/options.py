@@ -2,15 +2,34 @@ from dataclasses import dataclass
 from typing import ClassVar
 
 from Options import (
-    Accessibility as APAccessibility, Choice, DeathLink as APDeathLink, DeathLinkMixin,
-    NamedRange, OptionDict, OptionSet, PerGameCommonOptions, ProgressionBalancing as APProgressionBalancing,
-    OptionError, OptionGroup, Range, StartInventory as APStartInventory, StartInventoryPool, Toggle,
+    Accessibility as APAccessibility,
+)
+from Options import (
+    Choice,
+    DeathLinkMixin,
+    NamedRange,
+    OptionDict,
+    OptionError,
+    OptionGroup,
+    OptionSet,
+    PerGameCommonOptions,
+    Range,
+    StartInventoryPool,
+    Toggle,
+)
+from Options import (
+    DeathLink as APDeathLink,
+)
+from Options import (
+    ProgressionBalancing as APProgressionBalancing,
+)
+from Options import (
+    StartInventory as APStartInventory,
 )
 
-from .generated_content import CAMPAIGN_STAGES
 from .enemy_options import SPECIES_IDS
+from .generated_content import CAMPAIGN_STAGES
 from .items import FILLER_WEIGHT_NAMES, POOL_ITEM_LIMITS, SAFE_TRAP_NAMES, suit_perk_item_names
-
 from .player_strings_generated import text as player_text
 
 
@@ -234,16 +253,18 @@ class MasterLevelCount(Range):
     default = 1
 
 
-VICTORY_REQUIREMENT_NAMES = frozenset({
-    "Complete all Master Levels",
-    "Complete All Included Missions",
-    "Complete All Slayer Gates",
-    "Complete All Escalation Encounters",
-    "Complete All Secret Encounters",
-    "Complete All Mission Challenges",
-    "Complete All Weapon Mastery Challenges",
-    "Acquire the Unmaykr",
-})
+VICTORY_REQUIREMENT_NAMES = frozenset(
+    {
+        "Complete all Master Levels",
+        "Complete All Included Missions",
+        "Complete All Slayer Gates",
+        "Complete All Escalation Encounters",
+        "Complete All Secret Encounters",
+        "Complete All Mission Challenges",
+        "Complete All Weapon Mastery Challenges",
+        "Acquire the Unmaykr",
+    }
+)
 
 
 class AdditionalVictoryRequirements(OptionSet):
@@ -262,8 +283,11 @@ class AdditionalVictoryRequirements(OptionSet):
     valid_keys = VICTORY_REQUIREMENT_NAMES
 
     def __init__(self, value, random_str=None):
-        super().__init__({"Complete All Included Missions" if key == "Complete All Enabled Missions" else key
-                         for key in value}, random_str)
+        super().__init__(
+            {"Complete All Included Missions" if key == "Complete All Enabled Missions" else key for key in value},
+            random_str,
+        )
+
     default = frozenset()
 
 
@@ -367,8 +391,13 @@ class ArenaChecks(_ExactLabelChoice):
     option_only_master_levels = 3
     option_no_levels = 4
     default = 1
-    labels: ClassVar[dict[int, str]] = {0: "All Levels", 1: "DLC + Master Levels", 2: "Only DLC Levels",
-              3: "Only Master Levels", 4: "No Levels"}
+    labels: ClassVar[dict[int, str]] = {
+        0: "All Levels",
+        1: "DLC + Master Levels",
+        2: "Only DLC Levels",
+        3: "Only Master Levels",
+        4: "No Levels",
+    }
 
 
 class IncludeWeaponMasteryChallenges(Toggle):
@@ -618,7 +647,6 @@ class EnabledTraps(OptionSet):
     default = SAFE_TRAP_NAMES
 
 
-# Starting Weapon option values are public and stable.
 _STARTING_WEAPON_OPTION_NAMES = {
     1: "Heavy Cannon",
     2: "Plasma Rifle",
@@ -707,15 +735,25 @@ class _BoundedItemDict(OptionDict):
 
 
 _ENEMY_NAMES = {
-    species: {"archvile": "Arch-vile", "blood_angel": "Blood Maykr", "zombie_maykr": "Maykr Drone",
-              "chaingun_soldier": "Riot Soldier", "zombie_t1_screecher": "Screecher Zombie",
-              "zombie_tier_1": "Zombie", "zombie_tier_3": "Mecha Zombie"}.get(
-                  species, species.replace("_", " ").title())
+    species: {
+        "archvile": "Arch-vile",
+        "blood_angel": "Blood Maykr",
+        "zombie_maykr": "Maykr Drone",
+        "chaingun_soldier": "Riot Soldier",
+        "zombie_t1_screecher": "Screecher Zombie",
+        "zombie_tier_1": "Zombie",
+        "zombie_tier_3": "Mecha Zombie",
+    }.get(species, species.replace("_", " ").title())
     for species in SPECIES_IDS
 }
-_ENEMY_RANGE_LABELS = {"minimum": "Minimum", "maximum": "Maximum",
-                       "early_minimum": "Early Minimum", "early_maximum": "Early Maximum",
-                       "late_minimum": "Late Minimum", "late_maximum": "Late Maximum"}
+_ENEMY_RANGE_LABELS = {
+    "minimum": "Minimum",
+    "maximum": "Maximum",
+    "early_minimum": "Early Minimum",
+    "early_maximum": "Early Maximum",
+    "late_minimum": "Late Minimum",
+    "late_maximum": "Late Maximum",
+}
 
 
 class EnemyWeights(_BoundedItemDict):
@@ -734,9 +772,14 @@ class EnemyWeights(_BoundedItemDict):
 class _EnemyAttributeRanges(_BoundedItemDict):
     entry_limits = {field: 10000 for field in _ENEMY_RANGE_LABELS}
     entry_limits.update({f"{species}.{field}": 10000 for species in SPECIES_IDS for field in _ENEMY_RANGE_LABELS})
-    entry_labels = {**_ENEMY_RANGE_LABELS, **{
-        f"{species}.{field}": f"{label} — {_ENEMY_RANGE_LABELS[field]}"
-        for species, label in _ENEMY_NAMES.items() for field in _ENEMY_RANGE_LABELS}}
+    entry_labels = {
+        **_ENEMY_RANGE_LABELS,
+        **{
+            f"{species}.{field}": f"{label} — {_ENEMY_RANGE_LABELS[field]}"
+            for species, label in _ENEMY_NAMES.items()
+            for field in _ENEMY_RANGE_LABELS
+        },
+    }
     entry_minimum = 1
     default = {}
 
@@ -797,10 +840,18 @@ class EnemySpecialLimits(_BoundedItemDict):
     Some fights keep their special enemies."""
 
     display_name = "Special Enemy Limits"
-    entry_limits = {"marauder": 2147483647, "archvile": 2147483647,
-                    "spirit": 2147483647, "combined_special": 2147483647}
-    entry_labels = {"marauder": "Marauder", "archvile": "Arch-vile",
-                    "spirit": "Spirit", "combined_special": "Combined Specials"}
+    entry_limits = {
+        "marauder": 2147483647,
+        "archvile": 2147483647,
+        "spirit": 2147483647,
+        "combined_special": 2147483647,
+    }
+    entry_labels = {
+        "marauder": "Marauder",
+        "archvile": "Arch-vile",
+        "spirit": "Spirit",
+        "combined_special": "Combined Specials",
+    }
     default = {}
 
 
@@ -876,10 +927,12 @@ class StartingWeapon(Choice):
 
     display_name = "Starting Weapon"
     option_random_weapon = 0
-    locals().update({
-        f"option_{name.lower().replace(' ', '_').replace('-', '_')}": index
-        for index, name in _STARTING_WEAPON_OPTION_NAMES.items()
-    })
+    locals().update(
+        {
+            f"option_{name.lower().replace(' ', '_').replace('-', '_')}": index
+            for index, name in _STARTING_WEAPON_OPTION_NAMES.items()
+        }
+    )
     default = 6
 
     @classmethod
@@ -916,20 +969,6 @@ class PraetorSuitUpgradesInPool(NamedRange):
         if value == cls.special_range_names["random"]:
             return "Random"
         return super().get_option_name(value)
-
-
-def resolve_praetor_suit_upgrade_count(option_value: int, rng, maximum: int = len(suit_perk_item_names)) -> int:
-    if option_value >= 0:
-        if option_value > maximum:
-            raise ValueError(player_text("apworld.errors", "suit_count_maximum", maximum=maximum))
-        return option_value
-    if option_value != PraetorSuitUpgradesInPool.special_range_names["random"]:
-        raise ValueError(player_text("apworld.errors", "unknown_suit_count", count=option_value))
-    lower = max(1, maximum // 3)
-    upper = min(maximum - 1, (2 * maximum + 2) // 3)
-    candidates = list(range(lower, upper + 1))
-    weights = [maximum + 1 - abs(2 * value - maximum) for value in candidates]
-    return rng.choices(candidates, weights=weights, k=1)[0]
 
 
 @dataclass
@@ -997,27 +1036,93 @@ class DoomEternalOptions(DeathLinkMixin, PerGameCommonOptions):
     enabled_traps: EnabledTraps
 
 
+def resolve_praetor_suit_upgrade_count(option_value: int, rng, maximum: int = len(suit_perk_item_names)) -> int:
+    if option_value >= 0:
+        if option_value > maximum:
+            raise ValueError(player_text("apworld.errors", "suit_count_maximum", maximum=maximum))
+        return option_value
+    if option_value != PraetorSuitUpgradesInPool.special_range_names["random"]:
+        raise ValueError(player_text("apworld.errors", "unknown_suit_count", count=option_value))
+    lower = max(1, maximum // 3)
+    upper = min(maximum - 1, (2 * maximum + 2) // 3)
+    candidates = list(range(lower, upper + 1))
+    weights = [maximum + 1 - abs(2 * value - maximum) for value in candidates]
+    return rng.choices(candidates, weights=weights, k=1)[0]
+
+
 option_groups = [
-    OptionGroup("Campaign and Missions", [
-        MissionPool, CustomMissions, CustomDarkLord, MissionCount, MissionOrder, StartingMissions,
-        Goal, GoalMissionAsItem, FullSagaFinalBoss, AdditionalVictoryRequirements, IncludeMasterLevels, MasterLevelCount,
-        IncludeSlayerGates, IncludeSecretEncounters, ArenaChecks, IncludeWeaponMasteryChallenges,
-    ]),
-    OptionGroup("Items and Pool", [
-        UseDLCContent, StartingWeapon, SpecialWeapon, RandomizeChainsaw, RandomizeDash,
-        ResourceProfile, UsefulFortressRewards, ItemPoolCounts, PraetorSuitUpgradesInPool, FillerWeights,
-        TrapPercentage, EnabledTraps, TrapWeights,
-    ]),
-    OptionGroup("Enemies", [
-        EnemyRandomizer, EnemyPreset, EnemyIntensityEarly, EnemyIntensityLate, EnemyDensity,
-        EnemyLength, EnemyVariety, EnemyCountMode, EnemyCountMultiplier, EnemySizeVariationChance,
-        EnemyWeights, EnemyHealth, EnemyDamage, EnemySpeed, EnemySize, EnemySpecialLimits,
-    ]),
+    OptionGroup(
+        "Campaign and Missions",
+        [
+            MissionPool,
+            CustomMissions,
+            CustomDarkLord,
+            MissionCount,
+            MissionOrder,
+            StartingMissions,
+            Goal,
+            GoalMissionAsItem,
+            FullSagaFinalBoss,
+            AdditionalVictoryRequirements,
+            IncludeMasterLevels,
+            MasterLevelCount,
+            IncludeSlayerGates,
+            IncludeSecretEncounters,
+            ArenaChecks,
+            IncludeWeaponMasteryChallenges,
+        ],
+    ),
+    OptionGroup(
+        "Items and Pool",
+        [
+            UseDLCContent,
+            StartingWeapon,
+            SpecialWeapon,
+            RandomizeChainsaw,
+            RandomizeDash,
+            ResourceProfile,
+            UsefulFortressRewards,
+            ItemPoolCounts,
+            PraetorSuitUpgradesInPool,
+            FillerWeights,
+            TrapPercentage,
+            EnabledTraps,
+            TrapWeights,
+        ],
+    ),
+    OptionGroup(
+        "Enemies",
+        [
+            EnemyRandomizer,
+            EnemyPreset,
+            EnemyIntensityEarly,
+            EnemyIntensityLate,
+            EnemyDensity,
+            EnemyLength,
+            EnemyVariety,
+            EnemyCountMode,
+            EnemyCountMultiplier,
+            EnemySizeVariationChance,
+            EnemyWeights,
+            EnemyHealth,
+            EnemyDamage,
+            EnemySpeed,
+            EnemySize,
+            EnemySpecialLimits,
+        ],
+    ),
     OptionGroup("Killsanity", [Killsanity, KillsPerCheck, KillsanityMaximumMilestones]),
-    OptionGroup("Difficulty", [
-        CampaignDifficulty, LogicDifficulty, ProgressiveDifficulty, EnhancedMeleeDamage,
-        EasierSecretEncounters, MasteryRequirements,
-    ]),
+    OptionGroup(
+        "Difficulty",
+        [
+            CampaignDifficulty,
+            LogicDifficulty,
+            ProgressiveDifficulty,
+            EnhancedMeleeDamage,
+            EasierSecretEncounters,
+            MasteryRequirements,
+        ],
+    ),
     OptionGroup("Extras", [Accessibility, ProgressionBalancing, DeathLink, DeathLinkMode, RevealAPLocationsOnAutomap]),
     OptionGroup("Item & Location Options", [StartInventory]),
 ]
