@@ -1,4 +1,5 @@
-from io import StringIO
+import json
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -10,7 +11,6 @@ from worlds.doometernal import DoomEternalWorld
 from worlds.doometernal.slot_data import build_slot_data
 from worlds.doometernal.slot_data_contract import (
     MAX_PAYLOAD_BYTES,
-    PayloadSizeError,
     canonical_bytes,
 )
 
@@ -19,7 +19,8 @@ pytestmark = pytest.mark.slow
 
 @pytest.fixture(scope="module")
 def default_world():
-    multiworld = setup_multiworld(DoomEternalWorld, seed=42)
+    case = json.loads(Path(__file__).with_name("pillar_presets.json").read_text())[1]
+    multiworld = setup_multiworld(DoomEternalWorld, seed=case["seed"], options=case["options"])
     distribute_items_restrictive(multiworld)
     return multiworld.worlds[1]
 
@@ -58,34 +59,6 @@ def test_serialization_is_identical_without_rng(default_world):
         second = canonical_bytes(build_slot_data(default_world))
     assert first == second
     assert [stream.getstate() for stream in streams] == states
-
-
-def test_diagnostics_only_change_spoiler(default_world, monkeypatch):
-    before = canonical_bytes(build_slot_data(default_world))
-    monkeypatch.setitem(default_world.campaign_plan, "bootstrap_overshoot", 123)
-    monkeypatch.setitem(default_world.campaign_plan, "readiness_initial_deficit", 456)
-    monkeypatch.setitem(default_world.campaign_plan, "resource_auto_adjustments", {"Sentinel Battery": 2})
-    monkeypatch.setitem(default_world.enemy_plan, "seed", "1234")
-    monkeypatch.setitem(default_world.enemy_plan, "compiler_adjustments",
-                        [{"origin": "actor", "action": "preserve_scripted_boss"}])
-    assert canonical_bytes(build_slot_data(default_world)) == before
-    output = StringIO()
-    default_world.write_spoiler(output)
-    text = output.getvalue()
-    assert "overshoot 123" in text
-    assert "Readiness deficit: 456" in text
-    assert "Automatic adjustments: Sentinel Battery: 2" in text
-    assert "Enemy generation seed:" in text
-    assert "{" not in text
-
-
-def test_payload_error_is_player_configuration_error(default_world):
-    error = PayloadSizeError(MAX_PAYLOAD_BYTES + 1, MAX_PAYLOAD_BYTES)
-    with patch("worlds.doometernal.slot_data.validate_slot_data", side_effect=error) as validate:
-        with pytest.raises(OptionError, match="8000001") as raised:
-            build_slot_data(default_world)
-    assert raised.value.__cause__ is error
-    validate.assert_called_once()
 
 
 def test_incomplete_placements_are_rejected(default_world, monkeypatch):

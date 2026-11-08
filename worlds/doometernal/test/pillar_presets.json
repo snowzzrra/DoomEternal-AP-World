@@ -1,0 +1,65 @@
+[
+  {
+    "id": "base",
+    "seed": 230001,
+    "players": 1,
+    "options": {
+      "enemy_randomizer": false,
+      "starting_weapon": "combat_shotgun",
+      "mission_count": 6,
+      "include_weapon_mastery_challenges": false,
+      "mission_pool": "base",
+      "mission_order": "vanilla_order",
+      "use_dlc_content": false,
+      "goal": "kill_the_icon_of_sin"
+    }
+  },
+  {
+    "id": "mission_access",
+    "seed": 164570677,
+    "players": 1,
+    "options": {
+      "enemy_randomizer": true,
+      "starting_weapon": "combat_shotgun",
+      "mission_count": 6,
+      "include_weapon_mastery_challenges": true,
+      "mission_pool": "custom",
+      "custom_missions": [
+        "Hell on Earth",
+        "Cultist Base",
+        "Super Gore Nest",
+        "Final Sin",
+        "UAC Atlantica Facility",
+        "The World Spear"
+      ],
+      "custom_dark_lord": false,
+      "mission_order": "mission_access_as_items",
+      "starting_missions": 2,
+      "goal_mission_as_item": true,
+      "use_dlc_content": true,
+      "include_master_levels": true,
+      "arena_checks": "all_levels",
+      "campaign_difficulty": "ultra_nightmare",
+      "killsanity": true,
+      "killsanity_maximum_milestones": 6,
+      "kills_per_check": 10,
+      "goal": "kill_the_icon_of_sin"
+    }
+  },
+  {
+    "id": "dlc",
+    "seed": 427264797,
+    "players": 1,
+    "options": {
+      "enemy_randomizer": false,
+      "starting_weapon": "combat_shotgun",
+      "mission_count": 6,
+      "include_weapon_mastery_challenges": false,
+      "mission_pool": "dlc_only",
+      "mission_order": "random_mission_order",
+      "goal": "kill_the_dark_lord",
+      "include_slayer_gates": false,
+      "include_secret_encounters": false
+    }
+  }
+]
