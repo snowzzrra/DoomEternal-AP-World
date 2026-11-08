@@ -19,8 +19,9 @@ Your starting weapon, explicit starting inventory, and nonrandomized Dash and
 Chainsaw follow your player options. Combat equipment comes from checks.
 Progressive enemizer campaigns can start gradually in Hell on Earth or Exultia:
 collect weapons in the Fortress and the opening areas before tackling the harder
-encounters later in the mission. Other starting pools may need explicit starting
-equipment; generation rejects a start that cannot supply its required items.
+encounters later in the mission. Generation accepts an unprepared starting mission
+and skips its readiness check. Other starting pools may need explicit starting
+equipment to make progress.
 
 ## Find rewards
 
