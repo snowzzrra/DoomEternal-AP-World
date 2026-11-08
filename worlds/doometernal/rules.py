@@ -13,13 +13,14 @@ from .items import (
 )
 from .logic import (
     FORTRESS_BATTERY_CONSUMER_LOCATIONS,
-    MASTERY_SUFFIX,
+    VICTORY_REQUIREMENT_SUFFIXES,
     build_location_prerequisites,
     effective_victory_requirements,
     goal_endpoint_event_name,
     required_item_names,
     requirement_satisfied,
     validate_location_prerequisites,
+    victory_location_matches,
     victory_requirement_location_event_name,
 )
 
@@ -33,8 +34,6 @@ def set_rules(world) -> None:
     prerequisite_table = build_location_prerequisites(
         active_location_names,
         active_region_names={region.name for region in world.multiworld.get_regions(world.player)},
-        randomize_chainsaw=bool(world.options.randomize_chainsaw.value),
-        randomize_dash=bool(world.options.randomize_dash.value),
         special_weapon=(
             "The Crucible"
             if not world.options.use_dlc_content.value
@@ -85,7 +84,7 @@ def _set_victory_rules(world, active_location_names):
         required_events.update(mission_events)
     if "Acquire the Unmaykr" in effective_requirements:
         required_events.add(goal_endpoint_event_name("Acquire the Unmaykr"))
-    required_events.update(_additional_victory_events(world, active_location_names, effective_requirements))
+    required_events.update(_additional_victory_events(active_location_names, effective_requirements))
 
     world.multiworld.completion_condition[world.player] = lambda state: _victory_satisfied(
         world, state, required_events, master_goal, master_events
@@ -103,25 +102,19 @@ def _victory_satisfied(world, state, required_events, master_goal, master_events
     )
 
 
-def _additional_victory_events(world, active_location_names, effective_requirements):
+def _additional_victory_events(active_location_names, effective_requirements):
     events = set()
     for requirement_name in effective_requirements - {
         "Complete All Included Missions",
         "Acquire the Unmaykr",
         "Complete all Master Levels",
     }:
-        suffix = {
-            "Complete All Slayer Gates": " - Slayer Gate Complete",
-            "Complete All Escalation Encounters": " - Escalation Encounter Wave ",
-            "Complete All Secret Encounters": " - Secret Encounter - ",
-            "Complete All Mission Challenges": " - All Mission Challenges Completed",
-            "Complete All Weapon Mastery Challenges": MASTERY_SUFFIX,
-        }[requirement_name]
+        suffix = VICTORY_REQUIREMENT_SUFFIXES[requirement_name]
         candidate_locations = active_location_names
         events.update(
             victory_requirement_location_event_name(requirement_name, location)
             for location in candidate_locations
-            if (suffix in location if suffix.endswith(" - ") or suffix.endswith(" ") else location.endswith(suffix))
+            if victory_location_matches(location, suffix)
         )
 
     return events

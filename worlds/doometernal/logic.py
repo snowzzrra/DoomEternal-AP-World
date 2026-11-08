@@ -8,10 +8,21 @@ from typing import Any
 
 from BaseClasses import CollectionState
 
-from .items import starting_weapon_item_names
 from .player_strings_generated import text as player_text
 
 MASTERY_SUFFIX = " - Weapon Mastery Challenge"
+
+VICTORY_REQUIREMENT_SUFFIXES = {
+    "Complete All Slayer Gates": " - Slayer Gate Complete",
+    "Complete All Escalation Encounters": " - Escalation Encounter Wave ",
+    "Complete All Secret Encounters": " - Secret Encounter - ",
+    "Complete All Mission Challenges": " - All Mission Challenges Completed",
+    "Complete All Weapon Mastery Challenges": MASTERY_SUFFIX,
+}
+
+
+def victory_location_matches(location_name: str, suffix: str) -> bool:
+    return suffix in location_name if suffix.endswith(" ") else location_name.endswith(suffix)
 
 
 MOD_BASE_WEAPON_REQUIREMENTS: Mapping[str, str] = {
@@ -30,22 +41,6 @@ MOD_BASE_WEAPON_REQUIREMENTS: Mapping[str, str] = {
     "Meat Hook": "Super Shotgun",
 }
 
-MISSION_COMPLETION_WEAPON_THRESHOLDS: Mapping[str, int] = {
-    "Hell on Earth": 1,
-    "Exultia": 2,
-    "Cultist Base": 4,
-    "Doom Hunter Base": 5,
-    "Super Gore Nest": 6,
-    "ARC Complex": 7,
-    "UAC Atlantica Facility": 6,
-    "The Blood Swamps": 6,
-    "The Holt": 7,
-    "The World Spear": 6,
-    "Reclaimed Earth": 6,
-    "Immora": 7,
-    "The Dark Lord": 7,
-}
-DEFAULT_MISSION_COMPLETION_WEAPON_THRESHOLD = 7
 MISSION_CLEAR_EVENT_PREFIX = "Internal Mission Clear: "
 VICTORY_REQUIREMENT_EVENT_PREFIX = "Internal Victory Requirement: "
 GOAL_ENDPOINT_EVENT_PREFIX = "Internal Goal Endpoint: "
@@ -65,23 +60,6 @@ BASE_GATE_COMPLETE_NAMES = tuple(BASE_SLAYER_GATES)
 TAG1_GATE_COMPLETE_NAMES = (
     "UAC Atlantica Facility - Slayer Gate Complete",
     "The Holt - Slayer Gate Complete",
-)
-BASE_MISSION_NAMES = frozenset(
-    {
-        "Hell on Earth",
-        "Exultia",
-        "Cultist Base",
-        "Doom Hunter Base",
-        "Super Gore Nest",
-        "ARC Complex",
-        "Mars Core",
-        "Sentinel Prime",
-        "Taras Nabad",
-        "Nekravol",
-        "Nekravol Part II",
-        "Urdak",
-        "Final Sin",
-    }
 )
 
 DLC_REGION_NAMES = frozenset(
@@ -127,32 +105,6 @@ GOAL_ENDPOINT_LOCATIONS = {
 
 GOAL_IMPLIED_UNMAYKR = frozenset({"Acquire the Unmaykr"})
 
-FULL_SAGA_TAG_MISSIONS = (
-    "UAC Atlantica Facility",
-    "The Blood Swamps",
-    "The Holt",
-    "The World Spear",
-    "Reclaimed Earth",
-    "Immora",
-)
-BASE_CAMPAIGN_MISSIONS = (
-    "Hell on Earth",
-    "Exultia",
-    "Cultist Base",
-    "Doom Hunter Base",
-    "Super Gore Nest",
-    "ARC Complex",
-    "Mars Core",
-    "Sentinel Prime",
-    "Taras Nabad",
-    "Nekravol",
-    "Nekravol Part II",
-    "Urdak",
-    "Final Sin",
-)
-FULL_SAGA_MISSIONS = BASE_CAMPAIGN_MISSIONS + FULL_SAGA_TAG_MISSIONS
-BASE_CAMPAIGN_MISSION_COUNT = len(BASE_CAMPAIGN_MISSIONS)
-FULL_SAGA_MISSION_COUNT = len(FULL_SAGA_MISSIONS)
 
 FORTRESS_BATTERY_CONSUMER_LOCATIONS = frozenset(
     {
@@ -177,12 +129,9 @@ class LocationRequirement:
     """Location access from direct item, combat, and battery requirements."""
 
     all_of: tuple[str, ...] = ()
-    any_of: tuple[tuple[str, ...], ...] = ()
     combat_all_of: tuple[str, ...] = ()
-    combat_any_of: tuple[str, ...] = ()
     reachable_any_of: tuple[tuple[str, str], ...] = ()
     battery_currency: int = 0
-    normal_weapon_count: int = 0
     custom_rule: Callable[[CollectionState, int], bool] | None = None
     all_requirements: tuple[LocationRequirement, ...] = ()
 
@@ -214,11 +163,7 @@ def fortress_battery_consumer_cost(active_spend_groups_count: int = 11) -> int:
     return active_spend_groups_count * 2
 
 
-def connection_requirement(
-    condition: Mapping[str, object],
-    *,
-    randomize_dash: bool = False,
-) -> LocationRequirement:
+def connection_requirement(condition: Mapping[str, object]) -> LocationRequirement:
     """Convert generated connection metadata into AP access logic."""
     capabilities = condition.get("soft_capabilities", ())
     if not isinstance(capabilities, list | tuple):
@@ -406,8 +351,6 @@ def build_location_prerequisites(
     location_names: set[str],
     *,
     active_region_names: set[str] | None = None,
-    randomize_chainsaw: bool = False,
-    randomize_dash: bool = False,
     special_weapon: str = "The Crucible",
     active_battery_cost: int | None = None,
     logic_difficulty: int = 1,
@@ -440,10 +383,6 @@ def validate_location_prerequisites(
     item_names: set[str],
 ) -> None:
     for location_name, requirement in table.items():
-        if location_name not in location_names:
-            raise ValueError(player_text("apworld.errors", "unknown_logic_location", location=location_name))
-        if not isinstance(requirement, LocationRequirement):
-            raise ValueError(player_text("apworld.errors", "invalid_logic_rule", location=location_name))
         _validate_requirement(requirement, location_name, item_names)
 
 
@@ -461,15 +400,6 @@ def _validate_requirement(
                 items=str(sorted(set(requirement.all_of) - item_names)),
             )
         )
-    if any(not alternative for alternative in requirement.any_of):
-        raise ValueError(player_text("apworld.errors", "empty_logic_alternative", location=location_name))
-    unknown_any = {item for alternative in requirement.any_of for item in alternative if item not in item_names}
-    if unknown_any:
-        raise ValueError(
-            player_text(
-                "apworld.errors", "unknown_alternative_items", location=location_name, items=str(sorted(unknown_any))
-            )
-        )
     _validate_combat_items(requirement, location_name, item_names)
     _validate_resource_requirements(requirement, location_name, item_names)
     for child in requirement.all_requirements:
@@ -482,11 +412,6 @@ def requirement_satisfied(requirement: LocationRequirement, state: CollectionSta
     if not all(
         _alternatives_satisfied(combat_capability_alternatives(capability), state, player)
         for capability in requirement.combat_all_of
-    ):
-        return False
-    if requirement.combat_any_of and not any(
-        _alternatives_satisfied(combat_capability_alternatives(capability), state, player)
-        for capability in requirement.combat_any_of
     ):
         return False
     if not _reachable_requirement_satisfied(requirement, state, player):
@@ -693,7 +618,7 @@ def _mastery_target_present(kind, name, location_names, active_region_names):
 
 
 def _validate_combat_items(requirement, location_name, item_names):
-    for capability in (*requirement.combat_all_of, *requirement.combat_any_of):
+    for capability in requirement.combat_all_of:
         alternatives = combat_capability_alternatives(capability)
         unknown_combat = {item for alternative in alternatives for item in alternative if item not in item_names}
         if unknown_combat:
@@ -718,29 +643,8 @@ def _record_challenge_targets(generated_targets, replacements, managers, locatio
                 generated_targets.setdefault(target["name"], set()).add(("Location", location))
 
 
-def _safe_can_reach(state, player, kind: str, name: str) -> bool:
-    mw = getattr(state, "multiworld", None)
-    if mw is not None and hasattr(mw, "regions"):
-        if kind == "Region":
-            if name not in mw.regions.region_cache.get(player, ()):
-                return False
-        elif kind == "Location":
-            if name not in mw.regions.location_cache.get(player, ()):
-                return False
-    try:
-        return state.can_reach(name, kind, player)
-    except KeyError:
-        return False
-
-
 def _inventory_requirement_satisfied(requirement, state, player):
     if not all(state.has(item_name, player) for item_name in requirement.all_of):
-        return False
-    if (
-        requirement.normal_weapon_count
-        and sum(state.count(item_name, player) for item_name in starting_weapon_item_names)
-        < requirement.normal_weapon_count
-    ):
         return False
     if (
         requirement.battery_currency
@@ -748,27 +652,21 @@ def _inventory_requirement_satisfied(requirement, state, player):
         < requirement.battery_currency
     ):
         return False
-    return _item_alternatives_satisfied(requirement, state, player)
+    return True
 
 
 def _validate_resource_requirements(requirement, location_name, item_names):
     if requirement.battery_currency < 0:
         raise ValueError(player_text("apworld.errors", "negative_battery_requirement", location=location_name))
-    if requirement.normal_weapon_count < 0:
-        raise ValueError(player_text("apworld.errors", "negative_weapon_requirement", location=location_name))
     if requirement.battery_currency and not {"Sentinel Battery", "Sentinel Battery Bundle"}.issubset(item_names):
         raise ValueError(player_text("apworld.errors", "battery_items_absent", location=location_name))
 
 
 def _reachable_requirement_satisfied(requirement, state, player):
     if requirement.reachable_any_of:
-        if not any(_safe_can_reach(state, player, kind, name) for kind, name in requirement.reachable_any_of):
+        if not any(state.can_reach(name, kind, player) for kind, name in requirement.reachable_any_of):
             return False
     return True
-
-
-def _item_alternatives_satisfied(requirement, state, player):
-    return not requirement.any_of or _alternatives_satisfied(requirement.any_of, state, player)
 
 
 def _custom_requirements_satisfied(requirement, state, player):

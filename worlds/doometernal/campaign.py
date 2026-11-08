@@ -42,13 +42,13 @@ from .native_enemy_safety import OPENING_REGIONS
 from .options import MissionCount, resolve_praetor_suit_upgrade_count
 from .planner import (
     ITEM_DEPENDENCIES,
+    STAGE_BY_ID,
     FastState,
     is_compact_campaign,
     mastery_resource_family_count,
 )
 from .player_strings_generated import text as player_text
 
-STAGE_BY_ID = {stage["id"]: stage for stage in CAMPAIGN_STAGES}
 REGION_STAGE = {region: stage["id"] for stage in CAMPAIGN_STAGES for region in stage["regions"]}
 
 
@@ -108,16 +108,8 @@ def get_short_world_scaling(
     return active_sg, active_masteries, surplus
 
 
-def select_active_normal_missions(candidate_ids, requested_count, forced_ids, rng):
+def select_active_normal_missions(candidate_ids, effective_count, forced_ids, rng):
     candidates = sorted(candidate_ids)
-    effective_count = (
-        len(candidates)
-        if requested_count == "all" or requested_count == 0
-        else min(int(requested_count), len(candidates))
-    )
-    effective_count = max(MissionCount.range_start, effective_count)
-    if forced_ids:
-        effective_count = max(effective_count, len(forced_ids))
     selected = sorted(forced_ids)
     rem = effective_count - len(selected)
     if rem > 0:
@@ -195,7 +187,6 @@ def solve_stage_bootstrap(
         return {
             "stage_id": stage_id,
             "bootstrap_cost": 0,
-            "bootstrap_items": (),
             "placed_items": (),
             "initial_cr": res_0.player_cr,
             "final_cr": res_0.player_cr,
@@ -212,7 +203,6 @@ def solve_stage_bootstrap(
         return {
             "stage_id": stage_id,
             "bootstrap_cost": 0,
-            "bootstrap_items": (),
             "placed_items": best_zero[2],
             "initial_cr": res_0.player_cr,
             "final_cr": best_zero[3],
@@ -223,7 +213,6 @@ def solve_stage_bootstrap(
     return {
         "stage_id": stage_id,
         "bootstrap_cost": 999,
-        "bootstrap_items": (),
         "placed_items": (),
         "initial_cr": res_0.player_cr,
         "final_cr": 0.0,
@@ -501,10 +490,6 @@ class _CampaignPlanner:
             }
             logging.info(player_text("apworld.notices", "unprepared_start", mission=self.chosen_start))
         self._fixed_equipment()
-        self.bootstrap_cost = self.chosen_result["bootstrap_cost"]
-        self.readiness_bootstrap_items = list(self.chosen_result["bootstrap_items"])
-        self.battery_bootstrap_items = [it for it in self.readiness_bootstrap_items if it == "Sentinel Battery"]
-        self.combat_bootstrap_items = [it for it in self.readiness_bootstrap_items if it != "Sentinel Battery"]
 
     def _access_items(self):
         self.semantic_counts = dict(self.semantic_pool.counts_view())
@@ -832,10 +817,6 @@ class _CampaignPlanner:
             "fixed_dash_completion_stage": None
             if self.options.randomize_dash.value or "Dash" in self.bootstrap_inventory
             else self.sequence[0],
-            "bootstrap_cost": self.bootstrap_cost,
-            "readiness_bootstrap_items": self.readiness_bootstrap_items,
-            "battery_bootstrap_items": self.battery_bootstrap_items,
-            "combat_bootstrap_items": self.combat_bootstrap_items,
             "bootstrap_stage": self.chosen_start,
             "bootstrap_placed_items": list(self.chosen_result["placed_items"]),
             "bootstrap_initial_cr": self.chosen_result["initial_cr"],
@@ -891,7 +872,6 @@ def _greedy_bootstrap(stage_id, world_context, base_state, pool_counts, free_cap
         return {
             "stage_id": stage_id,
             "bootstrap_cost": 0,
-            "bootstrap_items": (),
             "placed_items": package,
             "initial_cr": res_0.player_cr,
             "final_cr": final.player_cr,
@@ -901,7 +881,6 @@ def _greedy_bootstrap(stage_id, world_context, base_state, pool_counts, free_cap
     return {
         "stage_id": stage_id,
         "bootstrap_cost": 999,
-        "bootstrap_items": (),
         "placed_items": (),
         "initial_cr": res_0.player_cr,
         "final_cr": 0.0,

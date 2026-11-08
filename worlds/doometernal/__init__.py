@@ -29,7 +29,14 @@ from .planner import PoolConfigurationError
 from .player_strings_generated import text as player_text
 from .settings import DoomEternalSettings
 from .slot_data import REQUIRED_CAPABILITIES, build_slot_data
-from .slot_data_contract import ContractError, catalog_tables, load_slot_catalog, validate_slot_data
+from .slot_data_contract import (
+    MASTER_LEVELS_CAPABILITY,
+    ULTRA_NIGHTMARE_CAPABILITY,
+    ContractError,
+    catalog_tables,
+    load_slot_catalog,
+    validate_slot_data,
+)
 
 
 class DoomEternalWeb(WebWorld):
@@ -267,7 +274,7 @@ class DoomEternalWorld(World):
         if name not in DEVINV_START_INVENTORY_ITEM_NAMES:
             if data.classification & ItemClassification.trap:
                 unsafe.append(player_text("apworld.errors", "inventory_trap", item=name))
-            elif data.classification & ItemClassification.filler:
+            elif data.classification == ItemClassification.filler:
                 unsafe.append(player_text("apworld.errors", "inventory_filler", item=name))
             elif name in DEVINV_NON_PERSISTENT_USEFUL_ITEM_NAMES:
                 unsafe.append(player_text("apworld.errors", "inventory_consumable", item=name))
@@ -455,7 +462,13 @@ class DoomEternalWorld(World):
 
         try:
             catalog = load_slot_catalog()
-            data = validate_slot_data(slot_data, catalog, supported_capabilities=frozenset(REQUIRED_CAPABILITIES))
+            data = validate_slot_data(
+                slot_data,
+                catalog,
+                supported_capabilities=frozenset(
+                    [*REQUIRED_CAPABILITIES, MASTER_LEVELS_CAPABILITY, ULTRA_NIGHTMARE_CAPABILITY]
+                ),
+            )
         except ContractError as error:
             raise OptionError(str(error)) from error
         self._restore_tracker_options(slot_data)

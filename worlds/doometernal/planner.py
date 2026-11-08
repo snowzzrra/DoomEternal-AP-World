@@ -19,6 +19,7 @@ from .items import (
     item_data_table,
     suit_perk_item_names,
 )
+from .logic import MOD_BASE_WEAPON_REQUIREMENTS
 from .player_strings_generated import text as player_text
 
 STAGE_BY_ID = {stage["id"]: stage for stage in CAMPAIGN_STAGES}
@@ -89,33 +90,10 @@ ORDERED_MASTERY_CHALLENGES = (
 
 
 ITEM_DEPENDENCIES: dict[str, tuple[str, ...]] = {
-    "Sticky Bombs Mastery": ("Combat Shotgun", "Sticky Bombs"),
-    "Full Auto Mastery": ("Combat Shotgun", "Full Auto"),
-    "Precision Bolt Mastery": ("Heavy Cannon", "Precision Bolt"),
-    "Micro Missiles Mastery": ("Heavy Cannon", "Micro Missiles"),
-    "Heat Blast Mastery": ("Plasma Rifle", "Heat Blast"),
-    "Microwave Beam Mastery": ("Plasma Rifle", "Microwave Beam"),
-    "Lock-on Burst Mastery": ("Rocket Launcher", "Lock-on Burst"),
-    "Remote Detonate Mastery": ("Rocket Launcher", "Remote Detonate"),
-    "Destroyer Blade Mastery": ("Ballista", "Destroyer Blade"),
-    "Arbalest Mastery": ("Ballista", "Arbalest"),
-    "Mobile Turret Mastery": ("Chaingun", "Mobile Turret"),
-    "Energy Shield Mastery": ("Chaingun", "Energy Shield"),
-    "Meat Hook Mastery": ("Super Shotgun", "Meat Hook"),
+    **{f"{mod} Mastery": (weapon, mod) for mod, weapon in MOD_BASE_WEAPON_REQUIREMENTS.items()},
     "Meat Hook": ("Super Shotgun",),
     "Faster Dash Recharge": ("Dash",),
-    "Sticky Bombs": ("Combat Shotgun",),
-    "Full Auto": ("Combat Shotgun",),
-    "Precision Bolt": ("Heavy Cannon",),
-    "Micro Missiles": ("Heavy Cannon",),
-    "Heat Blast": ("Plasma Rifle",),
-    "Microwave Beam": ("Plasma Rifle",),
-    "Remote Detonate": ("Rocket Launcher",),
-    "Lock-on Burst": ("Rocket Launcher",),
-    "Arbalest": ("Ballista",),
-    "Destroyer Blade": ("Ballista",),
-    "Energy Shield": ("Chaingun",),
-    "Mobile Turret": ("Chaingun",),
+    **{mod: (weapon,) for mod, weapon in MOD_BASE_WEAPON_REQUIREMENTS.items() if mod != "Meat Hook"},
 }
 ITEM_DEPENDENCIES.update(
     {

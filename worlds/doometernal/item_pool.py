@@ -15,7 +15,6 @@ from .combat_rating import (
     ALL_MOD_NAMES,
     AMMUNITION_BY_WEAPON,
     MOD_HOST,
-    NORMAL_RUNE_NAMES,
     SUPPORT_RUNE_NAMES,
     WEAPON_NAMES,
     evaluate_player_loadout_cr,
@@ -260,7 +259,6 @@ def _choose_early_arsenal(world, pool_names, start_inventory, plan):
         owned = (
             set(start_inventory)
             | set(plan["bootstrap_inventory"])
-            | set(plan.get("readiness_bootstrap_items", ()))
             | {world.starting_weapon_name}
         )
         ammunition = AMMUNITION_BY_WEAPON
@@ -368,7 +366,6 @@ class SemanticPool:
     optional_selected: Counter[str] = field(default_factory=Counter)
     readiness_initial_deficit: float = 0.0
     readiness_final_deficit: float = 0.0
-    readiness_evaluations: int = 0
     auto_adjustments: Counter[str] = field(default_factory=Counter)
 
     def counts_view(self) -> dict[str, int]:
@@ -554,7 +551,6 @@ class _SemanticPoolBuilder:
                 selected_mods.add(mod)
             for mod in selected_mods:
                 self.base_pool[mod] = max(self.base_pool[mod], 1)
-            self._complete_runes_and_capacities()
 
     def _optional_equipment(self):
         for mod in ALL_MODS_ORDERED:
@@ -562,15 +558,6 @@ class _SemanticPoolBuilder:
                 self.optional_caps[mod] = 0
             else:
                 self.optional_caps[mod] = max(0, 1 - self.base_pool.get(mod, 0))
-        if self.compact or self.lean:
-            for rune in NORMAL_RUNES_ORDERED:
-                self.optional_caps[rune] = max(0, 1 - self.base_pool.get(rune, 0))
-            if self.use_dlc:
-                for support in SUPPORT_RUNES_ORDERED:
-                    self.optional_caps[support] = max(0, 1 - self.base_pool.get(support, 0))
-            for stat in _CAPACITY_STATS:
-                stat_name = f"Progressive {stat} Upgrade"
-                self.optional_caps[stat_name] = max(0, _CAPACITY_MAX_STAGES - self.base_pool.get(stat_name, 0))
 
     def _apply_overrides(self):
         for name, quantity in self.overrides.items():
@@ -645,7 +632,6 @@ class _SemanticPoolBuilder:
             )
             self.pool.readiness_initial_deficit = self.selection.initial_deficit
             self.pool.readiness_final_deficit = self.selection.final_deficit
-            self.pool.readiness_evaluations = self.selection.evaluations
             if not self.selection.satisfied:
                 raise PoolConfigurationError(
                     player_text(
@@ -731,15 +717,6 @@ class _SemanticPoolBuilder:
                 self.mandatory_mods.add(dep)
             self.base_pool[dep] = max(self.base_pool[dep], 1)
 
-    def _complete_runes_and_capacities(self):
-        for rune in NORMAL_RUNES_ORDERED:
-            self.base_pool[rune] = max(self.base_pool[rune], 1)
-        if self.use_dlc:
-            for support in SUPPORT_RUNES_ORDERED:
-                self.base_pool[support] = max(self.base_pool[support], 1)
-        for stat in _CAPACITY_STATS:
-            stat_name = f"Progressive {stat} Upgrade"
-            self.base_pool[stat_name] = max(self.base_pool[stat_name], _CAPACITY_MAX_STAGES)
 
     def _validate_required_equipment(self, available):
         required_mods = {mod for mod, _ in ORDERED_MASTERY_CHALLENGES[: self.active_masteries_count]}
@@ -773,8 +750,6 @@ class _SemanticPoolBuilder:
         requirements = build_location_prerequisites(
             active_locations,
             active_region_names=active_regions,
-            randomize_chainsaw=bool(_option_value(self.options, "randomize_chainsaw")),
-            randomize_dash=bool(_option_value(self.options, "randomize_dash")),
             special_weapon=self.special_name,
             logic_difficulty=_option_value(self.options, "logic_difficulty", 1),
             active_spend_groups=self.active_sg,
@@ -783,13 +758,7 @@ class _SemanticPoolBuilder:
         hard_items = set().union(*(required_item_names(req) for req in requirements.values()))
         for source, destination, _, condition in CAMPAIGN_CONNECTIONS:
             if source in active_regions and destination in active_regions:
-                hard_items.update(
-                    required_item_names(
-                        connection_requirement(
-                            condition, randomize_dash=bool(_option_value(self.options, "randomize_dash"))
-                        )
-                    )
-                )
+                hard_items.update(required_item_names(connection_requirement(condition)))
         if "Blood Punch" in hard_items:
             hard_items.add("Progressive Blood Punch")
         locked = set(self.overrides) | set(self.start_inv)
@@ -827,7 +796,6 @@ class _SemanticPoolBuilder:
                 )
                 for target in self.targets or ()
             ]
-            self.pool.readiness_evaluations += len(results)
             if not all(result.ready for result in results):
                 continue
             score = (before_cr - cr, -counts[name], name)
@@ -838,8 +806,6 @@ class _SemanticPoolBuilder:
     def _removable_counts(self, name, counts):
         minimum = int(name.startswith("Progressive "))
         if counts[name] <= minimum:
-            return None
-        if name in NORMAL_RUNE_NAMES and sum(counts[rune] for rune in NORMAL_RUNE_NAMES) <= (1 if self.lean else 2):
             return None
         reduced = counts.copy()
         reduced[name] -= 1

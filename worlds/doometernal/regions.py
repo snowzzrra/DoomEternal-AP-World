@@ -31,13 +31,14 @@ from .locations import (
 from .logic import (
     CRUCIBLE_CHALLENGE,
     GOAL_ENDPOINT_LOCATIONS,
-    MASTERY_SUFFIX,
+    VICTORY_REQUIREMENT_SUFFIXES,
     connection_requirement,
     crucible_challenge_enabled,
     goal_endpoint_available,
     goal_endpoint_event_name,
     mission_clear_event_name,
     requirement_satisfied,
+    victory_location_matches,
     victory_requirement_location_event_name,
 )
 from .planner import ORDERED_MASTERY_CHALLENGES
@@ -79,8 +80,8 @@ def create_regions(world) -> None:
         region = multiworld.get_region(catalog_locations["Exultia - Dash"].region, player)
         region.add_event("Fixed Dash Acquisition", "Dash", location_type=DoomEternalLocation, item_type=DoomEternalItem)
 
-    _create_completion_events(world, plan, multiworld, player)
-    _create_victory_events(world, multiworld, player)
+    _create_completion_events(plan, multiworld, player)
+    _create_victory_events(multiworld, player)
     _create_goal_events(world, plan, multiworld, player)
     regions = _connect_missions(world, hub, plan, multiworld, player)
     ordinary = [key for key in plan["sequence"] if key != plan["goal_stage"]]
@@ -133,7 +134,6 @@ def _create_catalog_locations(
     for loc_name, loc_data in catalog_locations.items():
         reg_name = loc_data.region
         if not _location_active(
-            world,
             loc_name,
             reg_name,
             active_hub_locations,
@@ -147,15 +147,12 @@ def _create_catalog_locations(
         region.locations.append(location)
 
 
-def _create_completion_events(world, plan, multiworld, player):
+def _create_completion_events(plan, multiworld, player):
     for s in plan["stages"]:
         if s["kind"] in {"mission", "master"}:
             mission_name = s["name"]
             mission_location = f"{mission_name} - Mission Complete"
-            try:
-                public_location = multiworld.get_location(mission_location, player)
-            except KeyError:
-                continue
+            public_location = multiworld.get_location(mission_location, player)
             region = public_location.parent_region
             event_name = mission_clear_event_name(mission_name)
             event_item = region.add_event(
@@ -177,22 +174,11 @@ def _create_completion_events(world, plan, multiworld, player):
                 dash.classification = ItemClassification.progression_skip_balancing
 
 
-def _create_victory_events(world, multiworld, player):
-    requirement_location_suffixes = {
-        "Complete All Slayer Gates": " - Slayer Gate Complete",
-        "Complete All Escalation Encounters": " - Escalation Encounter Wave ",
-        "Complete All Secret Encounters": " - Secret Encounter - ",
-        "Complete All Mission Challenges": " - All Mission Challenges Completed",
-        "Complete All Weapon Mastery Challenges": MASTERY_SUFFIX,
-    }
+def _create_victory_events(multiworld, player):
     for location in list(multiworld.get_locations(player)):
         location_name = location.name
-        for requirement_name, suffix in requirement_location_suffixes.items():
-            if (
-                suffix in location_name
-                if suffix.endswith(" - ") or suffix.endswith(" ")
-                else location_name.endswith(suffix)
-            ):
+        for requirement_name, suffix in VICTORY_REQUIREMENT_SUFFIXES.items():
+            if victory_location_matches(location_name, suffix):
                 region = location.parent_region
                 event_name = victory_requirement_location_event_name(requirement_name, location_name)
                 event_item = region.add_event(
@@ -250,10 +236,7 @@ def _connect_stage_regions(world, regions, plan, player):
         if not _same_stage_connection(source_name, destination_name):
             continue
         entrance = regions[source_name].connect(regions[destination_name], entrance_name)
-        requirement = connection_requirement(
-            condition,
-            randomize_dash=bool(world.options.randomize_dash.value),
-        )
+        requirement = connection_requirement(condition)
         set_rule(entrance, partial(requirement_satisfied, requirement, player=player))
         from .native_enemy_safety import OPENING_REGIONS
 
@@ -267,7 +250,6 @@ def _connect_stage_regions(world, regions, plan, player):
                 entrance,
                 lambda state, s_id=bp_stage_id: is_spirit_breakpoint_ready(state, player, s_id, world),
             )
-    return regions
 
 
 def _catalog_locations(world):
@@ -294,7 +276,6 @@ def _hub_locations(world, active_normal_ids, active_sg):
 
 
 def _location_active(
-    world,
     loc_name,
     reg_name,
     active_hub_locations,
@@ -319,8 +300,4 @@ def _location_active(
 
 def _same_stage_connection(source_name, destination_name):
     source_stage = REGION_STAGE.get(source_name)
-    if (source_stage is None or source_stage != REGION_STAGE.get(destination_name)) and not (
-        source_name == "Menu" and destination_name == "Weapon Masteries"
-    ):
-        return False
-    return True
+    return source_stage is not None and source_stage == REGION_STAGE.get(destination_name)

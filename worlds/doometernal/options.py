@@ -1036,13 +1036,10 @@ class DoomEternalOptions(DeathLinkMixin, PerGameCommonOptions):
     enabled_traps: EnabledTraps
 
 
-def resolve_praetor_suit_upgrade_count(option_value: int, rng, maximum: int = len(suit_perk_item_names)) -> int:
+def resolve_praetor_suit_upgrade_count(option_value: int, rng) -> int:
     if option_value >= 0:
-        if option_value > maximum:
-            raise ValueError(player_text("apworld.errors", "suit_count_maximum", maximum=maximum))
         return option_value
-    if option_value != PraetorSuitUpgradesInPool.special_range_names["random"]:
-        raise ValueError(player_text("apworld.errors", "unknown_suit_count", count=option_value))
+    maximum = len(suit_perk_item_names)
     lower = max(1, maximum // 3)
     upper = min(maximum - 1, (2 * maximum + 2) // 3)
     candidates = list(range(lower, upper + 1))

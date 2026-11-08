@@ -17,15 +17,6 @@ class ItemData(NamedTuple):
     starting_weapon: bool = False
 
 
-ITEM_ID_BASE = 7770000
-
-
-BASE_CAMPAIGN_MAX_SENTINEL_BATTERIES = 28
-BASE_CAMPAIGN_SENTINEL_BATTERIES = 28
-BASE_CAMPAIGN_SENTINEL_BATTERY_BUNDLES = 13
-BASE_CAMPAIGN_SENTINEL_BATTERY_SINGLES = 2
-SENTINEL_BATTERY_BUNDLE_VALUE = 2
-
 # Reserved IDs stay unavailable to current item definitions.
 RESERVED_ITEM_IDS = frozenset(
     {
@@ -48,13 +39,8 @@ RESERVED_ITEM_IDS = frozenset(
 )
 RESERVED_LOCATION_IDS = frozenset({7770055, 7770068})
 
-PROGRESSIVE_SPECIAL_WEAPON_ID = 7770901
-PROGRESSIVE_SENTINEL_HAMMER_ID = 7770902
-WEAPON_UPGRADE_POINTS_ID = 7770903
 WEAPON_UPGRADE_POINTS_NAME = "Weapon Upgrade Points (3)"
-WEAPON_UPGRADE_POINTS_PER_ITEM = 3
 WEAPON_UPGRADE_POINTS_ITEM_COUNT = 39
-WEAPON_UPGRADE_POINTS_TOTAL = 117
 SPECIAL_WEAPON_ITEM_NAMES = frozenset(
     {
         "Progressive Special Weapon",
@@ -69,17 +55,6 @@ SPECIAL_WEAPON_POOL_COUNTS = {
 }
 
 SUPPORT_RUNE_ITEM_NAMES = frozenset({"Break Blast", "Desperate Punch", "Take Back"})
-BASE_GATE_KEY_ITEM_NAMES = (
-    "Slayer Gate Key Exultia",
-    "Slayer Gate Key Cultist Base",
-    "Slayer Gate Key Super Gore Nest",
-    "Slayer Gate Key ARC Complex",
-    "Slayer Gate Key Mars Core",
-    "Slayer Gate Key Taras Nabad",
-)
-TAG1_GATE_KEY_ITEM_NAMES = ("Slayer Gate Key UAC Atlantica Facility", "Slayer Gate Key The Holt")
-TAG_MISSION_LOCAL_ITEM_NAMES = frozenset(TAG1_GATE_KEY_ITEM_NAMES)
-ALL_GATE_KEY_ITEM_NAMES = BASE_GATE_KEY_ITEM_NAMES + TAG1_GATE_KEY_ITEM_NAMES
 
 item_data_table: dict[str, ItemData] = {
     "Weapon Upgrade Points (3)": ItemData(7770903, ItemClassification.useful),
@@ -213,7 +188,6 @@ item_data_table: dict[str, ItemData] = {
     "Ammo Drain Trap": ItemData(7770054, ItemClassification.trap),
     "Fuel Drain Trap": ItemData(7770055, ItemClassification.trap),
     "BFG Drain Trap": ItemData(7770056, ItemClassification.trap),
-    # Locked to the runtime mission-completion check; it has no in-game command.
     "Victory": ItemData(7770096, ItemClassification.progression),
 }
 
@@ -369,16 +343,3 @@ POOL_ITEM_LIMITS[WEAPON_UPGRADE_POINTS_NAME] = WEAPON_UPGRADE_POINTS_ITEM_COUNT
 FILLER_WEIGHT_NAMES = frozenset(
     name for name, item in item_data_table.items() if item.classification == ItemClassification.filler
 ) | {"Extra Life", "Ammo Refill"}
-
-
-SUIT_PAGE_UNLOCKING_ITEM_NAMES = frozenset(
-    {
-        "Progressive Health Upgrade",
-        "Progressive Armor Upgrade",
-        "Progressive Ammo Upgrade",
-        "Frag Grenade",
-        "Ice Bomb",
-        *suit_perk_item_names,
-    }
-)
-SUIT_PAGE_UNLOCKING_ITEM_IDS = frozenset(item_data_table[name].code for name in SUIT_PAGE_UNLOCKING_ITEM_NAMES)

@@ -8,15 +8,14 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 from .combat_rating import NORMAL_RUNE_NAMES, evaluate_player_loadout_cr
-from .generated_content import CAMPAIGN_STAGES, MASTER_LEVEL_COMBAT_PROFILES
+from .generated_content import MASTER_LEVEL_COMBAT_PROFILES
 from .logic import dash_available, sentinel_hammer_available
-from .planner import ITEM_DEPENDENCIES, FastState
+from .planner import ITEM_DEPENDENCIES, STAGE_BY_ID, FastState
 from .player_strings_generated import text as player_text
 
 if TYPE_CHECKING:
     from BaseClasses import CollectionState
 READINESS_PLACEMENT_SLACK: float = 6.0
-STAGE_BY_ID = {stage["id"]: stage for stage in CAMPAIGN_STAGES}
 
 
 MISSION_BASE_CR: dict[str, int] = {
@@ -36,7 +35,7 @@ MISSION_BASE_CR: dict[str, int] = {
     "e4m1_rig": 83,
     "e4m2_swamp": 88,
     "e4m3_mcity": 94,
-    "e5m1_spear": 86,  # The World Spear: provisional endurance comparison with Atlantica (83) / Blood Swamps (88)
+    "e5m1_spear": 86,
     "e5m2_earth": 77,
     "e5m3_hell": 82,
     "e5m4_boss": 80,
@@ -327,15 +326,6 @@ def has_effective_anti_spirit(state: CollectionState, player: int) -> bool:
     return state.has("Plasma Rifle", player) and state.has("Microwave Beam", player)
 
 
-def has_effective_sentinel_hammer(
-    state: CollectionState,
-    player: int,
-    special_weapon: str = "Progressive Special Weapon",
-) -> bool:
-    """Check whether player possesses Sentinel Hammer capability."""
-    return sentinel_hammer_available(state, player, special_weapon=special_weapon)
-
-
 def _resolve_readiness_options(
     world: Any | None = None,
     logic_difficulty: int | None = None,
@@ -572,7 +562,7 @@ def _mission_counter_penalty(state, player, stage_id, world, context, sw):
             penalties["spirit"] = SPIRIT_PENALTY
             reason = "Missing effective Microwave Beam at mandatory Spirit breakpoint (+15 CR)"
     elif context == "dark_lord_defeated" or (stage_id == DARK_LORD_STAGE_ID and context == "boss"):
-        if not has_effective_sentinel_hammer(state, player, special_weapon=sw):
+        if not sentinel_hammer_available(state, player, special_weapon=sw):
             penalties["dark_lord"] = DARK_LORD_HAMMER_PENALTY
             reason = "Missing effective Sentinel Hammer against The Dark Lord (+15 CR)"
 
@@ -619,15 +609,13 @@ def derive_readiness_targets(options, plan: Mapping[str, Any]) -> list[Readiness
             seen.add(key)
             targets.append(ReadinessTarget(stage_id, context, description))
 
-    order = getattr(options, "mission_order", None)
-    order_name = getattr(order, "current_option_name", "vanilla")
     spirit_stages = set(SPIRIT_BREAKPOINTS.values())
-    for stage_id in _readiness_stage_ids(plan, order_name):
+    for stage_id in plan.get("sequence", []) + plan.get("master_level_stage_ids", []):
         name = STAGE_BY_ID[stage_id]["name"]
         add_target(stage_id, "base", f"Mission: {name}")
         if stage_id in spirit_stages:
             add_target(stage_id, "spirit_breakpoint", f"Spirit Breakpoint: {name}")
-    if _requires_dark_lord_readiness(options, plan):
+    if _requires_dark_lord_readiness(plan):
         add_target(DARK_LORD_STAGE_ID, "dark_lord_defeated", "Boss: The Dark Lord Defeated")
     return targets
 
@@ -637,11 +625,9 @@ class SelectionStep:
     """One activated item copy inside a dependency-complete package."""
 
     item_name: str
-    copy_index: int
     package_lead: str
     package_size: int
     is_dependency: bool
-    delta_deficit: float
     delta_cr: float
     target_description: str
     reason: str
@@ -655,7 +641,6 @@ class ReadinessSelection:
     initial_deficit: float = 0.0
     final_deficit: float = 0.0
     satisfied: bool = False
-    evaluations: int = 0
 
 
 def select_readiness_items(
@@ -680,22 +665,9 @@ def select_readiness_items(
     return builder.build()
 
 
-def _readiness_stage_ids(plan, order_val):
-    if order_val == "mission_access_as_items":
-        active_ids = list(plan.get("active_normal_mission_ids", [])) + plan.get("master_level_stage_ids", [])
-        goal_stage = plan.get("goal_stage")
-        if goal_stage and goal_stage not in active_ids and goal_stage in STAGE_BY_ID:
-            active_ids.append(goal_stage)
-    else:
-        active_ids = plan.get("sequence", []) + plan.get("master_level_stage_ids", [])
-    return active_ids
-
-
-def _requires_dark_lord_readiness(options, plan):
-    goal_name = getattr(getattr(options, "goal", None), "current_option_name", "")
+def _requires_dark_lord_readiness(plan):
     return (
-        goal_name == "kill_the_dark_lord"
-        or plan.get("goal_stage") == DARK_LORD_STAGE_ID
+        plan.get("goal_stage") == DARK_LORD_STAGE_ID
         or any(
             DARK_LORD_STAGE_ID in plan.get(key, ()) for key in ("active_normal_mission_ids", "stage_ids", "sequence")
         )
@@ -761,13 +733,11 @@ class _ReadinessSelector:
                 worst_target = target
         cached = (worst, worst_target)
         self.target_cache[key] = cached
-        self.selection.evaluations += 1
         return cached
 
     def _initialize(self):
         self.selection = ReadinessSelection()
         self.state = FastState.from_counts(self.base_items, player=self.player)
-        self.used: Counter[str] = Counter()
         self.cr_cache: dict[tuple, float] = {}
         self.target_cache: dict[tuple, tuple[float, ReadinessTarget | None]] = {}
 
@@ -776,24 +746,20 @@ class _ReadinessSelector:
         self.selection.initial_deficit = self.current_deficit
         self.current_cr = self.player_cr(self.state)
         while self.current_deficit > -self.slack:
-            best_lead, best_package, best_delta_deficit, best_delta_cr = self._best_package()
+            best_lead, best_package, _, best_delta_cr = self._best_package()
             if best_lead is None:
                 break
             reason = _reason_for_context(self.current_worst.context if self.current_worst is not None else "base")
             target_description = self.current_worst.description if self.current_worst is not None else ""
             for pkg_name in best_package:
                 self.state.collect(pkg_name)
-                self.used[pkg_name] += 1
-                copy_index = self.selection.counts[pkg_name] + 1
                 self.selection.counts[pkg_name] += 1
                 self.selection.steps.append(
                     SelectionStep(
                         item_name=pkg_name,
-                        copy_index=copy_index,
                         package_lead=best_lead,
                         package_size=len(best_package),
                         is_dependency=pkg_name != best_lead,
-                        delta_deficit=best_delta_deficit,
                         delta_cr=best_delta_cr,
                         target_description=target_description,
                         reason=reason,
@@ -814,7 +780,7 @@ class _ReadinessSelector:
         best_delta_deficit = 0.0
         best_delta_cr = 0.0
         for cand_name in sorted(self.additional):
-            if self.used[cand_name] >= self.additional[cand_name]:
+            if self.selection.counts[cand_name] >= self.additional[cand_name]:
                 continue
             full_package = self._dependency_package(cand_name)
             if full_package is None:
@@ -844,7 +810,7 @@ class _ReadinessSelector:
         for dep in ITEM_DEPENDENCIES.get(cand_name, ()):
             if self.state.has(dep, self.player):
                 continue
-            if self.used[dep] < self.additional.get(dep, 0):
+            if self.selection.counts[dep] < self.additional.get(dep, 0):
                 package_items.append(dep)
             else:
                 possible = False

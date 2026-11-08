@@ -7,16 +7,18 @@ from Options import OptionError
 from .campaign import STAGE_BY_ID
 from .combat_readiness import (
     _enemy_counter_penalties,
+    _native_chainsaw_before_combat,
+    _renewable_ammo,
     get_mission_cr_range,
     get_mission_effort_per_check,
     get_mission_skull_tier,
 )
 from .enemy_plan import ENEMY_DRAW_REVISION
-from .generated_content import MASTER_LEVEL_COMBAT_PROFILES, MASTERY_REQUIREMENT_COUNTS
+from .generated_content import MASTERY_REQUIREMENT_COUNTS
 from .items import item_name_to_id
 from .killsanity_plan import build_resolved_killsanity
 from .logic import effective_victory_requirements, goal_endpoint_event_name
-from .native_enemy_plan import AMMO_FODDER, encode_native_recipes
+from .native_enemy_plan import encode_native_recipes
 from .options import DoomEternalOptions
 from .player_strings_generated import text as player_text
 from .slot_data_contract import (
@@ -118,13 +120,6 @@ def _runtime(world):
     )
 
 
-def _renewable_ammo(stage):
-    return any(operation.get("reserve") for operation in stage.get("operations", [])) or any(
-        recipe["renewable"] and any(body["species"] in AMMO_FODDER for body in recipe["bodies"])
-        for recipe in stage.get("recipes", [])
-    )
-
-
 def _stage_profile(world, stage_id):
     plan = world.enemy_plan or {}
     combat = plan.get("combat_costs", {}).get(stage_id, {}).get("campaign", {})
@@ -141,14 +136,8 @@ def _stage_profile(world, stage_id):
         "opening_cr_max": opening[1],
         "counter_ids": sorted(_enemy_counter_penalties(None, world.player, stage_id, world)),
         "opening_counter_ids": sorted(_enemy_counter_penalties(None, world.player, stage_id, world, opening=True)),
-        "renewable_ammo": (
-            MASTER_LEVEL_COMBAT_PROFILES[stage_id]["renewable_ammo"]
-            if stage_id in MASTER_LEVEL_COMBAT_PROFILES
-            else bool(_renewable_ammo(plan.get("maps", {}).get(stage_id, {})))
-        ),
-        "native_chainsaw_before_combat": bool(
-            stage_id == "e1m1_intro" and plan.get("revision", 0) >= 13 and not world.options.randomize_chainsaw.value
-        ),
+        "renewable_ammo": bool(_renewable_ammo(stage_id, world)),
+        "native_chainsaw_before_combat": bool(_native_chainsaw_before_combat(stage_id, world)),
         "skulls": get_mission_skull_tier(stage_id, world),
         "effort_per_check_milli": round(get_mission_effort_per_check(stage_id, world) * 1000),
     }

@@ -7,7 +7,7 @@ from .items import item_data_table
 from .killsanity_plan import build_killsanity_plan
 from .locations import KILL_REWARD_ID_BASE, DoomEternalLocation
 from .player_strings_generated import text as player_text
-from .slot_data_contract import MAX_KILL_REWARDS, catalog_tables
+from .slot_data_contract import catalog_tables
 
 
 def expand_kill_rewards(interval, count, finite_supported_count):
@@ -23,12 +23,7 @@ def expand_kill_rewards(interval, count, finite_supported_count):
 
 def build_kill_rewards(options, finite_sources, *, estimated_kills=None):
     try:
-        plan = build_killsanity_plan(options, finite_sources, estimated_kills=estimated_kills)
-        count = len(plan["milestones"])
-        if count > MAX_KILL_REWARDS:
-            raise ValueError(player_text("apworld.errors", "kill_rewards_range", maximum=MAX_KILL_REWARDS))
-        plan["milestones"] = expand_kill_rewards(plan["interval"], count, plan["finite_kills"] // plan["interval"])
-        return plan
+        return build_killsanity_plan(options, finite_sources, estimated_kills=estimated_kills)
     except ValueError as error:
         raise OptionError(str(error)) from error
 
@@ -49,8 +44,6 @@ def restore_kill_rewards(kills, catalog):
 
 def _source_access(world, row, entrance):
     multiworld, player = world.multiworld, world.player
-    if row["map_key"] not in world.campaign_plan["stage_ids"]:
-        raise ValueError(player_text("apworld.errors", "killsanity_inactive_mission", mission=row["map_key"]))
     items = tuple(row.get("required_items", ()))
     if set(items) - item_data_table.keys():
         raise ValueError(player_text("apworld.errors", "killsanity_unknown_items", source=row["source_id"]))

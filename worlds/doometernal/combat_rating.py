@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from itertools import combinations
 from typing import TYPE_CHECKING, Any
 
-from .logic import chainsaw_available, dash_available
+from .logic import MOD_BASE_WEAPON_REQUIREMENTS, chainsaw_available, dash_available
 
 if TYPE_CHECKING:
     from BaseClasses import CollectionState
@@ -51,37 +51,10 @@ WEAPON_MULTIPLIERS = (1.00, 0.95, 0.85, 0.70, 0.55, 0.40, 0.30)
 
 BREADTH_BONUS = (0.0, 0.0, 2.0, 5.0, 8.0, 10.0, 11.0, 12.0)
 
-MOD_HOST: dict[str, str] = {
-    "Sticky Bombs": "Combat Shotgun",
-    "Full Auto": "Combat Shotgun",
-    "Precision Bolt": "Heavy Cannon",
-    "Micro Missiles": "Heavy Cannon",
-    "Heat Blast": "Plasma Rifle",
-    "Microwave Beam": "Plasma Rifle",
-    "Remote Detonate": "Rocket Launcher",
-    "Lock-on Burst": "Rocket Launcher",
-    "Arbalest": "Ballista",
-    "Destroyer Blade": "Ballista",
-    "Energy Shield": "Chaingun",
-    "Mobile Turret": "Chaingun",
-}
+MOD_HOST = {mod: weapon for mod, weapon in MOD_BASE_WEAPON_REQUIREMENTS.items() if mod != "Meat Hook"}
 ALL_MOD_NAMES = frozenset(MOD_HOST)
 
-MASTERY_HOST: dict[str, tuple[str, ...]] = {
-    "Sticky Bombs Mastery": ("Combat Shotgun", "Sticky Bombs"),
-    "Full Auto Mastery": ("Combat Shotgun", "Full Auto"),
-    "Precision Bolt Mastery": ("Heavy Cannon", "Precision Bolt"),
-    "Micro Missiles Mastery": ("Heavy Cannon", "Micro Missiles"),
-    "Heat Blast Mastery": ("Plasma Rifle", "Heat Blast"),
-    "Microwave Beam Mastery": ("Plasma Rifle", "Microwave Beam"),
-    "Remote Detonate Mastery": ("Rocket Launcher", "Remote Detonate"),
-    "Lock-on Burst Mastery": ("Rocket Launcher", "Lock-on Burst"),
-    "Arbalest Mastery": ("Ballista", "Arbalest"),
-    "Destroyer Blade Mastery": ("Ballista", "Destroyer Blade"),
-    "Energy Shield Mastery": ("Chaingun", "Energy Shield"),
-    "Mobile Turret Mastery": ("Chaingun", "Mobile Turret"),
-    "Meat Hook Mastery": ("Super Shotgun", "Meat Hook"),
-}
+MASTERY_HOST = {f"{mod} Mastery": (weapon, mod) for mod, weapon in MOD_BASE_WEAPON_REQUIREMENTS.items()}
 ALL_MASTERY_NAMES = frozenset(MASTERY_HOST)
 
 _Contrib = tuple[str, float, tuple[str, ...]]
@@ -249,41 +222,6 @@ class PlayerLoadoutCR:
     raw_categories: dict[str, float]
     selected_runes: tuple[str, ...] = ()
     selected_support: str | None = None
-
-    @property
-    def total_cr(self) -> float:
-        return self.total
-
-    @property
-    def final(self) -> float:
-        return self.total
-
-    @property
-    def capped(self) -> dict[str, float]:
-        return self.categories
-
-    @property
-    def raw(self) -> dict[str, float]:
-        return self.raw_categories
-
-    def __getitem__(self, key: str) -> Any:
-        if key in ("final", "total", "total_cr"):
-            return self.total
-        if key in ("capped", "categories"):
-            return self.categories
-        if key in ("raw", "raw_categories"):
-            return self.raw_categories
-        if key == "selected_runes":
-            return self.selected_runes
-        if key == "selected_support":
-            return self.selected_support
-        raise KeyError(key)
-
-    def get(self, key: str, default: Any = None) -> Any:
-        try:
-            return self[key]
-        except KeyError:
-            return default
 
 
 def _evaluate_with_rune_selection(
@@ -479,10 +417,6 @@ def evaluate_player_loadout_cr(
         special_mode=special_mode,
         special_stage=special_stage,
     )
-
-
-evaluate_player_cr = evaluate_player_loadout_cr
-rate_collection_state = evaluate_player_loadout_cr
 
 
 def _apply_item_contributions(raw, owned):
