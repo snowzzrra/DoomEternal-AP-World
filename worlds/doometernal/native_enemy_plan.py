@@ -236,8 +236,6 @@ def _secret_timers_costs(catalog, key, maps, record, timers):
 
 
 def _secret_timers(maps, catalog):
-    from .secret_encounter_timers import load_secret_encounter_timers
-
     timers = {}
     for key, record in load_secret_encounter_timers()["maps"].items():
         _secret_timers_costs(catalog, key, maps, record, timers)
@@ -1524,3 +1522,8 @@ def encode_native_recipes(plan, catalog=None, *, active_maps, easier_secret_enco
 def _passthrough_stage(stage_id, catalog):
     return {'recipes': [], 'protected': [{'id': row['source_id']} for row in catalog['sources'].values()
             if row['stage_id'] == stage_id and row.get('role', 'primary') == 'primary']}
+
+
+def load_secret_encounter_timers() -> dict:
+    path = files(__package__).joinpath("secret_encounter_timers.json")
+    return json.loads(path.read_text(encoding="utf-8"))

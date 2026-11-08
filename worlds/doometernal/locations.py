@@ -5,8 +5,8 @@ from typing import NamedTuple
 from BaseClasses import Location
 
 from .generated_content import ARENA_LOCATION_KINDS, LOCATION_NAME_TO_ID, LOCATION_ROWS
-from .identity import GAME_NAME
 from .slot_data_contract import MAX_KILL_REWARDS
+from .version import GAME_NAME
 
 
 class DoomEternalLocation(Location):

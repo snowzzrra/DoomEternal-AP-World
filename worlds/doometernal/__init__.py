@@ -11,7 +11,6 @@ from worlds.AutoWorld import WebWorld, World
 from . import item_pool, regions, rules
 from .campaign import FORTRESS_SPEND_GROUPS, STAGE_BY_ID, make_plan
 from .enemy_options import BALANCE_PRESETS, normalize_enemy_options
-from .identity import GAME_NAME
 from .items import (
     DEVINV_NON_PERSISTENT_USEFUL_ITEM_NAMES,
     DEVINV_START_INVENTORY_ITEM_NAMES,
@@ -37,6 +36,7 @@ from .slot_data_contract import (
     load_slot_catalog,
     validate_slot_data,
 )
+from .version import GAME_NAME
 
 
 class DoomEternalWeb(WebWorld):
@@ -222,6 +222,7 @@ class DoomEternalWorld(World):
             kill_budget["finite_sources"],
             estimated_kills=kill_budget["estimated_kills"],
         )
+        self.killsanity_plan["stage_estimates"] = kill_budget.get("stage_estimates", {})
 
     def _validate_starting_inventory(self, start_inventory):
         dlc_enabled = bool(self.options.use_dlc_content.value)
@@ -474,7 +475,7 @@ class DoomEternalWorld(World):
         self._restore_tracker_options(slot_data)
         self.stage_profiles = data.stage_profiles
         self.campaign_plan = self._tracker_campaign(slot_data["campaign"])
-        self.killsanity_plan = restore_kill_rewards(data.killsanity, catalog)
+        self.killsanity_plan = restore_kill_rewards(data, catalog, self.campaign_plan)
         self.enemy_plan = self._tracker_enemy_plan(data, catalog)
         preset = self.options.enemy_preset.current_key
         self.enemies = {"enabled": data.recipes.enabled, "balance_preset": preset in BALANCE_PRESETS}

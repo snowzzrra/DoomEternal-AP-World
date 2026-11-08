@@ -431,8 +431,7 @@ def _generated_challenge_targets(enemy_plan):
     generated_targets: dict[str, set[tuple[str, str]]] = {}
     if enemy_plan:
         from .killsanity_plan import load_campaign_kill_sources
-        from .native_enemy_plan import native_event_identity
-        from .secret_encounter_timers import load_secret_encounter_timers
+        from .native_enemy_plan import load_secret_encounter_timers, native_event_identity
 
         secrets = load_secret_encounter_timers()["maps"]
         kill_sources = load_campaign_kill_sources()["maps"]

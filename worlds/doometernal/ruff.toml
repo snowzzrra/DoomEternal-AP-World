@@ -5,7 +5,6 @@ exclude = [
     "enemy_options.py",
     "enemy_plan.py",
     "enemy_species.py",
-    "fortress_economy.py",
     "generated_content.py",
     "killsanity_plan.py",
     "native_enemy_balance.py",
@@ -13,7 +12,6 @@ exclude = [
     "native_enemy_safety.py",
     "player_strings_generated.py",
     "recipe_codec.py",
-    "secret_encounter_timers.py",
     "slot_data_contract.py",
     "vanilla_enemy_profiles.py",
 ]

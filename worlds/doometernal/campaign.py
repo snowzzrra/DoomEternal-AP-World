@@ -26,7 +26,6 @@ from .combat_readiness import (
     select_readiness_items,
 )
 from .enemy_options import uses_protected_opening
-from .fortress_economy import battery_surplus_limit
 from .generated_content import (
     CAMPAIGN_STAGES,
     FORTRESS_POLICY,
@@ -48,6 +47,7 @@ from .planner import (
     mastery_resource_family_count,
 )
 from .player_strings_generated import text as player_text
+from .slot_data_contract import battery_surplus_limit
 
 REGION_STAGE = {region: stage["id"] for stage in CAMPAIGN_STAGES for region in stage["regions"]}
 

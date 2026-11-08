@@ -3,7 +3,7 @@ from typing import NamedTuple
 from BaseClasses import Item, ItemClassification
 
 from .generated_content import CAMPAIGN_STAGES
-from .identity import GAME_NAME
+from .version import GAME_NAME
 
 
 class DoomEternalItem(Item):
