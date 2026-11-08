@@ -1,0 +1,2 @@
+# the Mod generators compare these projections byte for byte, so text stays LF on every platform
+* text=auto eol=lf
