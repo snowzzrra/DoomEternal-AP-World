@@ -3,13 +3,15 @@ from collections import Counter
 from pathlib import Path
 
 import pytest
-from BaseClasses import CollectionState
+from BaseClasses import CollectionState, LocationProgressType
 from Options import OptionError
 from test.general import gen_steps, setup_multiworld
 from worlds.AutoWorld import call_all
 from worlds.doometernal import DoomEternalWorld
+from worlds.doometernal.campaign import completion_event
 
 from .generation_support import (
+    assert_optional_reward,
     collect_sphere_items,
     fill,
     filled_item_counts,
@@ -21,9 +23,14 @@ PRESETS = json.loads(Path(__file__).with_name("pillar_presets.json").read_text()
 CASES = [(case["id"], case["seed"], case["options"]) for case in PRESETS] + [
     ("unmaykr", 230001, {**PRESETS[0]["options"], "goal": "acquire_the_unmaykr"}),
     ("master_goal", 230001, {**PRESETS[1]["options"], "goal": "complete_n_master_levels", "master_level_count": 2}),
-    ("randomized_enemies", 230001, {**PRESETS[0]["options"], "enemy_randomizer": True}),
+    ("randomized_enemies", 230001, {**PRESETS[0]["options"], "enemy_randomizer": True,
+                                   "killsanity": True, "killsanity_maximum_milestones": 50}),
     ("starting_inventory", 230001, {**PRESETS[0]["options"], "start_inventory": {"Ballista": 1},
                             "start_inventory_from_pool": {"Heavy Cannon": 1}}),
+    ("killsanity_auto", 230001, {**PRESETS[0]["options"], "killsanity": True}),
+    ("killsanity_fixed", 230002, {**PRESETS[0]["options"], "killsanity": True,
+                               "mission_order": "random_mission_order", "killsanity_maximum_milestones": 50,
+                               "accessibility": "full"}),
 ]
 
 
@@ -31,12 +38,45 @@ def walk_spheres(mw):
     state = CollectionState(mw)
     checked = set()
     for sphere in mw.get_spheres():
-        assert sphere and all(location.can_reach(state) for location in sphere)
+        for world in mw.worlds.values():
+            assert_killsanity_budget(world, state)
+        assert all(location.can_reach(state) for location in sphere)
         assert checked.isdisjoint(sphere)
         collect_sphere_items(state, sphere)
         checked.update(sphere)
     assert checked == set(mw.get_filled_locations())
+    assert mw.fulfills_accessibility()
     return state
+
+
+def assert_killsanity_budget(world, state):
+    plan = world.killsanity_plan
+    budget = sum(count for key, count in plan["stage_estimates"].items()
+                 if world.get_location(completion_event(key)).can_reach(state))
+    campaign_complete = all(world.get_location(completion_event(key)).can_reach(state)
+                            for key in world.campaign_plan["stage_ids"])
+    for ordinal, row in enumerate(plan["milestones"], 1):
+        location = world.get_location(f"Kill Reward {ordinal:04d}")
+        if row["threshold"] * 100 > sum(plan["stage_estimates"].values()) * 110:
+            assert location.can_reach(state) == campaign_complete
+            assert_optional_reward(location)
+        else:
+            assert location.can_reach(state) == (row["threshold"] * 100 <= budget * 110)
+
+
+def assert_tracker_killsanity(world, seed):
+    mw = setup_multiworld(DoomEternalWorld, steps=(), seed=seed)
+    mw.re_gen_passthrough = {world.game: world.fill_slot_data()}
+    for step in gen_steps:
+        call_all(mw, step)
+    tracker = mw.worlds[1]
+    assert tracker.killsanity_plan["stage_estimates"] == world.killsanity_plan["stage_estimates"]
+    state = CollectionState(mw)
+    assert_killsanity_budget(tracker, state)
+    for sphere in world.multiworld.get_spheres():
+        for location in sphere:
+            state.collect(location.item, prevent_sweep=True)
+        assert_killsanity_budget(tracker, state)
 
 
 @pytest.mark.parametrize("name,seed,options", CASES, ids=[name for name, _, _ in CASES])
@@ -56,11 +96,21 @@ def test_generation_reaches_goal_and_conserves_items(name, seed, options):
     assert not mw.get_unfilled_locations()
     assert filled_item_counts(mw) == before
     assert Counter(item.name for item in mw.precollected_items[1]) >= Counter(options.get("start_inventory", {}))
+    if world.options.killsanity.value:
+        assert_tracker_killsanity(world, seed)
+
+
+def test_fixed_killsanity_has_rewards_above_budget():
+    _, seed, options = next(case for case in CASES if case[0] == "killsanity_fixed")
+    mw = setup_multiworld(DoomEternalWorld, seed=seed, options=options)
+    assert mw.worlds[1].get_region("Killsanity").locations[-1].progress_type == LocationProgressType.EXCLUDED
 
 
 def test_multiworld_spheres_deliver_foreign_items_to_their_player():
     mw = setup_multiworld([DoomEternalWorld, DoomEternalWorld], seed=230001,
-                          options=[PRESETS[0]["options"], PRESETS[1]["options"]])
+                            options=[{**PRESETS[0]["options"], "killsanity": True,
+                                      "killsanity_maximum_milestones": 50,
+                                      "accessibility": "full"}, PRESETS[1]["options"]])
     before = item_counts(physical_items(mw))
     fill(mw)
     assert any(location.item.player != location.player for location in mw.get_filled_locations())

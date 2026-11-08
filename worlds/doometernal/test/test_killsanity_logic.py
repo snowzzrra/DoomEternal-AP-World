@@ -2,8 +2,9 @@ from types import SimpleNamespace
 
 from BaseClasses import MultiWorld, Region
 
-from worlds.doometernal.campaign import STAGE_BY_ID
+from worlds.doometernal.campaign import STAGE_BY_ID, completion_event
 from worlds.doometernal.killsanity_logic import build_kill_rewards, create_killsanity_locations
+from worlds.doometernal.locations import DoomEternalLocation
 
 
 def world_with_kill_rewards():
@@ -31,6 +32,12 @@ def test_reward_identities_stay_fixed_across_intervals():
         world.killsanity_plan = build_kill_rewards(
             {"enabled": True, "interval": interval, "maximum_milestones": 4},
             world.killsanity_plan["finite_sources"])
+        world.killsanity_plan["stage_estimates"] = {row["map_key"]: row["count"]
+                                                   for row in world.killsanity_plan["finite_sources"]}
+        for key in world.campaign_plan["stage_ids"]:
+            region = Region(STAGE_BY_ID[key]["entry_region"], 1, world.multiworld)
+            world.multiworld.regions.append(region)
+            region.locations.append(DoomEternalLocation(1, completion_event(key), None, region))
         create_killsanity_locations(world)
         checks.append(world.multiworld.get_region("Killsanity", 1).locations)
     assert [(loc.name, loc.address) for loc in checks[0]] == [(loc.name, loc.address) for loc in checks[1]]

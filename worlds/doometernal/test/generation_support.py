@@ -1,6 +1,7 @@
 from collections import Counter
 
 import pytest
+from BaseClasses import Item, ItemClassification, LocationProgressType
 from Fill import distribute_items_restrictive
 
 from worlds.AutoWorld import call_all
@@ -45,3 +46,12 @@ def collect_sphere_items(state, sphere):
         state.collect(location.item, prevent_sweep=True, location=location)
         if location.item.player != location.player:
             assert state.prog_items[location.player] == before
+
+
+def assert_optional_reward(location):
+    assert location.progress_type == LocationProgressType.EXCLUDED
+    assert not getattr(location.item, "advancement", False)
+    assert not getattr(location.item, "useful", False)
+    for classification in (ItemClassification.progression, ItemClassification.useful):
+        assert not location.item_rule(Item("Foreign item", classification, 1, 2))
+    assert location.item_rule(Item("Foreign filler", ItemClassification.filler, 2, 2))
