@@ -136,12 +136,9 @@ def _goal_stage_available(world, state):
     return True
 
 
-def generate_basic(world) -> None:
-    if hasattr(world, "_tracker_slot"):
-        return
-    locations = [world.get_location(name) for group in world.active_spend_groups for name in group["locations"]]
+def _restrict_useful_rewards(world, locations, percentage) -> None:
     eligible = [loc for loc in locations if loc.progress_type != LocationProgressType.EXCLUDED]
-    count = min(len(eligible), (len(locations) * world.options.useful_fortress_rewards.value + 99) // 100)
+    count = min(len(eligible), (len(locations) * percentage + 99) // 100)
     chosen = set(world.random.sample(eligible, count))
     useful = ItemClassification.progression | ItemClassification.useful
     for location in locations:
@@ -149,3 +146,14 @@ def generate_basic(world) -> None:
             add_item_rule(location, lambda item: bool(item.classification & useful))
         elif world.multiworld.players > 1:
             add_item_rule(location, lambda item: item.player != world.player or bool(item.classification & useful))
+
+
+def generate_basic(world) -> None:
+    if hasattr(world, "_tracker_slot"):
+        return
+    locations = [world.get_location(name) for group in world.active_spend_groups for name in group["locations"]]
+    _restrict_useful_rewards(world, locations, world.options.useful_fortress_rewards.value)
+    if world.options.include_slayer_gates.value and world.options.useful_slayer_gate_rewards.value:
+        gates = [loc for loc in world.multiworld.get_locations(world.player)
+                 if loc.address is not None and loc.name.endswith(" - Slayer Gate Complete")]
+        _restrict_useful_rewards(world, gates, world.options.useful_slayer_gate_rewards.value)

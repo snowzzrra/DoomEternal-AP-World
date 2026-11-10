@@ -716,6 +716,18 @@ class UsefulFortressRewards(Range):
     default = 75
 
 
+class UsefulSlayerGateRewards(Range):
+    """Choose how many Slayer Gate rewards hold something useful.
+
+    This percentage of the Slayer Gate rewards only holds progression or useful items, from any world. The others can hold filler and traps from other worlds; your own filler and traps only go there in a single-player seed.
+    0%: no restriction. 100%: every Slayer Gate reward is useful."""
+
+    display_name = "Useful Slayer Gate Rewards"
+    range_start = 0
+    range_end = 100
+    default = 75
+
+
 class _BoundedItemDict(OptionDict):
     entry_limits = {}
 
@@ -989,6 +1001,7 @@ class DoomEternalOptions(DeathLinkMixin, PerGameCommonOptions):
     mastery_requirements: MasteryRequirements
     resource_profile: ResourceProfile
     useful_fortress_rewards: UsefulFortressRewards
+    useful_slayer_gate_rewards: UsefulSlayerGateRewards
     item_pool_counts: ItemPoolCounts
     filler_weights: FillerWeights
     trap_weights: TrapWeights
@@ -1079,6 +1092,7 @@ option_groups = [
             RandomizeDash,
             ResourceProfile,
             UsefulFortressRewards,
+            UsefulSlayerGateRewards,
             ItemPoolCounts,
             PraetorSuitUpgradesInPool,
             FillerWeights,
