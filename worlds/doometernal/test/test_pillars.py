@@ -3,12 +3,13 @@ from collections import Counter
 from pathlib import Path
 
 import pytest
-from BaseClasses import CollectionState, LocationProgressType
+from BaseClasses import CollectionState, Item, ItemClassification, LocationProgressType
 from Options import OptionError
 from test.general import gen_steps, setup_multiworld
 from worlds.AutoWorld import call_all
 from worlds.doometernal import DoomEternalWorld
 from worlds.doometernal.campaign import completion_event
+from worlds.doometernal.native_enemy_balance import _arena_reference_count_floor
 
 from .generation_support import (
     assert_optional_reward,
@@ -104,6 +105,38 @@ def test_fixed_killsanity_has_rewards_above_budget():
     _, seed, options = next(case for case in CASES if case[0] == "killsanity_fixed")
     mw = setup_multiworld(DoomEternalWorld, seed=seed, options=options)
     assert mw.worlds[1].get_region("Killsanity").locations[-1].progress_type == LocationProgressType.EXCLUDED
+
+
+def test_arena_reference_count_floor():
+    own = {"finite_total": 24}
+    for revision, kind, count, use_own in (
+        (21, "arena_encounter", 11, True),
+        (21, "arena_encounter", 12, False),
+        (21, "arena_encounter", 0, True),
+        (20, "arena_encounter", 3, False),
+        (21, "ambient_encounter", 3, False),
+        (21, "secret_encounter", 3, False),
+        (21, "specialized_encounter", 3, False),
+    ):
+        reference = {"finite_total": count}
+        result = _arena_reference_count_floor(reference, kind, "own_map", own, revision, "other_map", "vanilla_encounter")
+        expected = (own, "own_map", "native_arena_count_floor") if use_own else (
+            reference, "other_map", "vanilla_encounter")
+        assert result == expected
+
+
+def test_slayer_gate_rewards_restrict_useful_items():
+    options = {**PRESETS[0]["options"], "mission_count": 13, "useful_slayer_gate_rewards": 75}
+    mw = setup_multiworld([DoomEternalWorld, DoomEternalWorld], seed=230001, options=[options, options])
+    gates = [loc for loc in mw.get_locations(1)
+             if loc.address is not None and loc.name.endswith(" - Slayer Gate Complete")]
+    filler = Item("Foreign filler", ItemClassification.filler, 1, 2)
+    restricted = [loc for loc in gates if not loc.item_rule(filler)]
+    assert len(gates) == 6
+    assert len(restricted) == 5
+    fill(mw)
+    useful = ItemClassification.progression | ItemClassification.useful
+    assert all(loc.item.classification & useful for loc in restricted)
 
 
 def test_multiworld_spheres_deliver_foreign_items_to_their_player():
