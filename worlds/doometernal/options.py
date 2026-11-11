@@ -513,6 +513,7 @@ class EnemyDensity(_EnemyRecipeRange):
     Auto: Use the selected enemy preset."""
 
     display_name = "Density"
+    range_end = 500
 
 
 class EnemyLength(_EnemyRecipeRange):
@@ -524,6 +525,7 @@ class EnemyLength(_EnemyRecipeRange):
 
     display_name = "Enemy Length"
     range_start = 100
+    range_end = 500
 
 
 class EnemyVariety(_EnemyRecipeRange):
@@ -561,6 +563,7 @@ class EnemyCountMultiplier(_EnemyRecipeRange):
     Auto: Use the selected enemy preset. The fight's available space can limit the result."""
 
     display_name = "Enemy Count Multiplier"
+    range_end = 500
 
 
 class EnemySizeVariationChance(_EnemyRecipeRange):
