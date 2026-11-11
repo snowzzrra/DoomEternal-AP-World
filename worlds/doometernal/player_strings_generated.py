@@ -70,6 +70,18 @@ TEMPLATES = {
     ("apworld.errors", "enemy_weights_object"): (
         "Enemy Weights must be an object"
     ),
+    ("apworld.errors", "excluded_pool_capacity"): (
+        "Too many excluded locations for the DOOM Eternal upgrade pool. Exclude fewer locations, include more"
+        " missions, or reduce Item Pool Counts."
+    ),
+    ("apworld.errors", "excluded_room_capacity"): (
+        "The room has {excluded_count} excluded locations but only {filler_count} filler/trap items. Reduce "
+        "Exclude Locations or increase non-useful Filler Weights / Trap Percentage."
+    ),
+    ("apworld.errors", "filler_excluded_weight"): (
+        "Excluded locations require filler or traps. Give a positive Filler Weight to a non-useful item such "
+        "as Full Heal, or increase Trap Percentage."
+    ),
     ("apworld.errors", "filler_replacement_weight"): (
         "Filler Weights must leave a positive weight for replacement items"
     ),
@@ -232,6 +244,11 @@ TEMPLATES = {
     ("apworld.errors", "starting_pool_copies"): (
         "DOOM Eternal start_inventory_from_pool '{item}' requests {quantity} copies; only {available} "
         "eligible pool copies are available"
+    ),
+    ("apworld.errors", "starting_preparation_unavailable"): (
+        "DOOM Eternal cannot fit guaranteed combat preparation for a starting mission in this solo world. Add"
+        " starting equipment with Start Inventory, include early Base missions, or lower Campaign Difficulty "
+        "/ choose a more permissive Logic Difficulty."
     ),
     ("apworld.errors", "starting_weapon_unavailable"): (
         "Starting Weapon random selection has no eligible pool weapon"

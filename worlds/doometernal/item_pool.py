@@ -5,7 +5,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
-from BaseClasses import CollectionState, Item, ItemClassification, Location
+from BaseClasses import CollectionState, Item, ItemClassification, Location, LocationProgressType
 from Fill import FillError
 
 from Options import OptionError
@@ -175,13 +175,17 @@ def _placed_preparation(world, name, locations, state, credited):
 
 def pre_fill(world) -> None:
     plan = world.campaign_plan
-    if not plan.get("opening_stage") or hasattr(world, "_tracker_slot"):
+    if hasattr(world, "_tracker_slot"):
+        return
+    world.preparation_placements = []
+    if plan.get("unprepared_start_stages") and world.multiworld.players == 1:
+        _prepare_solo_start(world)
+    if not plan.get("opening_stage"):
         return
     from .native_enemy_safety import OPENING_REGIONS
 
     state = CollectionState(world.multiworld)
     credited = set()
-    world.preparation_placements = []
     state.sweep_for_advancements()
     opening = OPENING_REGIONS[plan["opening_stage"]]
     for items, regions in ((plan["bootstrap_placed_items"], ()), (plan["opening_placed_items"], opening)):
@@ -189,6 +193,46 @@ def pre_fill(world) -> None:
             _prepare_item(world, name, state, regions, credited)
     for item in world.get_pre_fill_items():
         _place_preparation(world, item, state, opening, credited)
+
+
+def _prepare_solo_start(world):
+    state = CollectionState(world.multiworld)
+    state.sweep_for_advancements()
+    base = FastState.from_counts(state.prog_items[world.player], world.player)
+    pool = [item for item in world.multiworld.itempool if item.player == world.player and item.advancement]
+    locations = [loc for loc in world.multiworld.get_unfilled_locations(world.player)
+                 if loc.progress_type != LocationProgressType.EXCLUDED and loc.can_reach(state)]
+    package = _solo_preparation_package(world, base, pool)
+    if package is None or len(package) > len(locations):
+        raise OptionError(player_text("apworld.errors", "starting_preparation_unavailable"))
+    regions = {loc.parent_region.name for loc in locations}
+    _place_solo_preparation(world, package, pool, state, regions)
+
+
+def _place_solo_preparation(world, package, pool, state, regions):
+    credited = set()
+    for name in package:
+        item = next(item for item in pool if item.name == name)
+        pool.remove(item)
+        world.multiworld.itempool.remove(item)
+        _place_preparation(world, item, state, regions, credited)
+
+
+def _solo_preparation_package(world, base, pool):
+    from .campaign import _endurance_selection, _prune_preparation, _start_stage_readiness
+
+    packages = []
+    counts = Counter(item.name for item in pool)
+    for stage in world.campaign_plan["starting_stages"]:
+        initial = _start_stage_readiness(base, world.player, stage, world)
+        selection = _endurance_selection(stage, world, base, counts, world.player, initial)
+        if selection.satisfied:
+            package = _prune_preparation(
+                [step.item_name for step in selection.steps], base,
+                lambda st, stage=stage: _start_stage_readiness(st, world.player, stage, world)
+            )
+            packages.append(package)
+    return min(packages, key=len, default=None)
 
 
 def _place_preparation(world, item, state, regions, credited):
@@ -229,6 +273,10 @@ def fill_hook(
     filleritempool: list[Item],
     fill_locations: list[Location],
 ) -> None:
+    excluded_count = sum(loc.progress_type == LocationProgressType.EXCLUDED for loc in fill_locations)
+    if excluded_count > len(filleritempool):
+        raise OptionError(player_text("apworld.errors", "excluded_room_capacity",
+                                     excluded_count=excluded_count, filler_count=len(filleritempool)))
     arsenal = set(getattr(world, "frontloaded_arsenal", ()))
     access_priority = _access_priorities(world)
 
@@ -284,6 +332,12 @@ def _pad_item_pool(world, pool_names):
                 "apworld.errors", "item_pool_capacity", pool_count=len(pool_names), location_count=locations_count
             )
         )
+    excluded_count = sum(
+        loc.progress_type == LocationProgressType.EXCLUDED or loc.name in world.options.exclude_locations.value
+        for loc in world.multiworld.get_unfilled_locations(world.player)
+    )
+    if world.multiworld.players == 1 and excluded_count > amount_needed:
+        raise OptionError(player_text("apworld.errors", "excluded_pool_capacity"))
     _add_filler_and_traps(world, pool_names, amount_needed)
 
 
@@ -330,25 +384,45 @@ def _choose_early_mod(world, pool_names, weapon):
         world.frontloaded_arsenal.append(mod)
 
 
+def _add_excluded_fillers(world, pool_names, filler_weights, amount_needed, trap_count):
+    excluded_count = sum(
+        loc.progress_type == LocationProgressType.EXCLUDED or loc.name in world.options.exclude_locations.value
+        for loc in world.multiworld.get_unfilled_locations(world.player)
+    )
+    count = min(amount_needed - trap_count, max(0, excluded_count - trap_count))
+    weights = {
+        name: weight for name, weight in filler_weights.items()
+        if not item_data_table[name].classification & (ItemClassification.progression | ItemClassification.useful)
+    }
+    if not any(weights.values()):
+        if count and world.multiworld.players == 1:
+            raise OptionError(player_text("apworld.errors", "filler_excluded_weight"))
+        return 0
+    if count:
+        pool_names.extend(world.item_pool_rng.choices(list(weights), weights=list(weights.values()), k=count))
+    return count
+
+
 def _add_filler_and_traps(world, pool_names, amount_needed):
-    if amount_needed > 0:
-        filler_weights = _filler_weights(world)
-        enabled_traps, trap_weights = _trap_weights(world)
-        trap_count = amount_needed * world.options.trap_percentage.value // 100 if enabled_traps else 0
-        if amount_needed > trap_count and not any(filler_weights.values()):
-            raise OptionError(player_text("apworld.errors", "filler_residual_weight"))
-        if amount_needed > trap_count:
-            pool_names.extend(
-                world.item_pool_rng.choices(
-                    list(filler_weights), weights=list(filler_weights.values()), k=amount_needed - trap_count
-                )
+    filler_weights = _filler_weights(world)
+    enabled_traps, trap_weights = _trap_weights(world)
+    trap_count = amount_needed * world.options.trap_percentage.value // 100 if enabled_traps else 0
+    excluded_fillers = _add_excluded_fillers(world, pool_names, filler_weights, amount_needed, trap_count)
+    if amount_needed > trap_count and not any(filler_weights.values()):
+        raise OptionError(player_text("apworld.errors", "filler_residual_weight"))
+    if amount_needed > trap_count + excluded_fillers:
+        pool_names.extend(
+            world.item_pool_rng.choices(
+                list(filler_weights), weights=list(filler_weights.values()),
+                k=amount_needed - trap_count - excluded_fillers
             )
-        if trap_count:
-            pool_names.extend(
-                world.item_pool_rng.choices(
-                    enabled_traps, weights=[trap_weights[name] for name in enabled_traps], k=trap_count
-                )
+        )
+    if trap_count:
+        pool_names.extend(
+            world.item_pool_rng.choices(
+                enabled_traps, weights=[trap_weights[name] for name in enabled_traps], k=trap_count
             )
+        )
 
 
 def _trap_weights(world):
