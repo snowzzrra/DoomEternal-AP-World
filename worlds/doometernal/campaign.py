@@ -38,7 +38,7 @@ from .items import suit_perk_item_names
 from .locations import location_data_table, optional_location_enabled
 from .logic import CRUCIBLE_CHALLENGE, crucible_challenge_enabled, goal_endpoint_event_name, mission_clear_event_name
 from .native_enemy_safety import OPENING_REGIONS
-from .options import MissionCount, resolve_praetor_suit_upgrade_count
+from .options import MasteryLogic, MissionCount, resolve_praetor_suit_upgrade_count
 from .planner import (
     ITEM_DEPENDENCIES,
     STAGE_BY_ID,
@@ -437,7 +437,9 @@ class _CampaignPlanner:
             hub_location_count = len(
                 FORTRESS_NON_CONSUMER_LOCATIONS | {name for group in self.active_sg for name in group["locations"]}
             ) + int(set(BASE_GATE_STAGE_IDS).issubset(self.active_stage_set))
-            self.resource_budget = self.resource_mission_locations + hub_location_count + self.active_masteries_count
+            self.resource_budget = self.resource_mission_locations + hub_location_count
+            if self.options.mastery_logic.value != MasteryLogic.option_excluded:
+                self.resource_budget += self.active_masteries_count
             self.semantic_pool = build_semantic_counts(
                 self.options,
                 active_normal_ids=self.active_normal_ids,

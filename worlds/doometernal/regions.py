@@ -1,6 +1,6 @@
 from functools import partial
 
-from BaseClasses import ItemClassification, Region
+from BaseClasses import ItemClassification, LocationProgressType, Region
 
 from worlds.generic.Rules import add_rule, set_rule
 
@@ -41,6 +41,7 @@ from .logic import (
     victory_location_matches,
     victory_requirement_location_event_name,
 )
+from .options import MasteryLogic
 from .planner import ORDERED_MASTERY_CHALLENGES
 
 
@@ -144,6 +145,8 @@ def _create_catalog_locations(
             continue
         region = multiworld.get_region(reg_name, player)
         location = DoomEternalLocation(player, loc_name, loc_data.code, region)
+        if loc_name in active_mastery_locations and world.options.mastery_logic.value == MasteryLogic.option_excluded:
+            location.progress_type = LocationProgressType.EXCLUDED
         region.locations.append(location)
 
 

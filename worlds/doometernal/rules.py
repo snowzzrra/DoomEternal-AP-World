@@ -9,6 +9,7 @@ from .campaign import (
     completion_event,
 )
 from .items import (
+    WEAPON_UPGRADE_POINTS_NAME,
     item_data_table,
 )
 from .logic import (
@@ -17,6 +18,7 @@ from .logic import (
     build_location_prerequisites,
     effective_victory_requirements,
     goal_endpoint_event_name,
+    mastery_goal_bundles,
     required_item_names,
     requirement_satisfied,
     validate_location_prerequisites,
@@ -41,6 +43,7 @@ def set_rules(world) -> None:
         ),
         active_battery_cost=active_battery_cost,
         logic_difficulty=world.options.logic_difficulty.value,
+        mastery_logic=world.options.mastery_logic.value,
         active_spend_groups=world.active_spend_groups,
         enemy_plan=world.enemy_plan,
     )
@@ -86,7 +89,10 @@ def _set_victory_rules(world, active_location_names):
         required_events.add(goal_endpoint_event_name("Acquire the Unmaykr"))
     required_events.update(_additional_victory_events(active_location_names, effective_requirements))
 
-    world.multiworld.completion_condition[world.player] = lambda state: _victory_satisfied(
+    goal_bundles = mastery_goal_bundles(world.active_masteries_count, effective_requirements)
+    world.multiworld.completion_condition[world.player] = lambda state: state.has(
+        WEAPON_UPGRADE_POINTS_NAME, world.player, goal_bundles
+    ) and _victory_satisfied(
         world, state, required_events, master_goal, master_events
     )
 

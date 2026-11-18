@@ -409,6 +409,23 @@ class IncludeWeaponMasteryChallenges(Toggle):
     default = 1
 
 
+class MasteryLogic(_ExactLabelChoice):
+    """Weapon upgrade points cannot be refunded. Each mod needs three bundles of points.
+
+    Strict waits until you have enough points for every active mastery.
+    Excluded opens each mastery after three bundles. Its reward can only be a non-progression item.
+    Relaxed opens each mastery after three bundles and allows progression rewards. Spending points on
+    another mod can block your progress until more points arrive.
+    Completing all masteries for victory requires enough points for every active mastery in all modes."""
+
+    display_name = "Mastery Logic"
+    option_strict = 0
+    option_excluded = 1
+    option_relaxed = 2
+    default = option_strict
+    labels = {option_strict: "Strict", option_excluded: "Excluded", option_relaxed: "Relaxed"}
+
+
 class EasierSecretEncounters(Toggle):
     """Give yourself 50% more time to finish Secret Encounters.
 
@@ -623,6 +640,14 @@ class RevealAPLocationsOnAutomap(Toggle):
 
     display_name = "Reveal AP Locations on Automap"
     default = 0
+
+
+class SkipCutscenes(Toggle):
+    """Skip the opening cutscenes of Hell on Earth, UAC Atlantica and The World Spear.
+    Also skip the ending cutscenes and credits of Final Sin, The Dark Lord (Davoth) and The Holt."""
+
+    display_name = "Skip Cutscenes"
+    default = 1
 
 
 class TrapPercentage(Range):
@@ -1045,7 +1070,9 @@ class DoomEternalOptions(DeathLinkMixin, PerGameCommonOptions):
     kills_per_check: KillsPerCheck
     killsanity_maximum_milestones: KillsanityMaximumMilestones
     include_weapon_mastery_challenges: IncludeWeaponMasteryChallenges
+    mastery_logic: MasteryLogic
     reveal_ap_locations_on_automap: RevealAPLocationsOnAutomap
+    skip_cutscenes: SkipCutscenes
     starting_weapon: StartingWeapon
     praetor_suit_upgrades_in_pool: PraetorSuitUpgradesInPool
     trap_percentage: TrapPercentage
@@ -1083,6 +1110,7 @@ option_groups = [
             IncludeSecretEncounters,
             ArenaChecks,
             IncludeWeaponMasteryChallenges,
+            MasteryLogic,
         ],
     ),
     OptionGroup(
@@ -1137,6 +1165,9 @@ option_groups = [
             MasteryRequirements,
         ],
     ),
-    OptionGroup("Extras", [Accessibility, ProgressionBalancing, DeathLink, DeathLinkMode, RevealAPLocationsOnAutomap]),
+    OptionGroup(
+        "Extras",
+        [Accessibility, ProgressionBalancing, DeathLink, DeathLinkMode, RevealAPLocationsOnAutomap, SkipCutscenes],
+    ),
     OptionGroup("Item & Location Options", [StartInventory]),
 ]

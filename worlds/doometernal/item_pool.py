@@ -34,6 +34,7 @@ from .items import (
     item_data_table,
     world_pool_weapon_item_names,
 )
+from .logic import mastery_goal_bundles, mastery_point_bundles
 from .planner import (
     _CAPACITY_MAX_STAGES,
     _CAPACITY_STATS,
@@ -607,9 +608,11 @@ class _SemanticPoolBuilder:
     def _upgrade_points(self):
         active_family_count = len(self.family_masteries)
         self.requested_mastery_count = len(self.requested_masteries)
-        self.effective_families = max(active_family_count, self.requested_mastery_count)
+        self.goal_bundles = mastery_goal_bundles(
+            self.active_masteries_count, self.options.additional_victory_requirements.value
+        )
         if self.compact:
-            wup_policy = 3 * self.effective_families
+            wup_policy = 3 * max(active_family_count, self.requested_mastery_count)
         else:
             wup_policy = WEAPON_UPGRADE_POINTS_ITEM_COUNT
         self.base_pool[WEAPON_UPGRADE_POINTS_NAME] = wup_policy
@@ -674,7 +677,10 @@ class _SemanticPoolBuilder:
             self.baseline["Dash"] = 1
         if not _option_value(self.options, "randomize_chainsaw"):
             self.baseline["Chainsaw"] = 1
-        self._mastery_progression_baseline()
+        if self.goal_bundles:
+            self.baseline[WEAPON_UPGRADE_POINTS_NAME] = max(
+                self.baseline[WEAPON_UPGRADE_POINTS_NAME], self.goal_bundles
+            )
         for name in list(self.base_pool) + list(self.optional_caps):
             qty = self.base_pool.get(name, 0)
             if qty <= 0 or not _item_is_progression(name) or name in COMBAT_BASELINE_NAMES:
@@ -690,6 +696,8 @@ class _SemanticPoolBuilder:
             self.in_baseline = 0
             if _item_is_progression(name) and name not in COMBAT_BASELINE_NAMES:
                 self.in_baseline = self.base_pool.get(name, 0)
+            elif name == WEAPON_UPGRADE_POINTS_NAME:
+                self.in_baseline = max(0, self.goal_bundles - self.start_inv[name])
             budget = max(0, self.pool_copies - self.in_baseline)
             if budget > 0:
                 self.activatable[name] = budget
@@ -802,19 +810,11 @@ class _SemanticPoolBuilder:
         for mod in required_mods:
             if available[mod] <= 0:
                 raise PoolConfigurationError(player_text("apworld.errors", "override_required_mod", mod=mod))
-        if available[WEAPON_UPGRADE_POINTS_NAME] < 3 * max(self.active_masteries_count, self.requested_mastery_count):
-            raise PoolConfigurationError(player_text("apworld.errors", "override_mastery_points"))
-
-    def _mastery_progression_baseline(self):
-        mastery_victory_active = (
-            "Complete All Weapon Mastery Challenges"
-            in set(getattr(getattr(self.options, "additional_victory_requirements", None), "value", ()) or ())
-            and self.effective_families > 0
+        required = mastery_point_bundles(
+            max(self.active_masteries_count, self.requested_mastery_count), self.options.mastery_logic.value
         )
-        wup_promoted = 0
-        if mastery_victory_active:
-            wup_promoted = min(3 * self.effective_families, self.base_pool.get(WEAPON_UPGRADE_POINTS_NAME, 0))
-            self.baseline[WEAPON_UPGRADE_POINTS_NAME] += wup_promoted
+        if available[WEAPON_UPGRADE_POINTS_NAME] < max(required, self.goal_bundles):
+            raise PoolConfigurationError(player_text("apworld.errors", "override_mastery_points"))
 
     def _budget_candidates(self):
         from .generated_content import CAMPAIGN_CONNECTIONS
@@ -826,6 +826,7 @@ class _SemanticPoolBuilder:
             active_region_names=active_regions,
             special_weapon=self.special_name,
             logic_difficulty=_option_value(self.options, "logic_difficulty", 1),
+            mastery_logic=self.options.mastery_logic.value,
             active_spend_groups=self.active_sg,
             enemy_plan=getattr(self.world_context, "enemy_plan", None),
         )

@@ -1,4 +1,5 @@
 from collections import Counter
+from collections.abc import Mapping
 from copy import deepcopy
 from random import Random
 from typing import ClassVar
@@ -441,10 +442,9 @@ class DoomEternalWorld(World):
             details = "; ".join(f"{name}: {value}" for name, value in sorted(adjustment.items()))
             spoiler_handle.write(player_text("apworld.spoiler", "safety_adjustment", details=details) + "\n")
 
-    def _restore_tracker_options(self, slot_data):
-        options = slot_data.get("tracker_options")
+    def _restore_tracker_options(self, options):
         names = tuple(DoomEternalOptions.__annotations__)
-        if not isinstance(options, dict) or set(options) != set(names):
+        if set(options) != set(names):
             raise OptionError(player_text("apworld.errors", "tracker_options_missing"))
         try:
             restored = {
@@ -472,7 +472,9 @@ class DoomEternalWorld(World):
             )
         except ContractError as error:
             raise OptionError(str(error)) from error
-        self._restore_tracker_options(slot_data)
+        self._restore_tracker_options({
+            name: dict(value) if isinstance(value, Mapping) else value for name, value in data.tracker_options.items()
+        })
         self.stage_profiles = data.stage_profiles
         self.campaign_plan = self._tracker_campaign(slot_data["campaign"])
         self.killsanity_plan = restore_kill_rewards(data, catalog, self.campaign_plan)

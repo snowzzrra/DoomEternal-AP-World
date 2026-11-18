@@ -8,16 +8,19 @@ from typing import Any
 
 from BaseClasses import CollectionState
 
+from .items import WEAPON_UPGRADE_POINTS_NAME
+from .options import MasteryLogic
 from .player_strings_generated import text as player_text
 
 MASTERY_SUFFIX = " - Weapon Mastery Challenge"
+MASTERY_GOAL = "Complete All Weapon Mastery Challenges"
 
 VICTORY_REQUIREMENT_SUFFIXES = {
     "Complete All Slayer Gates": " - Slayer Gate Complete",
     "Complete All Escalation Encounters": " - Escalation Encounter Wave ",
     "Complete All Secret Encounters": " - Secret Encounter - ",
     "Complete All Mission Challenges": " - All Mission Challenges Completed",
-    "Complete All Weapon Mastery Challenges": MASTERY_SUFFIX,
+    MASTERY_GOAL: MASTERY_SUFFIX,
 }
 
 
@@ -83,7 +86,7 @@ VICTORY_REQUIREMENT_NAMES = frozenset(
         "Complete All Escalation Encounters",
         "Complete All Secret Encounters",
         "Complete All Mission Challenges",
-        "Complete All Weapon Mastery Challenges",
+        MASTERY_GOAL,
         "Acquire the Unmaykr",
     }
 )
@@ -327,7 +330,7 @@ def _victory_content_present(active_locations):
         "Complete All Mission Challenges": any(
             " - All Mission Challenges Completed" in name for name in active_locations
         ),
-        "Complete All Weapon Mastery Challenges": any(name.endswith(MASTERY_SUFFIX) for name in active_locations),
+        MASTERY_GOAL: any(name.endswith(MASTERY_SUFFIX) for name in active_locations),
         "Acquire the Unmaykr": "Fortress of Doom - Unmaykr Acquired" in active_locations,
     }
 
@@ -354,6 +357,7 @@ def build_location_prerequisites(
     special_weapon: str = "The Crucible",
     active_battery_cost: int | None = None,
     logic_difficulty: int = 1,
+    mastery_logic: int = MasteryLogic.option_strict,
     active_spend_groups: Sequence[Mapping[str, Any]] | None = None,
     enemy_plan: Mapping[str, Any] | None = None,
 ) -> dict[str, LocationRequirement]:
@@ -365,7 +369,8 @@ def build_location_prerequisites(
     _mission_prerequisites(table, location_names, special_weapon, logic_difficulty)
     _arena_prerequisites(table, location_names)
     _fortress_prerequisites(table, location_names, active_battery_cost, active_spend_groups)
-    _mastery_prerequisites(table, mastery_locations, generated_targets, location_names, active_region_names)
+    bundles = mastery_point_bundles(len(mastery_locations), mastery_logic)
+    _mastery_prerequisites(table, mastery_locations, generated_targets, location_names, active_region_names, bundles)
     return table
 
 
@@ -571,8 +576,15 @@ def _fortress_prerequisites(table, location_names, active_battery_cost, active_s
             table[location_name] = LocationRequirement(battery_currency=battery_cost)
 
 
-def _mastery_prerequisites(table, mastery_locations, generated_targets, location_names, active_region_names):
-    bundles = 3 * len(mastery_locations)
+def mastery_point_bundles(count: int, mode: int) -> int:
+    return 3 * (count if mode == MasteryLogic.option_strict else min(count, 1))
+
+
+def mastery_goal_bundles(count: int, requirements) -> int:
+    return 3 * count if MASTERY_GOAL in requirements else 0
+
+
+def _mastery_prerequisites(table, mastery_locations, generated_targets, location_names, active_region_names, bundles):
     for location_name in mastery_locations:
         mod_name = location_name.removesuffix(MASTERY_SUFFIX)
         base_weapon = MOD_BASE_WEAPON_REQUIREMENTS.get(mod_name)
@@ -592,9 +604,7 @@ def _mastery_prerequisites(table, mastery_locations, generated_targets, location
         table[location_name] = LocationRequirement(
             combat_all_of=(f"mod:{mod_name}",),
             reachable_any_of=reachable_any_of,
-            # reserve the points for every active mod so purchases cannot lock another challenge.
-            custom_rule=lambda state, player, bundles=bundles: state.count("Weapon Upgrade Points (3)", player)
-            >= bundles,
+            custom_rule=lambda state, player: state.count(WEAPON_UPGRADE_POINTS_NAME, player) >= bundles,
         )
 
 

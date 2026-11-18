@@ -12,11 +12,13 @@ from Options import OptionError
 from .campaign import STAGE_BY_ID
 from .combat_readiness import READINESS_PLACEMENT_SLACK, derive_readiness_targets, select_readiness_items
 from .generated_content import CAMPAIGN_CONNECTIONS
-from .items import DoomEternalItem
+from .items import WEAPON_UPGRADE_POINTS_NAME, DoomEternalItem
 from .logic import (
     MASTERY_SUFFIX,
     build_location_prerequisites,
     connection_requirement,
+    mastery_goal_bundles,
+    mastery_point_bundles,
     required_item_names,
 )
 from .player_strings_generated import text as player_text
@@ -73,6 +75,7 @@ class _ProgressionClassifier:
             if self.world.options.use_dlc_content.value
             else "The Crucible",
             logic_difficulty=self.world.options.logic_difficulty.value,
+            mastery_logic=self.world.options.mastery_logic.value,
             active_spend_groups=getattr(self.world, "active_spend_groups", None),
             enemy_plan=getattr(self.world, "enemy_plan", None),
         )
@@ -162,8 +165,13 @@ class _ProgressionClassifier:
                 self.useful_items.setdefault(item.name, []).append(item)
 
     def _classify_mastery_points(self):
-        self.wup_name = "Weapon Upgrade Points (3)"
-        needed_wup_bundles = max(0, 3 * self.active_mastery_count - self.state.count(self.wup_name, self.player))
+        self.wup_name = WEAPON_UPGRADE_POINTS_NAME
+        options = self.world.options
+        required = max(
+            mastery_point_bundles(self.active_mastery_count, options.mastery_logic.value),
+            mastery_goal_bundles(self.active_mastery_count, options.additional_victory_requirements.value),
+        )
+        needed_wup_bundles = max(0, required - self.state.count(self.wup_name, self.player))
         if needed_wup_bundles > len(self.useful_items.get(self.wup_name, ())):
             raise OptionError(player_text("apworld.errors", "mastery_points_insufficient"))
         if needed_wup_bundles:

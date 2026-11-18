@@ -96,6 +96,7 @@ def _runtime(world):
         "enhanced_melee_damage",
         "easier_secret_encounters",
         "reveal_ap_locations_on_automap",
+        "skip_cutscenes",
     )
     return dict(
         difficulty={
