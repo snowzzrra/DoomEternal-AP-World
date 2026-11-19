@@ -14,6 +14,8 @@ from .player_strings_generated import text as player_text
 
 MASTERY_SUFFIX = " - Weapon Mastery Challenge"
 MASTERY_GOAL = "Complete All Weapon Mastery Challenges"
+BUNDLES_PER_MASTERY = 3
+UT_GLITCH_ITEM_NAME = "doometernal_ut_glitch"
 
 VICTORY_REQUIREMENT_SUFFIXES = {
     "Complete All Slayer Gates": " - Slayer Gate Complete",
@@ -137,6 +139,7 @@ class LocationRequirement:
     battery_currency: int = 0
     custom_rule: Callable[[CollectionState, int], bool] | None = None
     all_requirements: tuple[LocationRequirement, ...] = ()
+    battery_room_cost: int | None = None
 
 
 COMBAT_CAPABILITIES: Mapping[str, tuple[tuple[str, ...], ...]] = {
@@ -570,18 +573,20 @@ def _fortress_prerequisites(table, location_names, active_battery_cost, active_s
         for sg in active_spend_groups:
             for loc in sg["locations"]:
                 if loc in location_names:
-                    table[loc] = LocationRequirement(battery_currency=cost)
+                    table[loc] = LocationRequirement(battery_currency=cost, battery_room_cost=sg["cost"])
     for location_name in FORTRESS_BATTERY_CONSUMER_LOCATIONS & location_names:
         if location_name not in table:
-            table[location_name] = LocationRequirement(battery_currency=battery_cost)
+            table[location_name] = LocationRequirement(
+                battery_currency=battery_cost, battery_room_cost=fortress_battery_consumer_cost(1)
+            )
 
 
 def mastery_point_bundles(count: int, mode: int) -> int:
-    return 3 * (count if mode == MasteryLogic.option_strict else min(count, 1))
+    return BUNDLES_PER_MASTERY * (count if mode == MasteryLogic.option_strict else min(count, 1))
 
 
 def mastery_goal_bundles(count: int, requirements) -> int:
-    return 3 * count if MASTERY_GOAL in requirements else 0
+    return BUNDLES_PER_MASTERY * count if MASTERY_GOAL in requirements else 0
 
 
 def _mastery_prerequisites(table, mastery_locations, generated_targets, location_names, active_region_names, bundles):
@@ -604,7 +609,9 @@ def _mastery_prerequisites(table, mastery_locations, generated_targets, location
         table[location_name] = LocationRequirement(
             combat_all_of=(f"mod:{mod_name}",),
             reachable_any_of=reachable_any_of,
-            custom_rule=lambda state, player: state.count(WEAPON_UPGRADE_POINTS_NAME, player) >= bundles,
+            custom_rule=lambda state, player: _can_afford_spend(
+                state, player, state.count(WEAPON_UPGRADE_POINTS_NAME, player), bundles, BUNDLES_PER_MASTERY
+            ),
         )
 
 
@@ -652,15 +659,18 @@ def _record_challenge_targets(generated_targets, replacements, managers, locatio
                 generated_targets.setdefault(target["name"], set()).add(("Location", location))
 
 
+def _can_afford_spend(state, player, available, reserved, single_cost):
+    return available >= reserved or (
+        single_cost is not None and available >= single_cost and state.has(UT_GLITCH_ITEM_NAME, player)
+    )
+
+
 def _inventory_requirement_satisfied(requirement, state, player):
     if not all(state.has(item_name, player) for item_name in requirement.all_of):
         return False
-    if (
-        requirement.battery_currency
-        and (state.count("Sentinel Battery", player) + 2 * state.count("Sentinel Battery Bundle", player))
-        < requirement.battery_currency
-    ):
-        return False
+    if requirement.battery_currency:
+        batteries = state.count("Sentinel Battery", player) + 2 * state.count("Sentinel Battery Bundle", player)
+        return _can_afford_spend(state, player, batteries, requirement.battery_currency, requirement.battery_room_cost)
     return True
 
 

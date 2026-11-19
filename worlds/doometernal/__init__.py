@@ -23,6 +23,7 @@ from .items import (
     item_name_to_id,
 )
 from .locations import kill_reward_name_to_id, location_data_table, location_name_to_id
+from .logic import UT_GLITCH_ITEM_NAME
 from .native_enemy_plan import build_native_recipes
 from .options import DoomEternalOptions, option_groups
 from .planner import PoolConfigurationError
@@ -70,6 +71,7 @@ class DoomEternalWorld(World):
     options: DoomEternalOptions
     settings: DoomEternalSettings
     ut_can_gen_without_yaml = True
+    glitches_item_name = UT_GLITCH_ITEM_NAME
 
     def __init__(self, multiworld, player):
         super().__init__(multiworld, player)
@@ -144,6 +146,8 @@ class DoomEternalWorld(World):
     location_name_groups: ClassVar[dict[str, set[str]]] = {"Killsanity": set(kill_reward_name_to_id)}
 
     def create_item(self, name: str) -> DoomEternalItem:
+        if name == self.glitches_item_name:
+            return DoomEternalItem(name, ItemClassification.progression, None, self.player)
         item_data = item_data_table[name]
         return DoomEternalItem(name, item_data.classification, item_data.code, self.player)
 
